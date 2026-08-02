@@ -7,8 +7,6 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'examples/lattice-workload.json'
-      - 'tools/lattice_harden_v02.py'
-      - 'tools/lattice_harden_v02_fix.py'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -16,61 +14,12 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'examples/lattice-workload.json'
-      - 'tools/lattice_harden_v02.py'
-      - 'tools/lattice_harden_v02_fix.py'
       - '.github/workflows/lattice.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  materialize-v02:
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'agent/lattice-qualification-plane'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: agent/lattice-qualification-plane
-          fetch-depth: 0
-
-      - name: Detect staged migration
-        id: gate
-        shell: bash
-        run: |
-          if [[ -f tools/lattice_harden_v02.py && -f tools/lattice_harden_v02_fix.py ]]; then
-            echo 'enabled=true' >> "$GITHUB_OUTPUT"
-          else
-            echo 'enabled=false' >> "$GITHUB_OUTPUT"
-          fi
-
-      - name: Apply reviewed v0.2 hardening
-        if: steps.gate.outputs.enabled == 'true'
-        run: |
-          python3 tools/lattice_harden_v02.py
-          python3 tools/lattice_harden_v02_fix.py
-          rm tools/lattice_harden_v02.py tools/lattice_harden_v02_fix.py
-
-      - name: Validate exact final product tree
-        if: steps.gate.outputs.enabled == 'true'
-        run: |
-          python3 -m compileall -q lattice
-          python3 -m unittest discover -s lattice/tests -v
-          python3 -m lattice --version
-
-      - name: Publish tested product files
-        if: steps.gate.outputs.enabled == 'true'
-        shell: bash
-        run: |
-          git config user.name 'lattice-ci'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add lattice LATTICE.md docs/lattice-qualification.md
-          git add -u tools/lattice_harden_v02.py tools/lattice_harden_v02_fix.py
-          git commit -m 'lattice: add tamper-evident qualification records'
-          git push origin HEAD:agent/lattice-qualification-plane
-
   test:
     strategy:
       fail-fast: false
