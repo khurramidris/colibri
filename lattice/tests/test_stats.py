@@ -45,8 +45,8 @@ class StatsTests(unittest.TestCase):
     def test_candidate_clears_gates(self):
         score = score_candidate(
             "fast", {"a": 1.0, "b": 2.0},
-            {"a": [1.0, 1.0, 1.0], "b": [2.0, 2.0, 2.0]},
-            {"a": [1.2, 1.2, 1.2], "b": [2.4, 2.4, 2.4]},
+            {"a": {0: 1.0, 1: 1.0, 2: 1.0}, "b": {0: 2.0, 1: 2.0, 2: 2.0}},
+            {"a": {0: 1.2, 1: 1.2, 2: 1.2}, "b": {0: 2.4, 1: 2.4, 2: 2.4}},
             min_runs=3, min_gain=0.03, max_regression=0.05,
             confidence=0.98, require_confidence=True, hourly_cost_usd=2.0,
         )
@@ -54,12 +54,13 @@ class StatsTests(unittest.TestCase):
         self.assertAlmostEqual(score.weighted_speedup or 0, 1.2)
         self.assertIsNotNone(score.cost_per_million_usd)
         self.assertEqual(score.per_case["a"]["paired_runs"], 3)
+        self.assertEqual(score.per_case["a"]["paired_repeat_ids"], [0, 1, 2])
 
     def test_point_estimator_uses_paired_ratios_not_ratio_of_medians(self):
         score = score_candidate(
             "paired", {"case": 1.0},
-            {"case": [1.0, 2.0, 100.0]},
-            {"case": [2.0, 100.0, 101.0]},
+            {"case": {0: 1.0, 1: 2.0, 2: 100.0}},
+            {"case": {0: 2.0, 1: 100.0, 2: 101.0}},
             min_runs=3, min_gain=0.0, max_regression=1.0,
             confidence=0.9, require_confidence=False, hourly_cost_usd=None,
         )
@@ -67,11 +68,23 @@ class StatsTests(unittest.TestCase):
         self.assertAlmostEqual(score.per_case["case"]["candidate_tok_s"], 100.0)
         self.assertAlmostEqual(score.per_case["case"]["baseline_tok_s"], 2.0)
 
+    def test_pairing_uses_exact_repeat_identity_when_failures_differ(self):
+        score = score_candidate(
+            "paired", {"case": 1.0},
+            {"case": {0: 1.0, 2: 100.0}},
+            {"case": {1: 100.0, 2: 101.0}},
+            min_runs=1, min_gain=0.0, max_regression=1.0,
+            confidence=0.9, require_confidence=False, hourly_cost_usd=None,
+        )
+        self.assertAlmostEqual(score.weighted_speedup or 0.0, 1.01)
+        self.assertEqual(score.per_case["case"]["paired_repeat_ids"], [2])
+        self.assertEqual(score.per_case["case"]["paired_runs"], 1)
+
     def test_single_workload_regression_blocks_aggregate_gain(self):
         score = score_candidate(
             "mixed", {"a": 1.0, "b": 1.0},
-            {"a": [1.0, 1.0], "b": [1.0, 1.0]},
-            {"a": [2.0, 2.0], "b": [0.8, 0.8]},
+            {"a": {0: 1.0, 1: 1.0}, "b": {0: 1.0, 1: 1.0}},
+            {"a": {0: 2.0, 1: 2.0}, "b": {0: 0.8, 1: 0.8}},
             min_runs=2, min_gain=0.03, max_regression=0.05,
             confidence=0.9, require_confidence=False, hourly_cost_usd=None,
         )
