@@ -119,11 +119,18 @@ class ColibriTests(unittest.TestCase):
     def test_parse_calibration_and_metrics(self):
         replay = parse_calibration("[PROMPT_TOKENS] 2: 1 2\n[TOKENS] 3 generated: 3 4 5")
         self.assertEqual(replay["full_ids"], [1, 2, 3, 4, 5])
+        oracle_line = (
+            "REPLAY_ORACLE_STEP v1 step=0 forced=3 top1=2 top2=4 "
+            "top1_logit=3 forced_logit=1.25 margin=0.5 mean=0.8 rms=1.9 "
+            "p0=1 p1=-2 p2=3 p3=-4 topk_ids=0123456789abcdef nonfinite=0"
+        )
         metrics = parse_replay_metrics(
+            oracle_line + "\nREPLAY_ORACLE_SUMMARY v1 steps=1 topk=8\n"
             "REPLAY decode: 16 tokens | 2.50 tok/s\nexpert hit 70.5%\nlatency p50 10.2 ms p99 18.4 ms"
         )
         self.assertEqual(metrics["tok_s"], 2.5)
         self.assertEqual(metrics["hit_pct"], 70.5)
+        self.assertEqual(metrics["oracle"]["steps"][0]["top1"], 2)
 
 
 if __name__ == "__main__":

@@ -9,6 +9,7 @@ from .colibri import ColibriContext, calibrate_case, run_replay
 from .common import LatticeError, atomic_write_json, canonical_json, sha256_bytes, short_id, utc_now
 from .evidence import session_evidence_root
 from .integrity import validate_session_evidence
+from .oracle import ORACLE_POLICY
 from .suite import WorkloadCase, WorkloadSuite
 from .workspace import Workspace
 
@@ -245,6 +246,7 @@ def run_experiment(
             "hardware_fingerprint": context.hardware_fingerprint,
             "execution_fingerprint": context.execution_fingerprint,
             "qualification_context": context.qualification_context,
+            "oracle_policy": dict(ORACLE_POLICY),
             "repeats": repeats,
             "timeout_seconds": timeout,
             "candidates": [candidate.as_dict() for candidate in candidate_tuple],

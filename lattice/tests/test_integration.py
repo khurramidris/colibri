@@ -73,6 +73,13 @@ if os.environ.get('PIPE') == '1': speed=1.15
 if os.environ.get('DIRECT') == '1': speed=1.35
 if os.environ.get('PILOT_REAL') == '1': speed=1.25
 if os.environ.get('OMP_NUM_THREADS') == '2': speed=0.90
+for step, forced in enumerate(range(4, 12)):
+    print(
+        f'REPLAY_ORACLE_STEP v1 step={step} forced={forced} top1=2 top2=4 '
+        'top1_logit=3 forced_logit=1.25 margin=0.5 mean=0.8 rms=1.9 '
+        'p0=1 p1=-2 p2=3 p3=-4 topk_ids=0123456789abcdef nonfinite=0'
+    )
+print('REPLAY_ORACLE_SUMMARY v1 steps=8 topk=8')
 print(f'REPLAY decode: 8 tokens | {speed:.2f} tok/s')
 print('expert hit 70.0%')
 print('latency p50 10.0 ms p99 20.0 ms')
