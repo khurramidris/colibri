@@ -6545,16 +6545,18 @@ static void prof_report(Model *m, const ProfBase *b, double elapsed, int tokens,
 /* Fixed-token decode benchmark: prefill all but the prompt's last token, then
  * replay the oracle sequence one token at a time. CPU and CUDA therefore see
  * identical hidden-state inputs even if their argmax predictions differ.
- *
- * Numerical validation deliberately runs in a SECOND replay pass. Computing
- * top-k identities and full-vector projections inside the timed loop would
- * contaminate the throughput that the oracle is meant to gate. */
+ * Numerical validation is a separate replay pass and writes to a controller-
+ * supplied private artifact path so long continuations cannot overflow stdout. */
 static void run_replay(Model *m, const int *full, int nfull, int np){
     if(np<2||nfull<=np){ fprintf(stderr,"REPLAY requires a non-empty prompt and continuation\n"); return; }
     int oracle_on=getenv("REPLAY_ORACLE")?atoi(getenv("REPLAY_ORACLE")):0;
     int oracle_topk=getenv("REPLAY_ORACLE_TOPK")?atoi(getenv("REPLAY_ORACLE_TOPK")):8;
+    const char *oracle_path=getenv("REPLAY_ORACLE_OUT");
     if(oracle_topk<2) oracle_topk=2;
     if(oracle_topk>COLI_REPLAY_ORACLE_TOPK_MAX) oracle_topk=COLI_REPLAY_ORACLE_TOPK_MAX;
+    if(oracle_on && (!oracle_path || !*oracle_path)){
+        fprintf(stderr,"REPLAY_ORACLE_OUT is required when REPLAY_ORACLE=1\n"); exit(2);
+    }
 
     /* Phase 1: uninstrumented performance replay. */
     kv_alloc(m,nfull+2);
@@ -6581,9 +6583,10 @@ static void run_replay(Model *m, const int *full, int nfull, int np){
 #endif
 
     if(!oracle_on) return;
+    FILE *oracle_file=fopen(oracle_path,"wb");
+    if(!oracle_file){ perror("REPLAY_ORACLE_OUT"); exit(2); }
 
-    /* Phase 2: reset KV state and replay again for the numerical sketch. This
-     * phase is outside the published decode time and cannot alter its ranking. */
+    /* Phase 2: reset KV state and replay again for the numerical sketch. */
     kv_alloc(m,nfull+2);
     logit=step(m,full,np-1,0); free(logit);
     int oracle_steps=0;
@@ -6592,20 +6595,27 @@ static void run_replay(Model *m, const int *full, int nfull, int np){
         ColiReplayOracleStep o;
         if(!coli_replay_oracle_step(logit,m->c.vocab,full[i+1],oracle_topk,&o)){
             fprintf(stderr,"REPLAY_ORACLE failed at step %d (invalid/non-finite forced logit)\n",oracle_steps);
-            free(logit); exit(2);
+            free(logit); fclose(oracle_file); exit(2);
         }
-        printf("REPLAY_ORACLE_STEP v1 step=%d forced=%d top1=%d top2=%d "
-               "top1_logit=%.9g forced_logit=%.9g margin=%.9g mean=%.12g rms=%.12g "
-               "p0=%.12g p1=%.12g p2=%.12g p3=%.12g topk_ids=%016llx nonfinite=%d\n",
-               oracle_steps,o.forced,o.top1,o.top2,(double)o.top1_logit,(double)o.forced_logit,
-               (double)o.margin,o.mean,o.rms,o.projection[0],o.projection[1],
-               o.projection[2],o.projection[3],(unsigned long long)o.topk_ids_hash,o.nonfinite);
+        fprintf(oracle_file,"STEP\tv2\t%d\t%d\t%d\t%d\t%.9g\t%.9g\t%.9g\t%.12g\t%.12g"
+                            "\t%.12g\t%.12g\t%.12g\t%.12g\t",
+                o.forced,o.top1,o.top2,o.nonfinite,(double)o.top1_logit,(double)o.forced_logit,
+                (double)o.margin,o.mean,o.rms,o.projection[0],o.projection[1],
+                o.projection[2],o.projection[3]);
+        for(int j=0;j<o.topk;j++) fprintf(oracle_file,j?",%d":"%d",o.topk_ids[j]);
+        fputc('\n',oracle_file);
         free(logit); oracle_steps++;
     }
     if(oracle_steps!=steps){
-        fprintf(stderr,"REPLAY_ORACLE step count differs from measured replay\n"); exit(2);
+        fprintf(stderr,"REPLAY_ORACLE step count differs from measured replay\n");
+        fclose(oracle_file); exit(2);
     }
-    printf("REPLAY_ORACLE_SUMMARY v1 steps=%d topk=%d measurement=separate_replay_pass\n",
+    fprintf(oracle_file,"SUMMARY\tv2\t%d\t%d\tseparate_replay_pass\tprivate_file\n",
+            oracle_steps,oracle_topk);
+    if(fflush(oracle_file)!=0 || ferror(oracle_file) || fclose(oracle_file)!=0){
+        fprintf(stderr,"failed to publish replay oracle artifact\n"); exit(2);
+    }
+    printf("REPLAY_ORACLE_WRITTEN v2 steps=%d topk=%d measurement=separate_replay_pass transport=private_file\n",
            oracle_steps,oracle_topk);
 }
 

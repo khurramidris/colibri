@@ -7,28 +7,17 @@ from lattice.common import LatticeError
 from lattice.oracle import ORACLE_POLICY, ORACLE_SCHEMA, compare_oracles, validate_oracle
 
 
+def row(*, top1: int = 2, forced_logit: float = 1.25, topk: list[int] | None = None) -> list:
+    return [
+        3, top1, 4, 0,
+        3.0, forced_logit, 0.5, 0.8, 1.9,
+        1.0, -2.0, 3.0, -4.0,
+        topk or [top1, 4, 3, 1, 5, 6, 7, 8],
+    ]
+
+
 def fixture() -> dict:
-    return {
-        "schema": ORACLE_SCHEMA,
-        "policy": dict(ORACLE_POLICY),
-        "steps": [{
-            "step": 0,
-            "forced": 3,
-            "top1": 2,
-            "top2": 4,
-            "nonfinite": 0,
-            "top1_logit": 3.0,
-            "forced_logit": 1.25,
-            "margin": 0.5,
-            "mean": 0.833333333,
-            "rms": 1.9,
-            "projection_0": 1.0,
-            "projection_1": -2.0,
-            "projection_2": 3.0,
-            "projection_3": -4.0,
-            "topk_ids_hash": "0123456789abcdef",
-        }],
-    }
+    return {"schema": ORACLE_SCHEMA, "policy": dict(ORACLE_POLICY), "steps": [row()]}
 
 
 class OracleTests(unittest.TestCase):
@@ -37,26 +26,22 @@ class OracleTests(unittest.TestCase):
         self.assertIsNone(compare_oracles(value, copy.deepcopy(value)))
 
     def test_small_numeric_drift_is_tolerated(self):
-        base = fixture()
-        trial = copy.deepcopy(base)
-        trial["steps"][0]["projection_2"] += 0.001
+        base = fixture(); trial = copy.deepcopy(base)
+        trial["steps"][0][11] += 0.001
         self.assertIsNone(compare_oracles(base, trial))
 
-    def test_identity_or_large_numeric_drift_is_rejected(self):
-        base = fixture()
+    def test_exact_topk_or_large_numeric_drift_is_rejected(self):
+        base = fixture(); trial = copy.deepcopy(base)
+        trial["steps"][0][13][3] = 9
+        self.assertIn("topk_ids differs", compare_oracles(base, trial) or "")
         trial = copy.deepcopy(base)
-        trial["steps"][0]["top1"] = 9
-        self.assertIn("top1 differs", compare_oracles(base, trial) or "")
-        trial = copy.deepcopy(base)
-        trial["steps"][0]["forced_logit"] += 0.1
+        trial["steps"][0][5] += 0.1
         self.assertIn("beyond tolerance", compare_oracles(base, trial) or "")
 
     def test_nonfinite_or_malformed_oracle_is_rejected(self):
-        value = fixture()
-        value["steps"][0]["nonfinite"] = 1
+        value = fixture(); value["steps"][0][3] = 1
         self.assertIn("non-finite", compare_oracles(value, value) or "")
-        value = fixture()
-        value["steps"][0]["topk_ids_hash"] = "bad"
+        value = fixture(); value["steps"][0][13] = [2, 4]
         with self.assertRaisesRegex(LatticeError, "top-k identity"):
             validate_oracle(value)
 
