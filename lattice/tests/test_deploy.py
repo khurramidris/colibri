@@ -3,11 +3,15 @@ from __future__ import annotations
 import unittest
 
 from lattice.common import LatticeError
-from lattice.deploy import prepare_launch_args, validate_launch_args
+from lattice.deploy import (
+    ensure_profile_deployable,
+    prepare_launch_args,
+    validate_launch_args,
+)
 
 
 class DeployTests(unittest.TestCase):
-    def test_profile_overrides_are_rejected_in_both_flag_forms(self):
+    def test_unreviewed_or_profile_override_flags_are_rejected(self):
         for arguments in (
             ["serve", "--policy", "experimental-fast"],
             ["serve", "--ctx=8192"],
@@ -15,16 +19,22 @@ class DeployTests(unittest.TestCase):
             ["run", "--topk=8", "hello"],
             ["serve", "--auto-tier"],
             ["chat", "--attach", "http://127.0.0.1:8000"],
+            ["serve", "--future-flag", "value"],
         ):
             with self.subTest(arguments=arguments):
-                with self.assertRaisesRegex(LatticeError, "overrides the verified profile"):
+                with self.assertRaisesRegex(LatticeError, "reviewed allowlist"):
                     validate_launch_args(arguments)
 
-    def test_serving_and_generation_controls_remain_available(self):
+    def test_reviewed_serving_controls_are_available(self):
         validate_launch_args([
-            "serve", "--host", "127.0.0.1", "--port", "8000",
+            "serve", "--host", "127.0.0.1", "--port=8000",
             "--api-key", "secret", "--max-queue", "4", "--ngen", "512",
+            "--cors-origin", "https://example.test", "--allowed-host", "example.test",
+            "--queue-timeout", "30", "--kv-slots", "2", "--model-id", "local",
         ])
+        validate_launch_args(["web", "--no-browser", "--port", "8000"])
+        validate_launch_args(["chat", "--api-key", "secret", "--no-attach"])
+        validate_launch_args(["run", "--ngen", "64", "hello", "world"])
 
     def test_chat_is_forced_to_a_private_local_engine(self):
         self.assertEqual(prepare_launch_args(["chat"]), ["chat", "--no-attach"])
@@ -39,9 +49,25 @@ class DeployTests(unittest.TestCase):
                 with self.assertRaisesRegex(LatticeError, "launch supports only"):
                     prepare_launch_args([command])
 
-    def test_model_override_is_rejected(self):
-        with self.assertRaisesRegex(LatticeError, "--model"):
-            validate_launch_args(["chat", "--model=/tmp/other-model"])
+    def test_missing_values_and_unexpected_positionals_are_rejected(self):
+        for arguments, pattern in (
+            (["serve", "--port"], "requires a value"),
+            (["serve", "--port", "--host"], "requires a non-empty value"),
+            (["info", "unexpected"], "does not accept positional"),
+            (["run", "--ngen", "32"], "requires a prompt"),
+            (["web", "--no-browser=true"], "does not accept a value"),
+        ):
+            with self.subTest(arguments=arguments):
+                with self.assertRaisesRegex(LatticeError, pattern):
+                    validate_launch_args(arguments)
+
+    def test_non_deployable_profile_is_blocked(self):
+        with self.assertRaisesRegex(LatticeError, "deployment is blocked"):
+            ensure_profile_deployable({
+                "deployable": False,
+                "deployment_blocker": "uncalibrated evidence",
+            })
+        ensure_profile_deployable({"deployable": True})
 
 
 if __name__ == "__main__":
