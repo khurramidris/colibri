@@ -15,9 +15,23 @@ class WorkspaceTests(unittest.TestCase):
             ws.initialize({"schema_version": 1})
             run = {"schema_version": 1, "id": "run-abc"}
             ws.write_run(run)
+            self.assertRegex(run["record_sha256"], r"^[0-9a-f]{64}$")
             ws.write_run(run)
             with self.assertRaises(LatticeError):
-                ws.write_run({**run, "status": "changed"})
+                changed = dict(run)
+                changed["status"] = "changed"
+                ws.write_run(changed)
+
+    def test_run_digest_is_verified_on_read(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ws = Workspace(Path(directory))
+            ws.initialize({"schema_version": 1})
+            run = {"schema_version": 1, "id": "run-abc", "metrics": {"tok_s": 1.0}}
+            path = ws.write_run(run)
+            text = path.read_text(encoding="utf-8").replace('"tok_s": 1.0', '"tok_s": 9.0')
+            path.write_text(text, encoding="utf-8")
+            with self.assertRaisesRegex(LatticeError, "digest mismatch"):
+                ws.list_runs()
 
     def test_persisted_ids_are_validated_before_path_construction(self):
         with tempfile.TemporaryDirectory() as directory:
