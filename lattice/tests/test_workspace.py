@@ -19,6 +19,18 @@ class WorkspaceTests(unittest.TestCase):
             with self.assertRaises(LatticeError):
                 ws.write_run({**run, "status": "changed"})
 
+    def test_persisted_ids_are_validated_before_path_construction(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ws = Workspace(Path(directory))
+            ws.initialize({"schema_version": 1})
+            with self.assertRaisesRegex(LatticeError, "invalid session id"):
+                ws.load_session("../../escape")
+            with self.assertRaisesRegex(LatticeError, "invalid profile id"):
+                ws.load_profile("../escape")
+            with self.assertRaisesRegex(LatticeError, "invalid run id"):
+                ws.write_run({"schema_version": 1, "id": "../escape"})
+            self.assertFalse((Path(directory).parent / "escape.json").exists())
+
     def test_lock_is_exclusive(self):
         with tempfile.TemporaryDirectory() as directory:
             ws = Workspace(Path(directory))
