@@ -36,13 +36,15 @@ jobs:
           ref: agent/lattice-qualification-plane
           fetch-depth: 0
 
-      - name: Apply the reviewed environment hardening patch
-        run: python3 .lattice-sync/env-hardening.py
+      - name: Apply reviewed hardening patches
+        run: |
+          python3 .lattice-sync/env-hardening.py
+          python3 .lattice-sync/deploy-hardening.py
 
       - name: Restore permanent read-only workflow and remove transport
         shell: bash
         run: |
-          rm .lattice-sync/env-hardening.py
+          rm .lattice-sync/env-hardening.py .lattice-sync/deploy-hardening.py
           python3 - <<'PY'
           from pathlib import Path
           expression_open = '${' + '{'
@@ -100,9 +102,11 @@ jobs:
         run: |
           git config user.name 'lattice-ci'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add lattice/colibri.py lattice/tests/test_colibri.py .github/workflows/lattice.yml
-          git add -u .lattice-sync/env-hardening.py
-          git commit -m 'lattice: require explicit qualification environment allowlist'
+          git add lattice/colibri.py lattice/tests/test_colibri.py
+          git add lattice/deploy.py lattice/tests/test_deploy.py
+          git add .github/workflows/lattice.yml
+          git add -u .lattice-sync/env-hardening.py .lattice-sync/deploy-hardening.py
+          git commit -m 'lattice: close qualification and deployment override paths'
           git push origin HEAD:agent/lattice-qualification-plane
 
   test:
