@@ -85,7 +85,7 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
         f"- Per-candidate interval confidence: `{stats.get('per_candidate_confidence', 'missing')}`",
         f"- Minimum paired runs for confidence gating: `{stats.get('minimum_confidence_runs', 'missing')}`",
         "",
-        "Paired throughput ratios are calculated within repeat number for each workload. The point estimate is the workload-weighted geometric mean of the per-workload median paired ratios. Bootstrap resampling occurs independently within each workload, preserving the declared workload composition. Bonferroni adjustment controls the requested family-wise interval level across all non-baseline candidates.",
+        "Paired throughput ratios are calculated within repeat number for each workload. The point estimate is the workload-weighted geometric mean of the per-workload median paired ratios. Stratified bootstrap resampling occurs independently within each workload, preserving the declared workload composition. Bonferroni adjustment controls the requested family-wise interval level across all non-baseline candidates.",
         "",
         "## Qualified system fingerprints",
         "",
