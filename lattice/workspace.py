@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from .common import LatticeError, atomic_write_json, load_json
+from .common import LatticeError, atomic_write_json, load_json, validate_id
 
 
 @dataclass(frozen=True)
@@ -80,23 +80,27 @@ class Workspace:
         return data
 
     def write_run(self, run: dict[str, Any]) -> Path:
-        run_id = run["id"]
+        run_id = validate_id(run.get("id"), "run id")
         path = self.runs_dir / f"{run_id}.json"
         atomic_write_json(path, run, exclusive=True)
         return path
 
     def write_session(self, session: dict[str, Any], *, immutable: bool = False) -> Path:
-        path = self.sessions_dir / f"{session['id']}.json"
+        session_id = validate_id(session.get("id"), "session id")
+        path = self.sessions_dir / f"{session_id}.json"
         atomic_write_json(path, session, exclusive=immutable)
         return path
 
     def load_session(self, session_id: str) -> dict[str, Any]:
+        session_id = validate_id(session_id, "session id")
         data = load_json(self.sessions_dir / f"{session_id}.json")
         if not isinstance(data, dict) or data.get("schema_version") != 1:
             raise LatticeError(f"invalid session: {session_id}")
         return data
 
     def list_runs(self, session_id: str | None = None) -> list[dict[str, Any]]:
+        if session_id is not None:
+            session_id = validate_id(session_id, "session id")
         runs: list[dict[str, Any]] = []
         for path in sorted(self.runs_dir.glob("*.json")):
             data = load_json(path)
@@ -107,9 +111,10 @@ class Workspace:
         return runs
 
     def write_profile(self, profile: dict[str, Any]) -> Path:
-        path = self.profiles_dir / f"{profile['id']}.json"
+        profile_id = validate_id(profile.get("id"), "profile id")
+        path = self.profiles_dir / f"{profile_id}.json"
         atomic_write_json(path, profile, exclusive=True)
-        atomic_write_json(self.current_profile_path, {"schema_version": 1, "profile_id": profile["id"]})
+        atomic_write_json(self.current_profile_path, {"schema_version": 1, "profile_id": profile_id})
         return path
 
     def load_profile(self, profile_id: str | None = None) -> dict[str, Any]:
@@ -118,12 +123,14 @@ class Workspace:
             if not isinstance(pointer, dict) or pointer.get("schema_version") != 1:
                 raise LatticeError("invalid current profile pointer")
             profile_id = pointer.get("profile_id")
+        profile_id = validate_id(profile_id, "profile id")
         data = load_json(self.profiles_dir / f"{profile_id}.json")
         if not isinstance(data, dict) or data.get("schema_version") != 1:
             raise LatticeError(f"invalid profile: {profile_id}")
         return data
 
     def acquire_lock(self, name: str = "operation"):
+        name = validate_id(name, "lock name")
         return WorkspaceLock(self.root / f".{name}.lock")
 
 
