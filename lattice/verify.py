@@ -49,6 +49,8 @@ def verify_workspace(workspace: Workspace, *, deep: bool = False) -> dict[str, A
             "policy": evaluation["selection_policy"],
             "statistics_policy": evaluation["statistics_policy"],
             "oracle_policy": evaluation["oracle_policy"],
+            "assurance_level": evaluation["assurance_level"],
+            "deployable": evaluation["deployable"],
             "evidence_root_sha256": evaluation["evidence_root_sha256"],
         })
         checks.update({
@@ -64,6 +66,9 @@ def verify_workspace(workspace: Workspace, *, deep: bool = False) -> dict[str, A
             "profile_evidence_root": profile.get("evidence_root_sha256") == evaluation.get("evidence_root_sha256"),
             "profile_oracle_policy": profile.get("oracle_policy") == evaluation.get("oracle_policy"),
             "profile_statistics_policy": profile.get("statistics_policy") == evaluation.get("statistics_policy"),
+            "profile_assurance_level": profile.get("assurance_level") == evaluation.get("assurance_level"),
+            "profile_deployable": profile.get("deployable") == evaluation.get("deployable"),
+            "profile_deployment_blocker": profile.get("deployment_blocker") == evaluation.get("deployment_blocker"),
             "profile_recomputed": canonical_json({k: profile.get(k) for k in evaluation}) == canonical_json(evaluation),
         })
     failed = [name for name, passed in checks.items() if not passed]
