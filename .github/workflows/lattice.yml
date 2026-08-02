@@ -10,7 +10,6 @@ on:
       - 'lattice/**'
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
-      - 'tools/lattice_oracle_two_phase.py'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -21,52 +20,23 @@ on:
       - 'lattice/**'
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
-      - 'tools/lattice_oracle_two_phase.py'
       - '.github/workflows/lattice.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  materialize-two-phase:
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'agent/lattice-numerical-oracle'
+  engine-and-controller:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-        with:
-          ref: agent/lattice-numerical-oracle
-          fetch-depth: 0
-      - name: Detect staged timing correction
-        id: gate
-        shell: bash
-        run: |
-          [[ -f tools/lattice_oracle_two_phase.py ]] && echo 'enabled=true' >> "$GITHUB_OUTPUT" || echo 'enabled=false' >> "$GITHUB_OUTPUT"
-      - name: Apply two-phase replay measurement
-        if: steps.gate.outputs.enabled == 'true'
-        run: |
-          python3 tools/lattice_oracle_two_phase.py
-          rm tools/lattice_oracle_two_phase.py
-      - name: Validate exact corrected tree
-        if: steps.gate.outputs.enabled == 'true'
+      - name: Validate controller
         run: |
           python3 -m compileall -q lattice
           python3 -m unittest discover -s lattice/tests -v
-          make -C c check
           python3 -m lattice --version
-      - name: Publish exact tested correction
-        if: steps.gate.outputs.enabled == 'true'
-        shell: bash
-        run: |
-          git config user.name 'lattice-ci'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add c/colibri.c lattice/oracle.py lattice/colibri.py lattice/report.py
-          git add lattice/tests/test_colibri.py lattice/tests/test_integration.py LATTICE.md
-          git add -u tools/lattice_oracle_two_phase.py
-          git commit -m 'engine: isolate numerical oracle from replay timing'
-          git push origin HEAD:agent/lattice-numerical-oracle
+      - name: Validate Colibri engine and oracle
+        run: make -C c check
 
   python-matrix:
     strategy:
@@ -86,6 +56,3 @@ jobs:
         run: python -m unittest discover -s lattice/tests -v
       - name: CLI smoke test
         run: python -m lattice --version
-
-# Publication is deliberately one-shot: the migration deletes itself, and the
-# workflow is restored to read-only immediately after the tested commit lands.
