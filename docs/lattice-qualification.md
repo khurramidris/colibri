@@ -45,7 +45,7 @@ python3 -m lattice init --repo . --model /models/glm52_i4 \
 
 `init` performs the following:
 
-1. resolves the engine from the model family or `--engine`;
+1. detects the model family and requires the currently proven GLM/`colibri` replay adapter;
 2. executes Colibri's deep doctor;
 3. captures Colibri's generated resource plan;
 4. validates every Safetensors header and tensor offset;
@@ -173,6 +173,8 @@ A completed qualification proves that, for one exact model/runtime/hardware/work
 - the winner cleared explicit aggregate and per-workload gates;
 - the profile can be recomputed from retained evidence;
 - the estimated cost follows from a disclosed hourly cost assumption.
+
+The v0.1 adapter is deliberately limited to GLM/`colibri`. Inkling, Kimi K3 and OLMoE remain Colibri engine capabilities, but they need dedicated Lattice calibration/replay adapters before Lattice can make the same qualification claim for them.
 
 It does not prove:
 

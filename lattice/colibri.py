@@ -218,6 +218,12 @@ def create_context(
         raise LatticeError(f"not a Colibri checkout (missing c/coli): {repo_root}")
     model = model.expanduser().resolve()
     resolved_engine, family = resolve_engine(c_dir, model, engine)
+    if family != "colibri":
+        raise LatticeError(
+            "Lattice v0.1 qualification currently supports the GLM/colibri "
+            "deterministic replay contract only; Inkling, Kimi and OLMoE "
+            "require engine-specific calibration/replay adapters"
+        )
     sys.path.insert(0, str(c_dir))
     resource_plan = _load_module(c_dir / "resource_plan.py", "lattice_colibri_resource_plan")
     doctor_module = _load_module(c_dir / "doctor.py", "lattice_colibri_doctor")

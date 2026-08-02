@@ -8,7 +8,7 @@ Colibri is the inference engine: it moves frontier MoE weights across NVMe, RAM 
 
 The first implementation lives in [`lattice/`](lattice/) and is intentionally narrow. It does **not** claim a new kernel or universal speedup. It provides:
 
-- deep Colibri preflight and plan capture;
+- deep Colibri preflight and plan capture for the currently proven GLM/`colibri` adapter;
 - sampled model-payload and exact runtime fingerprints;
 - deterministic, teacher-forced replay across a weighted workload suite;
 - hardware-specific scheduling and placement candidates only;
@@ -50,5 +50,7 @@ python3 -m lattice report --workspace .lattice --output qualification-report.md
 python3 -m lattice env --workspace .lattice --format shell
 python3 -m lattice launch --workspace .lattice -- serve --port 8000
 ```
+
+The v0.1 qualification adapter is intentionally GLM-only. Inkling, Kimi K3 and OLMoE support requires dedicated deterministic replay adapters before Lattice will claim qualification coverage.
 
 Read [`docs/lattice-qualification.md`](docs/lattice-qualification.md) for the architecture, evidence contract and limitations.
