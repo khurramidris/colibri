@@ -26,6 +26,8 @@ def write_safetensors(path: Path) -> None:
 def valid_output(*, matching: int = 3, total: int = 3) -> str:
     return (
         "resident weights loaded in 1.5s | RSS after load: 2.25 GB\n"
+        "Reference: 3 4 5 \n"
+        "C engine : 3 4 5 \n"
         f"Matching tokens: {matching}/{total}\n"
         "PEAK RSS: 3.50 GB\n"
         "Expert cache hit rate: 75.0%  (hit=30 miss=10)\n"
@@ -67,10 +69,13 @@ class AcceptanceTests(unittest.TestCase):
     def test_output_parser_requires_complete_consistent_telemetry(self):
         metrics = parse_olmoe_output(valid_output())
         self.assertEqual(metrics["matching_tokens"], 3)
+        self.assertEqual(metrics["engine_tokens"], [3, 4, 5])
         self.assertEqual(metrics["tok_s"], 2.0)
         self.assertEqual(metrics["peak_rss_gb"], 3.5)
         with self.assertRaisesRegex(LatticeError, "speed token count"):
             parse_olmoe_output(valid_output(total=2).replace("for 2 tokens", "for 3 tokens"))
+        with self.assertRaisesRegex(LatticeError, "match counter disagrees"):
+            parse_olmoe_output(valid_output(matching=2))
 
     def test_reference_drift_stops_before_engine_execution(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -95,6 +100,8 @@ import os
 assert os.environ['PILOT'] == '0'
 assert os.environ['HOT'] == '0'
 print('resident weights loaded in 1.5s | RSS after load: 2.25 GB')
+print('Reference: 3 4 5 ')
+print('C engine : 3 4 5 ')
 print('Matching tokens: 3/3')
 print('PEAK RSS: 3.50 GB')
 print('Expert cache hit rate: 75.0%  (hit=30 miss=10)')
@@ -119,6 +126,7 @@ print('Speed: 2.00 tok/s (1.5s for 3 tokens)')
             self.assertRegex(record["execution_fingerprint"], r"^[0-9a-f]{64}$")
             self.assertRegex(record["evidence_root_sha256"], r"^[0-9a-f]{64}$")
             self.assertTrue(all(verify_record_digest(run) for run in record["runs"]))
+            self.assertTrue(all(run["metrics"]["engine_tokens"] == [3, 4, 5] for run in record["runs"]))
             report = render_acceptance_report(record)
             self.assertIn("TOKEN-EXACT-REFERENCE-REPLAY", report.upper())
             self.assertIn("Exact successful runs: 3/3", report)
@@ -140,6 +148,8 @@ print('Speed: 2.00 tok/s (1.5s for 3 tokens)')
             engine.write_text(
                 """#!/usr/bin/env python3
 print('resident weights loaded in 1.0s | RSS after load: 2.0 GB')
+print('Reference: 3 4 5 ')
+print('C engine : 3 9 5 ')
 print('Matching tokens: 2/3')
 print('PEAK RSS: 3.0 GB')
 print('Expert cache hit rate: 50.0%  (hit=10 miss=10)')
@@ -153,6 +163,7 @@ print('Speed: 1.0 tok/s (3.0s for 3 tokens)')
             )
             self.assertEqual(record["status"], "rejected")
             self.assertIn("token mismatch", record["runs"][0]["error"])
+            self.assertIn("token 1", record["runs"][0]["error"])
             self.assertTrue(verify_record_digest(record["runs"][0]))
 
 
