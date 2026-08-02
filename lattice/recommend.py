@@ -16,9 +16,8 @@ from .suite import WorkloadSuite, parse_suite
 from .workspace import Workspace
 
 
-def _successful_samples(runs: list[dict[str, Any]], candidate_id: str) -> dict[str, list[float]]:
-    values: dict[str, list[tuple[int, float]]] = {}
-    seen: set[tuple[str, int]] = set()
+def _successful_samples(runs: list[dict[str, Any]], candidate_id: str) -> dict[str, dict[int, float]]:
+    values: dict[str, dict[int, float]] = {}
     for run in runs:
         if run.get("candidate_id") != candidate_id or run.get("status") != "success":
             continue
@@ -26,14 +25,14 @@ def _successful_samples(runs: list[dict[str, Any]], candidate_id: str) -> dict[s
         repeat = run.get("repeat")
         metrics = run.get("metrics") or {}
         tok_s = metrics.get("tok_s")
-        if not isinstance(case_id, str) or not isinstance(repeat, int) or not isinstance(tok_s, (int, float)) or tok_s <= 0:
+        if (not isinstance(case_id, str) or isinstance(repeat, bool) or not isinstance(repeat, int)
+                or isinstance(tok_s, bool) or not isinstance(tok_s, (int, float)) or tok_s <= 0):
             continue
-        key = (case_id, repeat)
-        if key in seen:
+        case_values = values.setdefault(case_id, {})
+        if repeat in case_values:
             raise LatticeError(f"duplicate successful evidence for {candidate_id}/{case_id}/repeat-{repeat}")
-        seen.add(key)
-        values.setdefault(case_id, []).append((repeat, float(tok_s)))
-    return {case_id: [value for _, value in sorted(samples)] for case_id, samples in values.items()}
+        case_values[repeat] = float(tok_s)
+    return values
 
 
 def _successful_run_map(runs: list[dict[str, Any]], candidate_id: str) -> dict[tuple[str, int], dict[str, Any]]:
