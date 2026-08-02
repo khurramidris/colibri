@@ -63,6 +63,7 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
         "",
         f"- Schema: `{oracle.get('schema', 'missing')}`",
         f"- Exact top-k identity size: `{oracle.get('topk', 'missing')}`",
+        f"- Measurement method: `{oracle.get('measurement', 'missing')}`",
         f"- Absolute tolerance: `{oracle.get('absolute_tolerance', 'missing')}`",
         f"- Relative tolerance: `{oracle.get('relative_tolerance', 'missing')}`",
         "",

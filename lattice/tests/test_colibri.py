@@ -125,7 +125,7 @@ class ColibriTests(unittest.TestCase):
             "p0=1 p1=-2 p2=3 p3=-4 topk_ids=0123456789abcdef nonfinite=0"
         )
         metrics = parse_replay_metrics(
-            oracle_line + "\nREPLAY_ORACLE_SUMMARY v1 steps=1 topk=8\n"
+            oracle_line + "\nREPLAY_ORACLE_SUMMARY v1 steps=1 topk=8 measurement=separate_replay_pass\n"
             "REPLAY decode: 16 tokens | 2.50 tok/s\nexpert hit 70.5%\nlatency p50 10.2 ms p99 18.4 ms"
         )
         self.assertEqual(metrics["tok_s"], 2.5)

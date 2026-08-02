@@ -575,8 +575,10 @@ def parse_replay_oracle(output: str) -> dict[str, Any]:
             raise LatticeError("replay numerical oracle step is not finite or sequential")
         steps.append(step)
     version, summary = _oracle_fields(summaries[0], ORACLE_SUMMARY_PREFIX)
-    if version != "v1" or set(summary) != {"steps", "topk"}:
+    if version != "v1" or set(summary) != {"steps", "topk", "measurement"}:
         raise LatticeError("invalid replay numerical oracle summary")
+    if summary["measurement"] != ORACLE_POLICY["measurement"]:
+        raise LatticeError("replay numerical oracle measurement method mismatch")
     try:
         summary_steps, topk = int(summary["steps"]), int(summary["topk"])
     except ValueError as error:

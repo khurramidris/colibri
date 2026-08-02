@@ -10,6 +10,7 @@ ORACLE_SCHEMA = "coli-replay-oracle/1"
 ORACLE_POLICY = {
     "schema": ORACLE_SCHEMA,
     "topk": 8,
+    "measurement": "separate_replay_pass",
     "absolute_tolerance": 0.005,
     "relative_tolerance": 0.0005,
 }

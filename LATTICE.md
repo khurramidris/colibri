@@ -26,7 +26,7 @@ The current implementation lives in [`lattice/`](lattice/) and is intentionally 
 
 ## What the assurance level means
 
-Lattice v0.3 measures candidates while forcing the same prompt and continuation token IDs through each run. Before each replay-step logit vector is freed, Colibri records a compact numerical sketch. Lattice rejects candidates whose exact token identities differ or whose numeric sketch exceeds the versioned tolerance.
+Lattice v0.3 measures candidates while forcing the same prompt and continuation token IDs through each run. Colibri first performs an uninstrumented timed replay. It then resets KV state and performs a separate numerical-validation replay, so sketch computation and output cannot contaminate the measured throughput. Lattice rejects candidates whose exact token identities differ or whose numeric sketch exceeds the versioned tolerance.
 
 This is **numerical replay consistency**, not complete logit equality. The sketch cannot prove that every logit matches, that free-running generations are identical, or that downstream task quality is unchanged. The current absolute and relative tolerances are explicit and versioned, but they still need calibration against real supported CPU/GPU deployments.
 
