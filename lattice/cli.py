@@ -6,6 +6,7 @@ import sys
 from pathlib import Path
 
 from . import __version__
+from .acceptance import prepare_olmoe_acceptance, run_olmoe_acceptance, write_acceptance_outputs
 from .colibri import create_context, hardware_summary
 from .common import LatticeError
 from .deploy import deployment_environment, launch
@@ -160,7 +161,6 @@ def cmd_status(args: argparse.Namespace) -> int:
     return 0
 
 
-
 def cmd_env(args: argparse.Namespace) -> int:
     workspace = _workspace(args.workspace)
     env, profile = deployment_environment(workspace, adaptive=args.adaptive)
@@ -180,6 +180,35 @@ def cmd_launch(args: argparse.Namespace) -> int:
     if command and command[0] == "--":
         command = command[1:]
     return launch(workspace, command, adaptive=args.adaptive)
+
+
+def cmd_accept_olmoe(args: argparse.Namespace) -> int:
+    output = Path(args.output).expanduser().resolve()
+    report = Path(args.report).expanduser().resolve() if args.report else output.with_suffix(".md")
+    prepared = prepare_olmoe_acceptance(
+        Path(args.repo),
+        Path(args.model),
+        Path(args.reference),
+        engine=Path(args.engine) if args.engine else None,
+        cache_cap=args.cache_cap,
+        quant_bits=args.quant_bits,
+        repeats=args.repeats,
+        timeout=args.timeout,
+        threads=args.threads,
+    )
+    record = run_olmoe_acceptance(prepared)
+    write_acceptance_outputs(record, output, report)
+    print(json.dumps({
+        "status": record["status"],
+        "acceptance_id": record["id"],
+        "evidence_root_sha256": record["evidence_root_sha256"],
+        "successful_runs": record["summary"]["successful_runs"],
+        "required_runs": record["summary"]["required_runs"],
+        "output": str(output),
+        "report": str(report),
+    }, indent=2))
+    return 0 if record["status"] == "accepted" else 3
+
 
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
@@ -245,6 +274,23 @@ def build_parser() -> argparse.ArgumentParser:
     launch_parser.add_argument("--adaptive", action="store_true", help="allow runtime adaptive state not covered by the qualification")
     launch_parser.add_argument("coli_args", nargs=argparse.REMAINDER, help="arguments after --, e.g. -- serve --port 8000")
     launch_parser.set_defaults(func=cmd_launch)
+
+    accept = sub.add_parser(
+        "accept-olmoe",
+        help="run a token-exact real-model acceptance against an OLMoE reference continuation",
+    )
+    accept.add_argument("--repo", default=".", help="Colibri checkout root")
+    accept.add_argument("--model", required=True, help="converted OLMoE model directory")
+    accept.add_argument("--reference", required=True, help="reference JSON with prompt_ids and full_ids")
+    accept.add_argument("--engine", help="explicit OLMoE engine binary")
+    accept.add_argument("--cache-cap", type=int, default=16, help="expert cache entries per layer")
+    accept.add_argument("--quant-bits", type=int, default=8, help="expert quantization bits used by the engine")
+    accept.add_argument("--repeats", type=int, default=3)
+    accept.add_argument("--timeout", type=int, default=1800, help="seconds per real-model run")
+    accept.add_argument("--threads", type=int, help="fixed OpenMP thread count; default uses engine tuning")
+    accept.add_argument("--output", default="olmoe-acceptance.json", help="immutable JSON evidence output")
+    accept.add_argument("--report", help="Markdown report path; defaults beside --output")
+    accept.set_defaults(func=cmd_accept_olmoe)
     return parser
 
 
