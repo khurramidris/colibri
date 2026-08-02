@@ -101,7 +101,9 @@ print('latency p50 10.0 ms p99 20.0 ms')
             self.assertEqual(session["status"], "completed")
             runs = workspace.list_runs(session["id"])
             self.assertEqual(len(runs), len(session["candidates"]) * 2 * 2)
-            self.assertEqual(sum(run["status"] == "failed" for run in runs), 4)
+            has_io_uring = any(candidate["id"] == "io-uring" for candidate in session["candidates"])
+            expected_failures = 4 if has_io_uring else 0
+            self.assertEqual(sum(run["status"] == "failed" for run in runs), expected_failures)
 
             self.assertEqual(main([
                 "recommend", "--workspace", str(workspace_path), "--session", session["id"],
