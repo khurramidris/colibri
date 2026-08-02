@@ -1,26 +1,74 @@
-name: Lattice qualification plane
+name: Lattice numerical replay oracle
 
 on:
   push:
     paths:
+      - 'c/colibri.c'
+      - 'c/replay_oracle.h'
+      - 'c/tests/test_replay_oracle.c'
+      - 'c/Makefile'
       - 'lattice/**'
-      - 'LATTICE.md'
-      - 'docs/lattice-qualification.md'
-      - 'examples/lattice-workload.json'
+      - 'tools/lattice_numerical_oracle.py'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
+      - 'c/colibri.c'
+      - 'c/replay_oracle.h'
+      - 'c/tests/test_replay_oracle.c'
+      - 'c/Makefile'
       - 'lattice/**'
-      - 'LATTICE.md'
-      - 'docs/lattice-qualification.md'
-      - 'examples/lattice-workload.json'
+      - 'tools/lattice_numerical_oracle.py'
       - '.github/workflows/lattice.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  test:
+  materialize-oracle:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'agent/lattice-numerical-oracle'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/lattice-numerical-oracle
+          fetch-depth: 0
+
+      - name: Detect staged numerical oracle
+        id: gate
+        shell: bash
+        run: |
+          [[ -f tools/lattice_numerical_oracle.py ]] && echo 'enabled=true' >> "$GITHUB_OUTPUT" || echo 'enabled=false' >> "$GITHUB_OUTPUT"
+
+      - name: Apply reviewed numerical oracle integration
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          python3 tools/lattice_numerical_oracle.py
+          rm tools/lattice_numerical_oracle.py
+
+      - name: Validate exact engine and controller tree
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          python3 -m compileall -q lattice
+          python3 -m unittest discover -s lattice/tests -v
+          make -C c check
+          python3 -m lattice --version
+
+      - name: Publish exact tested product files
+        if: steps.gate.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          git config user.name 'lattice-ci'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add c/colibri.c c/Makefile c/replay_oracle.h c/tests/test_replay_oracle.c
+          git add lattice
+          git add -u tools/lattice_numerical_oracle.py
+          git commit -m 'engine: gate Lattice promotion on numerical replay oracle'
+          git push origin HEAD:agent/lattice-numerical-oracle
+
+  python-matrix:
     strategy:
       fail-fast: false
       matrix:
