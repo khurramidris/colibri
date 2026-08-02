@@ -9,6 +9,7 @@ import os
 import platform
 import re
 import shutil
+import stat
 import sys
 import tempfile
 from dataclasses import dataclass, field
@@ -16,13 +17,18 @@ from pathlib import Path
 from types import ModuleType
 from typing import Any
 
-from .common import LatticeError, canonical_json, sha256_bytes, sha256_file
+from .common import (
+    LatticeError, canonical_json, load_json, sha256_bytes, sha256_file,
+    strict_json_loads,
+)
 from .process import ProcessResult, run_bounded
 from .oracle import ORACLE_POLICY, ORACLE_SCHEMA, validate_oracle
 
-PROMPT_RE = re.compile(r"\[PROMPT_TOKENS\]\s+\d+:\s*([0-9 ]+)")
-TOKENS_RE = re.compile(r"\[TOKENS\]\s+\d+\s+generated:\s*([0-9 ]+)")
-SPEED_RE = re.compile(r"REPLAY decode:\s+\d+\s+tokens.*?\|\s*([0-9.]+)\s+tok/s")
+PROMPT_RE = re.compile(r"\[PROMPT_TOKENS\]\s+(\d+):\s*([0-9 ]+)")
+TOKENS_RE = re.compile(r"\[TOKENS\]\s+(\d+)\s+generated:\s*([0-9 ]+)")
+SPEED_RE = re.compile(
+    r"REPLAY decode:\s+(\d+)\s+tokens\s+in\s+([0-9.]+)s\s*\|\s*([0-9.]+)\s+tok/s"
+)
 HIT_RE = re.compile(r"expert hit\s+([0-9.]+)%")
 LATENCY_RE = re.compile(r"latency p50\s+([0-9.]+)\s*ms.*?p99\s+([0-9.]+)\s*ms")
 ORACLE_WRITTEN_RE = re.compile(
@@ -88,6 +94,17 @@ AMBIENT_QUALIFICATION_KEYS = TOPOLOGY_KEYS | frozenset({
     "CUDA_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES",
 })
 
+# Keep only operating-system variables required to start local subprocesses.
+# Secrets, Python import injection, dynamic-loader injection and unrelated
+# numerical-library tuning variables are deliberately absent.
+SYSTEM_ENV_KEYS = frozenset({
+    "PATH", "SystemRoot", "WINDIR", "COMSPEC", "PATHEXT",
+    "TEMP", "TMP", "TMPDIR", "HOME", "USERPROFILE", "HOMEDRIVE",
+    "HOMEPATH", "APPDATA", "LOCALAPPDATA", "PROGRAMDATA",
+    "LANG", "LC_ALL", "LANGUAGE", "TZ",
+})
+ATTESTED_SYSTEM_KEYS = frozenset({"PATH", "SystemRoot", "WINDIR"})
+
 
 @dataclass(frozen=True)
 class ColibriContext:
@@ -117,11 +134,32 @@ def _load_module(path: Path, name: str) -> ModuleType:
         raise LatticeError(f"cannot import Colibri support module: {path}")
     module = importlib.util.module_from_spec(spec)
     sys.modules[name] = module
-    spec.loader.exec_module(module)
-    return module
+    try:
+        spec.loader.exec_module(module)
+        return module
+    except BaseException:
+        raise
+    finally:
+        sys.modules.pop(name, None)
+
+
+def _purge_new_support_modules(c_dir: Path, before: set[str]) -> None:
+    root = c_dir.resolve()
+    for name in set(sys.modules) - before:
+        module = sys.modules.get(name)
+        location = getattr(module, "__file__", None)
+        if not location:
+            continue
+        try:
+            Path(location).resolve().relative_to(root)
+        except (OSError, ValueError):
+            continue
+        sys.modules.pop(name, None)
 
 
 def detect_family(config: dict[str, Any]) -> str:
+    if not isinstance(config, dict):
+        raise LatticeError("model config must be an object")
     model_type = str(config.get("model_type") or "").lower()
     architectures = " ".join(map(str, config.get("architectures") or [])).lower()
     text = f"{model_type} {architectures}"
@@ -131,17 +169,23 @@ def detect_family(config: dict[str, Any]) -> str:
         return "kimi_k3"
     if "olmoe" in text or "olmo_moe" in text or "olmoe" in text.replace("-", ""):
         return "olmoe"
-    return "colibri"
+    if "glm" in text:
+        return "colibri"
+    raise LatticeError(
+        f"unsupported or unrecognized model family: model_type={model_type or '<missing>'!r}"
+    )
 
 
 def resolve_engine(c_dir: Path, model: Path, explicit: Path | None = None) -> tuple[Path, str]:
     config_path = model / "config.json"
     try:
-        config = json.loads(config_path.read_text(encoding="utf-8"))
+        config = strict_json_loads(
+            config_path.read_text(encoding="utf-8"), label=f"model config {config_path}"
+        )
     except FileNotFoundError as error:
         raise LatticeError(f"missing model config: {config_path}") from error
-    except json.JSONDecodeError as error:
-        raise LatticeError(f"invalid model config: {error}") from error
+    except UnicodeDecodeError as error:
+        raise LatticeError(f"model config is not UTF-8: {config_path}") from error
     family = detect_family(config)
     if explicit is not None:
         engine = explicit.expanduser().resolve()
@@ -170,9 +214,9 @@ def _safetensors_header(path: Path) -> bytes:
         if len(header) != header_len:
             raise LatticeError(f"truncated safetensors header: {path}")
         try:
-            parsed = json.loads(header)
-        except json.JSONDecodeError as error:
-            raise LatticeError(f"invalid safetensors JSON header: {path}: {error}") from error
+            parsed = strict_json_loads(header.decode("utf-8"), label=f"safetensors header {path}")
+        except UnicodeDecodeError as error:
+            raise LatticeError(f"safetensors header is not UTF-8: {path}") from error
         if not isinstance(parsed, dict):
             raise LatticeError(f"invalid safetensors header object: {path}")
         for name, meta in parsed.items():
@@ -278,15 +322,19 @@ def fingerprint_model(model: Path) -> str:
 
 
 def fingerprint_runtime(c_dir: Path, coli: Path, engine: Path) -> str:
-    paths = [coli, engine]
-    for name in ("resource_plan.py", "doctor.py", "autotune.py", "version.py"):
-        path = c_dir / name
-        if path.is_file():
-            paths.append(path)
+    c_dir = c_dir.expanduser().resolve()
+    paths = {coli.expanduser().resolve(), engine.expanduser().resolve()}
+    paths.update(path.resolve() for path in c_dir.glob("*.py") if path.is_file())
     entries = []
-    for path in sorted({p.resolve() for p in paths}, key=lambda p: str(p)):
-        entries.append({"name": path.name, "size": path.stat().st_size, "sha256": sha256_file(path)})
-    return sha256_bytes(canonical_json({"schema": 1, "files": entries}))
+    for path in sorted(paths, key=lambda item: str(item)):
+        if not path.is_file() or path.is_symlink():
+            raise LatticeError(f"runtime component is not a regular file: {path}")
+        try:
+            name = str(path.relative_to(c_dir))
+        except ValueError:
+            name = str(path)
+        entries.append({"name": name, "size": path.stat().st_size, "sha256": sha256_file(path)})
+    return sha256_bytes(canonical_json({"schema": 2, "files": entries}))
 
 
 def _qualification_key(key: str) -> bool:
@@ -299,6 +347,7 @@ def _qualification_key(key: str) -> bool:
         | QUALIFICATION_SCALAR_KEYS
         | TOPOLOGY_KEYS
         | QUALIFICATION_COLI_KEYS
+        | ATTESTED_SYSTEM_KEYS
     )
 
 
@@ -329,24 +378,17 @@ def clean_environment(
     overrides: dict[str, str] | None = None,
 ) -> dict[str, str]:
     original = dict(os.environ if source is None else source)
-    env = dict(original)
+    env = {
+        key: str(original[key])
+        for key in SYSTEM_ENV_KEYS
+        if key in original and str(original[key])
+    }
+    env.setdefault("PATH", os.defpath)
     inherited = {
         key: str(original[key])
         for key in AMBIENT_QUALIFICATION_KEYS
         if key in original
     }
-    for key in list(env):
-        if (
-            key.startswith("COLI_")
-            or key.startswith("OMP_")
-            or key.startswith("GOMP_")
-            or key in QUALIFICATION_SCALAR_KEYS
-            or key in SAFE_TUNABLE_KEYS
-            or key in SERVING_ONLY_KEYS
-            or key in FORBIDDEN_AMBIENT_KEYS
-            or key in TOPOLOGY_KEYS
-        ):
-            env.pop(key, None)
     env.update(inherited)
     env.update({
         "COLI_POLICY": "quality",
@@ -359,6 +401,14 @@ def clean_environment(
     if overrides:
         for key, value in overrides.items():
             text = str(value)
+            if key in ATTESTED_SYSTEM_KEYS:
+                current = str(original.get(key) or env.get(key) or "")
+                if text != current:
+                    raise LatticeError(
+                        f"recorded system environment changed for {key}; reinitialize"
+                    )
+                env[key] = text
+                continue
             if not _qualification_key(key):
                 raise LatticeError(f"invalid qualification environment override: {key}")
             _validate_qualification_value(key, text)
@@ -466,21 +516,27 @@ def create_context(
         "COLI_POLICY": "quality",
         "CTX": str(context_length),
     })
-    sys.path.insert(0, str(c_dir))
-    with _temporary_environment(controlled):
-        resource_plan = _load_module(c_dir / "resource_plan.py", "lattice_colibri_resource_plan")
-        doctor_module = _load_module(c_dir / "doctor.py", "lattice_colibri_doctor")
-        computed_plan = resource_plan.build_plan(str(model), context=context_length, policy="quality")
-        if frozen_plan is not None and not isinstance(frozen_plan, dict):
-            raise LatticeError("frozen execution plan must be an object")
-        plan = frozen_plan if frozen_plan is not None else computed_plan
-        report = doctor_module.run_doctor(
-            str(model), 0, context_length, None, 0,
-            engine_path=str(resolved_engine),
-            deep=deep,
-            mirror_dir=controlled.get("COLI_MODEL_MIRROR"),
-        )
-        controlled = resource_plan.environment_for_plan(plan, env=controlled, cuda_enabled=True)
+    original_sys_path = list(sys.path)
+    modules_before = set(sys.modules)
+    try:
+        sys.path.insert(0, str(c_dir))
+        with _temporary_environment(controlled):
+            resource_plan = _load_module(c_dir / "resource_plan.py", "lattice_colibri_resource_plan")
+            doctor_module = _load_module(c_dir / "doctor.py", "lattice_colibri_doctor")
+            computed_plan = resource_plan.build_plan(str(model), context=context_length, policy="quality")
+            if frozen_plan is not None and not isinstance(frozen_plan, dict):
+                raise LatticeError("frozen execution plan must be an object")
+            plan = frozen_plan if frozen_plan is not None else computed_plan
+            report = doctor_module.run_doctor(
+                str(model), 0, context_length, None, 0,
+                engine_path=str(resolved_engine),
+                deep=deep,
+                mirror_dir=controlled.get("COLI_MODEL_MIRROR"),
+            )
+            controlled = resource_plan.environment_for_plan(plan, env=controlled, cuda_enabled=True)
+    finally:
+        sys.path[:] = original_sys_path
+        _purge_new_support_modules(c_dir, modules_before)
     controlled.update({
         "SNAP": str(model),
         "COLI_MODEL": str(model),
@@ -536,25 +592,49 @@ def create_context(
     )
 
 
+def _trace_ids(match: re.Match[str], label: str) -> list[int]:
+    declared = int(match.group(1))
+    values = [int(value) for value in match.group(2).split()]
+    if declared != len(values):
+        raise LatticeError(
+            f"{label} declared {declared} token IDs but emitted {len(values)}"
+        )
+    if any(value < 0 for value in values):
+        raise LatticeError(f"{label} contains a negative token ID")
+    return values
+
+
 def parse_calibration(output: str) -> dict[str, list[int]]:
-    prompt_match = PROMPT_RE.search(output)
-    token_match = TOKENS_RE.search(output)
-    if not prompt_match or not token_match:
-        raise LatticeError("engine did not emit token trace; rebuild Colibri with current instrumentation")
-    prompt_ids = [int(value) for value in prompt_match.group(1).split()]
-    continuation = [int(value) for value in token_match.group(1).split()]
+    prompt_matches = list(PROMPT_RE.finditer(output))
+    token_matches = list(TOKENS_RE.finditer(output))
+    if len(prompt_matches) != 1 or len(token_matches) != 1:
+        raise LatticeError("engine must emit exactly one prompt and continuation token trace")
+    prompt_ids = _trace_ids(prompt_matches[0], "prompt trace")
+    continuation = _trace_ids(token_matches[0], "continuation trace")
     if len(prompt_ids) < 2 or not continuation:
         raise LatticeError("calibration produced an empty token trace")
     return {"prompt_ids": prompt_ids, "full_ids": prompt_ids + continuation}
 
 
 def read_replay_oracle_file(path: Path) -> str:
-    if path.is_symlink() or not path.is_file():
-        raise LatticeError("engine did not create a regular replay oracle artifact")
-    if path.stat().st_size > MAX_ORACLE_BYTES:
-        raise LatticeError("replay numerical oracle artifact exceeded the evidence limit")
-    with path.open("rb") as stream:
-        data = stream.read(MAX_ORACLE_BYTES + 1)
+    flags = os.O_RDONLY | getattr(os, "O_BINARY", 0) | getattr(os, "O_NOFOLLOW", 0)
+    try:
+        descriptor = os.open(path, flags)
+    except OSError as error:
+        raise LatticeError("engine did not create a readable regular replay oracle artifact") from error
+    try:
+        before = os.fstat(descriptor)
+        if not stat.S_ISREG(before.st_mode):
+            raise LatticeError("engine did not create a regular replay oracle artifact")
+        if before.st_size > MAX_ORACLE_BYTES:
+            raise LatticeError("replay numerical oracle artifact exceeded the evidence limit")
+        with os.fdopen(descriptor, "rb", closefd=False) as stream:
+            data = stream.read(MAX_ORACLE_BYTES + 1)
+        after = os.fstat(descriptor)
+        if (before.st_dev, before.st_ino, before.st_size) != (after.st_dev, after.st_ino, after.st_size):
+            raise LatticeError("replay numerical oracle artifact changed while being read")
+    finally:
+        os.close(descriptor)
     if len(data) > MAX_ORACLE_BYTES:
         raise LatticeError("replay numerical oracle artifact exceeded the evidence limit")
     try:
@@ -563,7 +643,9 @@ def read_replay_oracle_file(path: Path) -> str:
         raise LatticeError("replay numerical oracle artifact is not UTF-8") from error
 
 
-def parse_replay_oracle(artifact: str) -> dict[str, Any]:
+def parse_replay_oracle(
+    artifact: str, *, expected_forced: list[int] | None = None
+) -> dict[str, Any]:
     steps: list[list[Any]] = []
     summary: list[str] | None = None
     for line_number, line in enumerate(artifact.splitlines(), start=1):
@@ -600,26 +682,53 @@ def parse_replay_oracle(artifact: str) -> dict[str, Any]:
         "schema": ORACLE_SCHEMA,
         "policy": dict(ORACLE_POLICY),
         "steps": steps,
-    })
+    }, expected_forced=expected_forced)
 
 
-def parse_replay_metrics(output: str, oracle_artifact: str) -> dict[str, Any]:
-    speed = SPEED_RE.search(output)
-    marker = ORACLE_WRITTEN_RE.search(output)
-    if not speed:
-        raise LatticeError("engine did not emit REPLAY throughput")
-    if not marker:
-        raise LatticeError("engine did not confirm replay oracle publication")
-    oracle = parse_replay_oracle(oracle_artifact)
+def parse_replay_metrics(
+    output: str, oracle_artifact: str, *, expected_forced: list[int] | None = None
+) -> dict[str, Any]:
+    speeds = list(SPEED_RE.finditer(output))
+    markers = list(ORACLE_WRITTEN_RE.finditer(output))
+    if len(speeds) != 1:
+        raise LatticeError("engine must emit exactly one REPLAY throughput record")
+    if len(markers) != 1:
+        raise LatticeError("engine must emit exactly one replay oracle publication marker")
+    oracle = parse_replay_oracle(oracle_artifact, expected_forced=expected_forced)
+    speed, marker = speeds[0], markers[0]
+    steps = int(speed.group(1))
+    seconds = float(speed.group(2))
+    tok_s = float(speed.group(3))
+    if steps != len(oracle["steps"]):
+        raise LatticeError("REPLAY throughput step count does not match numerical oracle")
+    if (not math.isfinite(seconds) or seconds <= 0 or not math.isfinite(tok_s) or tok_s <= 0
+            or not math.isclose(tok_s, steps / seconds, rel_tol=0.02, abs_tol=0.02)):
+        raise LatticeError("REPLAY throughput telemetry is invalid or internally inconsistent")
     if int(marker.group(1)) != len(oracle["steps"]) or int(marker.group(2)) != ORACLE_POLICY["topk"]:
         raise LatticeError("replay oracle publication marker does not match artifact")
-    hit = HIT_RE.search(output)
-    latency = LATENCY_RE.search(output)
+    hits = list(HIT_RE.finditer(output))
+    if len(hits) != 1:
+        raise LatticeError("engine must emit exactly one expert-hit telemetry record")
+    hit_pct = float(hits[0].group(1))
+    if not math.isfinite(hit_pct) or not 0 <= hit_pct <= 100:
+        raise LatticeError("expert-hit telemetry is outside 0..100")
+    latencies = list(LATENCY_RE.finditer(output))
+    if len(latencies) > 1:
+        raise LatticeError("engine emitted duplicate latency telemetry")
+    p50_ms = p99_ms = None
+    if latencies:
+        p50_ms = float(latencies[0].group(1))
+        p99_ms = float(latencies[0].group(2))
+        if (not math.isfinite(p50_ms) or not math.isfinite(p99_ms)
+                or p50_ms < 0 or p99_ms < p50_ms):
+            raise LatticeError("latency telemetry is invalid")
     return {
-        "tok_s": float(speed.group(1)),
-        "hit_pct": float(hit.group(1)) if hit else None,
-        "p50_ms": float(latency.group(1)) if latency else None,
-        "p99_ms": float(latency.group(2)) if latency else None,
+        "tok_s": tok_s,
+        "decode_seconds": seconds,
+        "decode_tokens": steps,
+        "hit_pct": hit_pct,
+        "p50_ms": p50_ms,
+        "p99_ms": p99_ms,
         "oracle": oracle,
     }
 
@@ -632,6 +741,14 @@ def calibrate_case(
     ctx: int,
     timeout: int,
 ) -> tuple[dict[str, list[int]], ProcessResult]:
+    if not isinstance(prompt, str) or not prompt.strip() or len(prompt) > 32768:
+        raise LatticeError("calibration prompt must be non-empty and at most 32768 characters")
+    if isinstance(tokens, bool) or not isinstance(tokens, int) or not 1 <= tokens <= 2048:
+        raise LatticeError("calibration tokens must be between 1 and 2048")
+    if isinstance(ctx, bool) or not isinstance(ctx, int) or not 128 <= ctx <= context.qualification_context:
+        raise LatticeError("calibration context is outside the recorded qualification context")
+    if isinstance(timeout, bool) or not isinstance(timeout, int) or timeout < 1:
+        raise LatticeError("calibration timeout must be a positive integer")
     env = dict(context.base_environment)
     env.update({
         "TOKENS": "1", "PROF": "1", "NGEN": str(tokens), "CTX": str(ctx),
@@ -666,13 +783,35 @@ def run_replay(
     ctx: int,
     timeout: int,
 ) -> tuple[dict[str, Any], ProcessResult]:
+    if not isinstance(candidate, dict):
+        raise LatticeError("candidate environment must be an object")
     unknown = set(candidate) - SAFE_TUNABLE_KEYS
     if unknown:
         raise LatticeError(f"candidate contains unsupported or quality-affecting keys: {', '.join(sorted(unknown))}")
+    for key, value in candidate.items():
+        if not isinstance(value, str):
+            raise LatticeError(f"candidate environment value for {key} must be a string")
+        _validate_qualification_value(key, value)
+    if isinstance(ctx, bool) or not isinstance(ctx, int) or not 128 <= ctx <= context.qualification_context:
+        raise LatticeError("replay context is outside the recorded qualification context")
+    if isinstance(timeout, bool) or not isinstance(timeout, int) or timeout < 1:
+        raise LatticeError("replay timeout must be a positive integer")
+    replay = load_json(replay_path, max_bytes=16 * 1024 * 1024)
+    if not isinstance(replay, dict):
+        raise LatticeError("replay payload must be an object")
+    prompt_ids, full_ids = replay.get("prompt_ids"), replay.get("full_ids")
+    if (not isinstance(prompt_ids, list) or not isinstance(full_ids, list)
+            or not prompt_ids or len(full_ids) <= len(prompt_ids)
+            or full_ids[:len(prompt_ids)] != prompt_ids
+            or any(isinstance(token, bool) or not isinstance(token, int) or token < 0 for token in full_ids)):
+        raise LatticeError("replay payload contains an invalid token path")
+    if len(full_ids) > ctx:
+        raise LatticeError("replay token path exceeds the declared context")
+    expected_forced = full_ids[len(prompt_ids):]
     env = dict(context.base_environment)
     env.update(candidate)
     env.update({
-        "REF": str(replay_path),
+        "REF": str(replay_path.resolve()),
         "REF_FORCE": "1",
         "REPLAY": "1",
         "REPLAY_ORACLE": "1",
@@ -680,7 +819,8 @@ def run_replay(
         "PROF": "1",
         "CTX": str(ctx),
     })
-    env.pop("PROMPT", None); env.pop("TOKENS", None)
+    env.pop("PROMPT", None)
+    env.pop("TOKENS", None)
     command = [str(context.engine), str(context.replay_cap)]
     with tempfile.TemporaryDirectory(prefix="lattice-oracle-") as directory:
         artifact_path = Path(directory) / "oracle.tsv"
@@ -694,7 +834,9 @@ def run_replay(
         if result.output_truncated:
             raise LatticeError("replay output exceeded the evidence limit")
         oracle_artifact = read_replay_oracle_file(artifact_path)
-    return parse_replay_metrics(output, oracle_artifact), result
+    return parse_replay_metrics(
+        output, oracle_artifact, expected_forced=expected_forced
+    ), result
 
 
 def hardware_summary(context: ColibriContext) -> dict[str, Any]:
