@@ -10,6 +10,8 @@ from lattice.oracle import ORACLE_POLICY, ORACLE_SCHEMA
 from lattice.recommend import recommend
 from lattice.workspace import Workspace
 
+PLAN_FINGERPRINT = "p" * 64
+
 
 class RecommendTests(unittest.TestCase):
     def _workspace(self, root: Path) -> tuple[Workspace, str]:
@@ -24,7 +26,7 @@ class RecommendTests(unittest.TestCase):
             "runtime_fingerprint": "r",
             "hardware_fingerprint": "h",
             "execution_fingerprint": "e",
-            "plan_fingerprint": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+            "plan_fingerprint": PLAN_FINGERPRINT,
             "replay_cap": 0,
             "qualification_context": 4096,
             "qualification_environment": {},
@@ -44,8 +46,7 @@ class RecommendTests(unittest.TestCase):
         atomic_write_json(ws.project_path, project)
         replay = {"prompt_ids": [1, 2], "full_ids": [1, 2, 3, 4]}
         replay_hash = sha256_bytes(canonical_json(replay))
-        replay_path = ws.replays_dir / "case.json"
-        atomic_write_json(replay_path, replay)
+        atomic_write_json(ws.replays_dir / "case.json", replay)
         return ws, replay_hash
 
     def _session(self, ws: Workspace, replay_hash: str, repeats: int) -> dict:
@@ -59,7 +60,7 @@ class RecommendTests(unittest.TestCase):
             "runtime_fingerprint": "r",
             "hardware_fingerprint": "h",
             "execution_fingerprint": "e",
-            "plan_fingerprint": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+            "plan_fingerprint": PLAN_FINGERPRINT,
             "replay_cap": 0,
             "qualification_context": 4096,
             "oracle_policy": dict(ORACLE_POLICY),
@@ -85,17 +86,36 @@ class RecommendTests(unittest.TestCase):
         )
         ws.write_session(session)
 
+    @staticmethod
+    def _row(forced: int, *, top1: int = 2, forced_logit: float = 1.25) -> list:
+        topk = [top1, 4, 3, 1, 5, 6, 7, 8]
+        if len(set(topk)) != len(topk):
+            topk = [top1] + [value for value in (4, 3, 1, 5, 6, 7, 8, 9, 10) if value != top1][:7]
+        return [
+            forced, top1, topk[1], 0, 3.0, forced_logit, 0.5, 0.8, 1.9,
+            1.0, -2.0, 3.0, -4.0, topk,
+        ]
+
     def _oracle(self, *, top1: int = 2, forced_logit: float = 1.25) -> dict:
         return {
             "schema": ORACLE_SCHEMA,
             "policy": dict(ORACLE_POLICY),
-            "steps": [[
-                3, top1, 4, 0, 3.0, forced_logit, 0.5, 0.8, 1.9,
-                1.0, -2.0, 3.0, -4.0, [top1, 4, 3, 1, 5, 6, 7, 8],
-            ]],
+            "steps": [
+                self._row(3, top1=top1, forced_logit=forced_logit),
+                self._row(4, top1=top1, forced_logit=forced_logit),
+            ],
         }
 
-    def _run(self, candidate: str, repeat: int, tok_s: float, replay_hash: str, suffix: str = "", *, top1: int = 2) -> dict:
+    def _run(
+        self,
+        candidate: str,
+        repeat: int,
+        tok_s: float,
+        replay_hash: str,
+        suffix: str = "",
+        *,
+        top1: int = 2,
+    ) -> dict:
         environment = {} if candidate == "baseline" else {"PIPE": "1"}
         return {
             "schema_version": 1,
@@ -106,13 +126,24 @@ class RecommendTests(unittest.TestCase):
             "repeat": repeat,
             "replay_sha256": replay_hash,
             "execution_fingerprint": "e",
-            "plan_fingerprint": "pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp",
+            "plan_fingerprint": PLAN_FINGERPRINT,
             "replay_cap": 0,
             "candidate_environment": environment,
             "status": "success",
-            "metrics": {"tok_s": tok_s, "oracle": self._oracle(top1=top1)},
+            "metrics": {
+                "tok_s": tok_s,
+                "hit_pct": 50.0,
+                "p50_ms": 1.0,
+                "p99_ms": 2.0,
+                "oracle": self._oracle(top1=top1),
+            },
             "returncode": 0,
+            "timed_out": False,
+            "duration_seconds": 0.01,
             "output_truncated": False,
+            "stdout": "fixture stdout",
+            "stderr": "",
+            "error": None,
         }
 
     def test_fast_candidate_promoted_with_recorded_statistics_policy(self):
@@ -153,7 +184,7 @@ class RecommendTests(unittest.TestCase):
             self.assertEqual(profile["winner"]["id"], "baseline")
             self.assertIn("numerical oracle mismatch", scores[0].reason)
 
-    def test_duplicate_success_is_rejected(self):
+    def test_duplicate_task_is_rejected_even_when_records_have_unique_ids(self):
         with tempfile.TemporaryDirectory() as directory:
             ws, replay_hash = self._workspace(Path(directory))
             session = self._session(ws, replay_hash, repeats=1)
@@ -166,7 +197,7 @@ class RecommendTests(unittest.TestCase):
                 ws.write_run(run)
                 session["run_ids"].append(run["id"])
             self._finalize(ws, session)
-            with self.assertRaisesRegex(Exception, "duplicate successful run task"):
+            with self.assertRaisesRegex(LatticeError, "duplicate run task"):
                 recommend(ws, "session-a", min_runs=1)
 
 
