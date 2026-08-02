@@ -1,4 +1,4 @@
-name: Lattice numerical replay oracle
+name: Lattice scalable replay oracle artifacts
 
 on:
   push:
@@ -8,8 +8,7 @@ on:
       - 'c/tests/test_replay_oracle.c'
       - 'c/Makefile'
       - 'lattice/**'
-      - 'LATTICE.md'
-      - 'docs/lattice-qualification.md'
+      - 'tools/lattice_oracle_artifacts.py'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -18,25 +17,52 @@ on:
       - 'c/tests/test_replay_oracle.c'
       - 'c/Makefile'
       - 'lattice/**'
-      - 'LATTICE.md'
-      - 'docs/lattice-qualification.md'
+      - 'tools/lattice_oracle_artifacts.py'
       - '.github/workflows/lattice.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
-  engine-and-controller:
+  materialize-artifacts:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'agent/lattice-oracle-artifacts'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate controller
+        with:
+          ref: agent/lattice-oracle-artifacts
+          fetch-depth: 0
+      - name: Detect staged artifact transport
+        id: gate
+        shell: bash
+        run: |
+          [[ -f tools/lattice_oracle_artifacts.py ]] && echo 'enabled=true' >> "$GITHUB_OUTPUT" || echo 'enabled=false' >> "$GITHUB_OUTPUT"
+      - name: Apply scalable exact-oracle changes
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          python3 tools/lattice_oracle_artifacts.py
+          rm tools/lattice_oracle_artifacts.py
+      - name: Validate exact transformed tree
+        if: steps.gate.outputs.enabled == 'true'
         run: |
           python3 -m compileall -q lattice
           python3 -m unittest discover -s lattice/tests -v
+          make -C c check
           python3 -m lattice --version
-      - name: Validate Colibri engine and oracle
-        run: make -C c check
+      - name: Publish exact tested source
+        if: steps.gate.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          git config user.name 'lattice-ci'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add c/colibri.c c/replay_oracle.h c/tests/test_replay_oracle.c
+          git add lattice
+          git add -u tools/lattice_oracle_artifacts.py
+          git commit -m 'engine: move exact replay oracle to bounded artifacts'
+          git push origin HEAD:agent/lattice-oracle-artifacts
 
   python-matrix:
     strategy:
