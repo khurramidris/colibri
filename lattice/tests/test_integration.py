@@ -73,13 +73,20 @@ if os.environ.get('PIPE') == '1': speed=1.15
 if os.environ.get('DIRECT') == '1': speed=1.35
 if os.environ.get('PILOT_REAL') == '1': speed=1.25
 if os.environ.get('OMP_NUM_THREADS') == '2': speed=0.90
-for step, forced in enumerate(range(4, 12)):
-    print(
-        f'REPLAY_ORACLE_STEP v1 step={step} forced={forced} top1=2 top2=4 '
-        'top1_logit=3 forced_logit=1.25 margin=0.5 mean=0.8 rms=1.9 '
-        'p0=1 p1=-2 p2=3 p3=-4 topk_ids=0123456789abcdef nonfinite=0'
-    )
-print('REPLAY_ORACLE_SUMMARY v1 steps=8 topk=8 measurement=separate_replay_pass')
+oracle_path=os.environ.get('REPLAY_ORACLE_OUT')
+if not oracle_path:
+    print('missing REPLAY_ORACLE_OUT', file=sys.stderr)
+    raise SystemExit(2)
+with open(oracle_path, 'w', encoding='utf-8') as oracle:
+    for forced in range(4, 12):
+        print(
+            f'STEP\\tv2\\t{forced}\\t2\\t4\\t0\\t3\\t1.25\\t0.5\\t0.8\\t1.9',
+            '\\t1\\t-2\\t3\\t-4\\t2,4,3,1,5,6,7,8',
+            sep='',
+            file=oracle,
+        )
+    print('SUMMARY\\tv2\\t8\\t8\\tseparate_replay_pass\\tprivate_file', file=oracle)
+print('REPLAY_ORACLE_WRITTEN v2 steps=8 topk=8 measurement=separate_replay_pass transport=private_file')
 print(f'REPLAY decode: 8 tokens | {speed:.2f} tok/s')
 print('expert hit 70.0%')
 print('latency p50 10.0 ms p99 20.0 ms')
@@ -113,7 +120,7 @@ print('latency p50 10.0 ms p99 20.0 ms')
             session = json.loads(sessions[0].read_text(encoding="utf-8"))
             self.assertEqual(session["status"], "completed")
             self.assertRegex(session["evidence_root_sha256"], r"^[0-9a-f]{64}$")
-            self.assertEqual(session["oracle_policy"]["schema"], "coli-replay-oracle/1")
+            self.assertEqual(session["oracle_policy"]["schema"], "coli-replay-oracle/2")
             runs = workspace.list_runs(session["id"])
             self.assertEqual(len(runs), len(session["candidates"]) * 2 * 2)
             self.assertTrue(all("record_sha256" in run for run in runs))
@@ -123,7 +130,11 @@ print('latency p50 10.0 ms p99 20.0 ms')
             ))
             has_io_uring = any(candidate["id"] == "io-uring" for candidate in session["candidates"])
             expected_failures = 4 if has_io_uring else 0
-            self.assertEqual(sum(run["status"] == "failed" for run in runs), expected_failures)
+            self.assertEqual(
+                sum(run["status"] == "failed" for run in runs),
+                expected_failures,
+                [run.get("error") for run in runs if run["status"] == "failed"],
+            )
 
             self.assertEqual(main([
                 "recommend", "--workspace", str(workspace_path), "--session", session["id"],

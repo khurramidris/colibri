@@ -19,11 +19,12 @@ int main(void){
     assert(a.top1==2);
     assert(a.top2==4);
     assert(a.topk==4);
+    assert(a.topk_ids[0]==2 && a.topk_ids[1]==4 && a.topk_ids[2]==3 && a.topk_ids[3]==1);
+    assert(!memcmp(a.topk_ids,b.topk_ids,sizeof(a.topk_ids)));
     assert(a.nonfinite==0);
     assert(close_enough(a.forced_logit,1.25,1e-7));
     assert(close_enough(a.top1_logit,3.0,1e-7));
     assert(close_enough(a.margin,0.5,1e-7));
-    assert(a.topk_ids_hash==b.topk_ids_hash);
     for(int p=0;p<COLI_REPLAY_ORACLE_PROJECTIONS;p++)
         assert(a.projection[p]==b.projection[p]);
 
@@ -33,7 +34,7 @@ int main(void){
     for(int p=0;p<COLI_REPLAY_ORACLE_PROJECTIONS;p++)
         if(changed.projection[p]!=a.projection[p]) projection_changed=1;
     assert(projection_changed);
-    assert(changed.topk_ids_hash==a.topk_ids_hash); /* tail change keeps top-k identity */
+    assert(!memcmp(changed.topk_ids,a.topk_ids,sizeof(a.topk_ids)));
 
     float nonfinite[6]; memcpy(nonfinite,logits,sizeof(nonfinite)); nonfinite[0]=NAN;
     assert(coli_replay_oracle_step(nonfinite,6,3,4,&changed));

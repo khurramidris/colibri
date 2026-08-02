@@ -5,7 +5,7 @@
 #include <stdint.h>
 #include <stddef.h>
 
-#define COLI_REPLAY_ORACLE_SCHEMA "coli-replay-oracle/1"
+#define COLI_REPLAY_ORACLE_SCHEMA "coli-replay-oracle/2"
 #define COLI_REPLAY_ORACLE_TOPK_MAX 16
 #define COLI_REPLAY_ORACLE_PROJECTIONS 4
 
@@ -15,13 +15,13 @@ typedef struct {
     int top2;
     int nonfinite;
     int topk;
+    int topk_ids[COLI_REPLAY_ORACLE_TOPK_MAX];
     float forced_logit;
     float top1_logit;
     float margin;
     double mean;
     double rms;
     double projection[COLI_REPLAY_ORACLE_PROJECTIONS];
-    uint64_t topk_ids_hash;
 } ColiReplayOracleStep;
 
 static inline uint64_t coli_replay_oracle_mix64(uint64_t x){
@@ -33,29 +33,16 @@ static inline uint64_t coli_replay_oracle_mix64(uint64_t x){
     return x;
 }
 
-static inline uint64_t coli_replay_oracle_hash_u64(uint64_t hash, uint64_t value){
-    hash ^= value;
-    hash *= UINT64_C(1099511628211);
-    return hash;
-}
-
 static inline int coli_replay_oracle_better(float value, int id, float other, int other_id){
     return value > other || (value == other && id < other_id);
 }
 
 /* Build a compact numerical sketch of one replay step.
  *
- * This is not a cryptographic proof of full-logit equality. It records:
- *   - exact top-k token identity (hashed in deterministic order),
- *   - top-1/top-2 and forced-token logits,
- *   - distribution mean/RMS,
- *   - four deterministic signed projections over the complete finite logit vector,
- *   - non-finite count.
- *
- * The host compares numeric fields with explicit tolerances and identity fields
- * exactly. The O(vocab * topk) work is opt-in through REPLAY_ORACLE=1 and is tiny
- * compared with a frontier-model forward pass.
- */
+ * This is not a proof of full-logit equality. It records exact ordered top-k
+ * token IDs, selected logits, distribution moments, deterministic full-vector
+ * projections and non-finite count. The O(vocab * topk) work is opt-in and is
+ * executed in a separate replay pass outside the published decode timing. */
 static inline int coli_replay_oracle_step(const float *logits, int vocab, int forced,
                                            int requested_topk,
                                            ColiReplayOracleStep *out){
@@ -92,13 +79,13 @@ static inline int coli_replay_oracle_step(const float *logits, int vocab, int fo
         }
     }
     if(finite_count < 2 || ids[0] < 0 || ids[1] < 0 || !isfinite(logits[forced])) return 0;
-    uint64_t hash=UINT64_C(1469598103934665603);
-    for(int j=0;j<k;j++) hash=coli_replay_oracle_hash_u64(hash,(uint64_t)(uint32_t)ids[j]);
     out->forced=forced;
     out->top1=ids[0];
     out->top2=ids[1];
     out->nonfinite=nonfinite;
     out->topk=k;
+    for(int j=0;j<k;j++) out->topk_ids[j]=ids[j];
+    for(int j=k;j<COLI_REPLAY_ORACLE_TOPK_MAX;j++) out->topk_ids[j]=-1;
     out->forced_logit=logits[forced];
     out->top1_logit=values[0];
     out->margin=values[0]-values[1];
@@ -106,7 +93,6 @@ static inline int coli_replay_oracle_step(const float *logits, int vocab, int fo
     out->rms=sqrt(sumsq/(double)finite_count);
     double scale=sqrt((double)finite_count);
     for(int p=0;p<COLI_REPLAY_ORACLE_PROJECTIONS;p++) out->projection[p]=proj[p]/scale;
-    out->topk_ids_hash=hash;
     return 1;
 }
 

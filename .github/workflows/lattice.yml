@@ -1,4 +1,4 @@
-name: Lattice numerical replay oracle
+name: Lattice scalable replay oracle artifacts
 
 on:
   push:
@@ -30,12 +30,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - name: Validate controller
+      - name: Validate controller and long oracle artifacts
         run: |
           python3 -m compileall -q lattice
           python3 -m unittest discover -s lattice/tests -v
           python3 -m lattice --version
-      - name: Validate Colibri engine and oracle
+      - name: Validate Colibri engine and exact top-k oracle
         run: make -C c check
 
   python-matrix:

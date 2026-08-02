@@ -85,14 +85,10 @@ class RecommendTests(unittest.TestCase):
         return {
             "schema": ORACLE_SCHEMA,
             "policy": dict(ORACLE_POLICY),
-            "steps": [{
-                "step": 0, "forced": 3, "top1": top1, "top2": 4, "nonfinite": 0,
-                "top1_logit": 3.0, "forced_logit": forced_logit, "margin": 0.5,
-                "mean": 0.8, "rms": 1.9,
-                "projection_0": 1.0, "projection_1": -2.0,
-                "projection_2": 3.0, "projection_3": -4.0,
-                "topk_ids_hash": "0123456789abcdef",
-            }],
+            "steps": [[
+                3, top1, 4, 0, 3.0, forced_logit, 0.5, 0.8, 1.9,
+                1.0, -2.0, 3.0, -4.0, [top1, 4, 3, 1, 5, 6, 7, 8],
+            ]],
         }
 
     def _run(self, candidate: str, repeat: int, tok_s: float, replay_hash: str, suffix: str = "", *, top1: int = 2) -> dict:

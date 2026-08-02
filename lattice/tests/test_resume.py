@@ -56,14 +56,10 @@ class ResumeTests(unittest.TestCase):
                 oracle = {
                     "schema": ORACLE_SCHEMA,
                     "policy": dict(ORACLE_POLICY),
-                    "steps": [{
-                        "step": 0, "forced": 3, "top1": 2, "top2": 4, "nonfinite": 0,
-                        "top1_logit": 3.0, "forced_logit": 1.25, "margin": 0.5,
-                        "mean": 0.8, "rms": 1.9,
-                        "projection_0": 1.0, "projection_1": -2.0,
-                        "projection_2": 3.0, "projection_3": -4.0,
-                        "topk_ids_hash": "0123456789abcdef",
-                    }],
+                    "steps": [[
+                        3, 2, 4, 0, 3.0, 1.25, 0.5, 0.8, 1.9,
+                        1.0, -2.0, 3.0, -4.0, [2, 4, 3, 1, 5, 6, 7, 8],
+                    ]],
                 }
                 return {"tok_s": 1.0, "hit_pct": 50.0, "p50_ms": 1.0, "p99_ms": 2.0, "oracle": oracle}, result("replay")
 
