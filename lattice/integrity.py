@@ -51,6 +51,28 @@ def _finite_number(value: Any, label: str, *, positive: bool = False, nonnegativ
     return number
 
 
+def _validate_process_evidence(record: Any, label: str, *, require_success: bool) -> None:
+    if not isinstance(record, dict):
+        raise LatticeError(f"{label} process evidence must be an object")
+    if not isinstance(record.get("stdout"), str) or not isinstance(record.get("stderr"), str):
+        raise LatticeError(f"{label} output evidence is invalid")
+    if not isinstance(record.get("timed_out"), bool) or not isinstance(record.get("output_truncated"), bool):
+        raise LatticeError(f"{label} process flags are invalid")
+    _finite_number(record.get("duration_seconds"), f"{label} duration", nonnegative=True)
+    for field in ("stdout_bytes", "stderr_bytes"):
+        value = record.get(field)
+        if isinstance(value, bool) or not isinstance(value, int) or value < 0:
+            raise LatticeError(f"{label} {field} is invalid")
+    returncode = record.get("returncode")
+    if returncode is not None and (isinstance(returncode, bool) or not isinstance(returncode, int)):
+        raise LatticeError(f"{label} return code is invalid")
+    if require_success and (
+        returncode != 0 or record.get("timed_out") is not False
+        or record.get("output_truncated") is not False
+    ):
+        raise LatticeError(f"{label} process evidence is not a complete success")
+
+
 def validate_session_evidence(
     workspace: Workspace,
     project: dict[str, Any],
@@ -63,20 +85,19 @@ def validate_session_evidence(
     if session.get("schema_version") != 1:
         raise LatticeError("unsupported session schema")
     session_id = validate_id(session.get("id"), "session id")
-    status = session.get("status")
-    if status not in {"running", "interrupted", "completed"}:
-        raise LatticeError(f"invalid session status: {status}")
-    if require_complete and status != "completed":
+    session_status = session.get("status")
+    if session_status not in {"running", "interrupted", "completed"}:
+        raise LatticeError(f"invalid session status: {session_status}")
+    if require_complete and session_status != "completed":
         raise LatticeError(f"session is not completed: {session_id}")
-    if status == "completed" and not isinstance(session.get("completed_at"), str):
+    if session_status == "completed" and not isinstance(session.get("completed_at"), str):
         raise LatticeError(f"completed session has no completion timestamp: {session_id}")
     for field in (
         "suite_fingerprint", "model_fingerprint", "runtime_fingerprint",
         "hardware_fingerprint", "execution_fingerprint", "plan_fingerprint",
         "replay_cap", "qualification_context",
     ):
-        project_field = "suite_fingerprint" if field == "suite_fingerprint" else field
-        expected = suite.fingerprint if field == "suite_fingerprint" else project.get(project_field)
+        expected = suite.fingerprint if field == "suite_fingerprint" else project.get(field)
         if session.get(field) != expected:
             raise LatticeError(f"session {field.replace('_', ' ')} does not match project")
     if session.get("oracle_policy") != ORACLE_POLICY:
@@ -118,6 +139,9 @@ def validate_session_evidence(
             raise LatticeError(f"replay prompt count mismatch for {case.id}")
         if record.get("continuation_tokens") != len(continuation):
             raise LatticeError(f"replay continuation count mismatch for {case.id}")
+        _validate_process_evidence(
+            record.get("calibration"), f"calibration for {case.id}", require_success=True
+        )
         digest = sha256_bytes(canonical_json(replay))
         if digest != record.get("sha256"):
             raise LatticeError(f"replay hash mismatch for {case.id}")
@@ -144,19 +168,27 @@ def validate_session_evidence(
         for candidate_id in candidates
     }
     actual_tasks: set[tuple[str, str, int]] = set()
+    actual_attempts: set[tuple[str, str, int, int]] = set()
+    successful_tasks: set[tuple[str, str, int]] = set()
     for run in runs:
         if run.get("schema_version") != 1:
             raise LatticeError("unsupported run schema")
         run_id = validate_id(run.get("id"), "run id")
         if run.get("session_id") != session_id:
             raise LatticeError(f"run belongs to another session: {run_id}")
-        candidate_id, case_id, repeat = run.get("candidate_id"), run.get("case_id"), run.get("repeat")
+        candidate_id, case_id = run.get("candidate_id"), run.get("case_id")
+        repeat, attempt = run.get("repeat"), run.get("attempt")
         if (candidate_id not in candidates or case_id not in case_ids
-                or isinstance(repeat, bool) or not isinstance(repeat, int) or not 0 <= repeat < repeats):
-            raise LatticeError(f"run has an invalid task identity: {run_id}")
+                or isinstance(repeat, bool) or not isinstance(repeat, int) or not 0 <= repeat < repeats
+                or isinstance(attempt, bool) or not isinstance(attempt, int) or attempt < 0):
+            raise LatticeError(f"run has an invalid task or attempt identity: {run_id}")
         task = (candidate_id, case_id, repeat)
-        if task in actual_tasks:
-            raise LatticeError(f"duplicate run task: {candidate_id}/{case_id}/repeat-{repeat}")
+        attempt_key = (*task, attempt)
+        if attempt_key in actual_attempts:
+            raise LatticeError(
+                f"duplicate run attempt: {candidate_id}/{case_id}/repeat-{repeat}/attempt-{attempt}"
+            )
+        actual_attempts.add(attempt_key)
         actual_tasks.add(task)
         if run.get("candidate_environment") != candidates[candidate_id]["environment"]:
             raise LatticeError(f"candidate environment mismatch in run {run_id}")
@@ -167,19 +199,18 @@ def validate_session_evidence(
         for field in ("execution_fingerprint", "plan_fingerprint", "replay_cap"):
             if run.get(field) != project.get(field):
                 raise LatticeError(f"{field.replace('_', ' ')} mismatch in run {run_id}")
-        if not isinstance(run.get("stdout"), str) or not isinstance(run.get("stderr"), str):
-            raise LatticeError(f"run output evidence is invalid: {run_id}")
-        if not isinstance(run.get("timed_out"), bool) or not isinstance(run.get("output_truncated"), bool):
-            raise LatticeError(f"run process flags are invalid: {run_id}")
-        _finite_number(run.get("duration_seconds"), f"run duration for {run_id}", nonnegative=True)
-        status = run.get("status")
-        if status == "success":
+        run_status = run.get("status")
+        _validate_process_evidence(run, f"run {run_id}", require_success=run_status == "success")
+        if run_status == "success":
+            if task in successful_tasks:
+                raise LatticeError(
+                    f"multiple successful attempts for {candidate_id}/{case_id}/repeat-{repeat}"
+                )
+            successful_tasks.add(task)
             metrics = run.get("metrics")
             if not isinstance(metrics, dict):
                 raise LatticeError(f"successful run has no metrics: {run_id}")
             _finite_number(metrics.get("tok_s"), f"throughput for {run_id}", positive=True)
-            if run.get("returncode") != 0 or run.get("timed_out") is not False or run.get("output_truncated") is not False:
-                raise LatticeError(f"successful run is incomplete: {run_id}")
             validate_oracle(
                 metrics.get("oracle"),
                 expected_forced=replay_continuations[case_id],
@@ -195,12 +226,13 @@ def validate_session_evidence(
                 p99_value = _finite_number(p99, f"p99 latency for {run_id}", nonnegative=True)
                 if p99_value < p50_value:
                     raise LatticeError(f"p99 latency is below p50 for {run_id}")
-        elif status == "failed":
+            if run.get("error") is not None:
+                raise LatticeError(f"successful run contains an error message: {run_id}")
+        elif run_status == "failed":
             if not isinstance(run.get("error"), str) or not run["error"].strip():
                 raise LatticeError(f"failed run has no error evidence: {run_id}")
-            returncode = run.get("returncode")
-            if returncode is not None and (isinstance(returncode, bool) or not isinstance(returncode, int)):
-                raise LatticeError(f"failed run return code is invalid: {run_id}")
+            if run.get("metrics") is not None:
+                raise LatticeError(f"failed run unexpectedly contains accepted metrics: {run_id}")
         else:
             raise LatticeError(f"invalid run status: {run_id}")
     if not actual_tasks.issubset(expected_tasks):
@@ -208,7 +240,7 @@ def validate_session_evidence(
     if require_complete and actual_tasks != expected_tasks:
         missing = expected_tasks - actual_tasks
         raise LatticeError(f"session task matrix is incomplete ({len(missing)} missing)")
-    if status == "completed":
+    if session_status == "completed":
         expected_root = session.get("evidence_root_sha256")
         if not isinstance(expected_root, str) or len(expected_root) != 64:
             raise LatticeError("completed session has no valid evidence root")
