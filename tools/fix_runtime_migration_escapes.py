@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Correct literal newline escaping in the one-time runtime migration source."""
+"""Correct guarded details in the one-time runtime migration source."""
 from __future__ import annotations
 
 from pathlib import Path
@@ -20,5 +20,27 @@ for value in (1, 2):
         raise SystemExit(f"expected one support-module escape for VALUE={value}")
     text = text.replace(old, new)
 
+old_override = '''            if key in ATTESTED_SYSTEM_KEYS or not _qualification_key(key):
+                raise LatticeError(f"invalid qualification environment override: {key}")
+            _validate_qualification_value(key, text)
+            env[key] = text
+'''
+new_override = '''            if key in ATTESTED_SYSTEM_KEYS:
+                current = str(original.get(key) or env.get(key) or "")
+                if text != current:
+                    raise LatticeError(
+                        f"recorded system environment changed for {key}; reinitialize"
+                    )
+                env[key] = text
+                continue
+            if not _qualification_key(key):
+                raise LatticeError(f"invalid qualification environment override: {key}")
+            _validate_qualification_value(key, text)
+            env[key] = text
+'''
+if text.count(old_override) != 1:
+    raise SystemExit("expected one recorded-system override guard")
+text = text.replace(old_override, new_override)
+
 path.write_text(text, encoding="utf-8", newline="\n")
-print("runtime migration escapes corrected")
+print("runtime migration guards corrected")
