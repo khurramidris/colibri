@@ -61,6 +61,10 @@ def validate_session_evidence(
         raise LatticeError("session hardware fingerprint does not match project")
     if session.get("execution_fingerprint") != project.get("execution_fingerprint"):
         raise LatticeError("session execution fingerprint does not match project")
+    if session.get("plan_fingerprint") != project.get("plan_fingerprint"):
+        raise LatticeError("session plan fingerprint does not match project")
+    if session.get("replay_cap") != project.get("replay_cap"):
+        raise LatticeError("session replay cache cap does not match project")
     if session.get("qualification_context") != project.get("qualification_context"):
         raise LatticeError("session qualification context does not match project")
     if session.get("oracle_policy") != ORACLE_POLICY:
@@ -135,6 +139,10 @@ def validate_session_evidence(
             raise LatticeError(f"replay identity mismatch in run {run.get('id')}")
         if run.get("execution_fingerprint") != project.get("execution_fingerprint"):
             raise LatticeError(f"execution identity mismatch in run {run.get('id')}")
+        if run.get("plan_fingerprint") != project.get("plan_fingerprint"):
+            raise LatticeError(f"plan identity mismatch in run {run.get('id')}")
+        if run.get("replay_cap") != project.get("replay_cap"):
+            raise LatticeError(f"replay cache cap mismatch in run {run.get('id')}")
         status = run.get("status")
         if status == "success":
             if task in successful_tasks:

@@ -7,7 +7,7 @@ from pathlib import Path
 
 from . import __version__
 from .acceptance import prepare_olmoe_acceptance, run_olmoe_acceptance, write_acceptance_outputs
-from .colibri import create_context, hardware_summary
+from .colibri import create_context, fingerprint_runtime, hardware_summary
 from .common import LatticeError
 from .deploy import deployment_environment, launch
 from .experiment import create_project, resume_experiment, run_experiment
@@ -51,13 +51,19 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 def _context_from_project(workspace: Workspace, deep: bool = False):
     project = workspace.load_project()
+    repo_root = Path(project["repo_root"])
+    engine = Path(project["engine_path"])
+    current_runtime = fingerprint_runtime(repo_root / "c", repo_root / "c" / "coli", engine)
+    if current_runtime != project.get("runtime_fingerprint"):
+        raise LatticeError("runtime changed before support modules could be executed; reinitialize")
     return create_context(
         Path(project["repo_root"]),
         Path(project["model_path"]),
-        engine=Path(project["engine_path"]),
+        engine=engine,
         deep=deep,
         context_length=int(project["qualification_context"]),
         qualification_overrides=project.get("qualification_environment"),
+        frozen_plan=project.get("plan"),
     )
 
 
@@ -72,6 +78,10 @@ def _assert_project_identity(workspace: Workspace, context) -> None:
         mismatches.append("hardware")
     if project.get("execution_fingerprint") != context.execution_fingerprint:
         mismatches.append("execution environment")
+    if project.get("plan_fingerprint") != context.plan_fingerprint:
+        mismatches.append("execution plan")
+    if project.get("replay_cap") != context.replay_cap:
+        mismatches.append("native replay arguments")
     if project.get("qualification_context") != context.qualification_context:
         mismatches.append("qualification context")
     if mismatches:

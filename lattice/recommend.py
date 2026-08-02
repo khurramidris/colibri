@@ -167,6 +167,8 @@ def evaluate_session(
         "runtime_fingerprint": project["runtime_fingerprint"],
         "hardware_fingerprint": project["hardware_fingerprint"],
         "execution_fingerprint": project["execution_fingerprint"],
+        "plan_fingerprint": project["plan_fingerprint"],
+        "replay_cap": project["replay_cap"],
         "qualification_context": project["qualification_context"],
         "suite_fingerprint": suite.fingerprint,
         "evidence_root_sha256": session["evidence_root_sha256"],

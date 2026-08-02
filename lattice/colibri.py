@@ -107,6 +107,8 @@ class ColibriContext:
     execution_fingerprint: str = ""
     hardware_fingerprint: str = ""
     storage_topology: dict[str, Any] = field(default_factory=dict)
+    plan_fingerprint: str = ""
+    replay_cap: int = 0
 
 
 def _load_module(path: Path, name: str) -> ModuleType:
@@ -440,6 +442,7 @@ def create_context(
     deep: bool = True,
     context_length: int = 4096,
     qualification_overrides: dict[str, str] | None = None,
+    frozen_plan: dict[str, Any] | None = None,
 ) -> ColibriContext:
     repo_root = repo_root.expanduser().resolve()
     c_dir = repo_root / "c"
@@ -452,7 +455,7 @@ def create_context(
     resolved_engine, family = resolve_engine(c_dir, model, engine)
     if family != "colibri":
         raise LatticeError(
-            "Lattice v0.1 qualification currently supports the GLM/colibri "
+            "Lattice numerical qualification currently supports the GLM/colibri "
             "deterministic replay contract only; Inkling, Kimi and OLMoE "
             "require engine-specific calibration/replay adapters"
         )
@@ -467,7 +470,10 @@ def create_context(
     with _temporary_environment(controlled):
         resource_plan = _load_module(c_dir / "resource_plan.py", "lattice_colibri_resource_plan")
         doctor_module = _load_module(c_dir / "doctor.py", "lattice_colibri_doctor")
-        plan = resource_plan.build_plan(str(model), context=context_length, policy="quality")
+        computed_plan = resource_plan.build_plan(str(model), context=context_length, policy="quality")
+        if frozen_plan is not None and not isinstance(frozen_plan, dict):
+            raise LatticeError("frozen execution plan must be an object")
+        plan = frozen_plan if frozen_plan is not None else computed_plan
         report = doctor_module.run_doctor(
             str(model), 0, context_length, None, 0,
             engine_path=str(resolved_engine),
@@ -494,9 +500,15 @@ def create_context(
     runtime_fingerprint = fingerprint_runtime(c_dir, coli, resolved_engine)
     hardware_fingerprint = fingerprint_hardware(plan, topology)
     controlled_snapshot = qualification_environment(controlled)
+    plan_fingerprint = sha256_bytes(canonical_json(plan))
+    replay_cap = int(plan.get("tiers", {}).get("ram", {}).get("cache_slots_per_layer", 0) or 0)
+    if replay_cap < 0:
+        raise LatticeError("execution plan has a negative replay cache cap")
     execution_fingerprint = sha256_bytes(canonical_json({
-        "schema": 1,
+        "schema": 2,
         "context": context_length,
+        "plan_fingerprint": plan_fingerprint,
+        "native_replay_arguments": [str(replay_cap)],
         "environment": controlled_snapshot,
         "hardware_fingerprint": hardware_fingerprint,
         "model_fingerprint": topology["fingerprint"],
@@ -519,6 +531,8 @@ def create_context(
         execution_fingerprint=execution_fingerprint,
         hardware_fingerprint=hardware_fingerprint,
         storage_topology=topology,
+        plan_fingerprint=plan_fingerprint,
+        replay_cap=replay_cap,
     )
 
 
@@ -667,8 +681,7 @@ def run_replay(
         "CTX": str(ctx),
     })
     env.pop("PROMPT", None); env.pop("TOKENS", None)
-    cap = context.plan.get("tiers", {}).get("ram", {}).get("cache_slots_per_layer", 0)
-    command = [str(context.engine), str(int(cap or 0))]
+    command = [str(context.engine), str(context.replay_cap)]
     with tempfile.TemporaryDirectory(prefix="lattice-oracle-") as directory:
         artifact_path = Path(directory) / "oracle.tsv"
         env["REPLAY_ORACLE_OUT"] = str(artifact_path)

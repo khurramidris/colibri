@@ -6558,24 +6558,20 @@ static void run_replay(Model *m, const int *full, int nfull, int np){
         fprintf(stderr,"REPLAY_ORACLE_OUT is required when REPLAY_ORACLE=1\n"); exit(2);
     }
 
-    /* Phase 1: uninstrumented performance replay. */
+    /* Phase 1: disable all profiler work inside the measured loop. */
+    int saved_prof=g_prof; g_prof=0;
     kv_alloc(m,nfull+2);
     float *logit=step(m,full,np-1,0); free(logit);
     m->hits=m->miss=m->ereq=m->gpu_expert_calls=0; m->hit_pin=m->hit_ecache=0; m->hit_vk=0;
-    profile_reset(m);
-    ProfBase pb; prof_base(m,&pb);
     for(int r=0;r<MIR_REPS;r++){ atomic_store(&g_mir_bytes[r],0); atomic_store(&g_mir_nread[r],0); }
     double t0=now_s(); int steps=0;
     for(int i=np-1;i<nfull-1;i++){
-        double tf0=g_prof?now_s():0;
         logit=step(m,full+i,1,i); free(logit); steps++;
-        if(g_prof){ prof_lat(now_s()-tf0); m->n_fw++; m->n_emit++; }
     }
     double dt=now_s()-t0, tot=m->hits+m->miss;
     printf("REPLAY decode: %d tokens in %.3fs | %.2f tok/s | expert hit %.1f%%\n",
         steps,dt,steps/dt,tot?100.0*m->hits/tot:0.0);
-    profile_print(m,dt);
-    if(g_prof) prof_report(m,&pb,dt,steps,stdout);
+    g_prof=saved_prof;
 #ifdef COLI_CUDA
     if(m->gpu_expert_count) printf("CUDA expert tier: %d resident experts (%.2f GB) | %llu calls served from VRAM\n",
         m->gpu_expert_count,m->gpu_expert_bytes/1e9,(unsigned long long)m->gpu_expert_calls);

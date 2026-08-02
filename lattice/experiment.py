@@ -37,6 +37,8 @@ def create_project(context: ColibriContext, suite: WorkloadSuite) -> dict[str, A
         "runtime_fingerprint": context.runtime_fingerprint,
         "hardware_fingerprint": context.hardware_fingerprint,
         "execution_fingerprint": context.execution_fingerprint,
+        "plan_fingerprint": context.plan_fingerprint,
+        "replay_cap": context.replay_cap,
         "qualification_context": context.qualification_context,
         "qualification_environment": context.qualification_environment,
         "storage_topology": context.storage_topology,
@@ -121,6 +123,8 @@ def _execute_task(
         "repeat": repeat,
         "replay_sha256": replays[case.id]["sha256"],
         "execution_fingerprint": context.execution_fingerprint,
+        "plan_fingerprint": context.plan_fingerprint,
+        "replay_cap": context.replay_cap,
     }
     run_id = short_id("run", {**task, "attempt_ns": time.time_ns()})
     progress(f"{case.id}: {candidate.id} ({repeat + 1}/{session['repeats']})")
@@ -245,6 +249,8 @@ def run_experiment(
             "runtime_fingerprint": context.runtime_fingerprint,
             "hardware_fingerprint": context.hardware_fingerprint,
             "execution_fingerprint": context.execution_fingerprint,
+            "plan_fingerprint": context.plan_fingerprint,
+            "replay_cap": context.replay_cap,
             "qualification_context": context.qualification_context,
             "oracle_policy": dict(ORACLE_POLICY),
             "repeats": repeats,

@@ -40,7 +40,7 @@ class ResumeTests(unittest.TestCase):
                 doctor={"status": "ok"}, base_environment={},
                 qualification_context=4096, qualification_environment={},
                 execution_fingerprint="execution", hardware_fingerprint="hardware",
-                storage_topology={},
+                storage_topology={}, plan_fingerprint="pppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppppp", replay_cap=0,
             )
             workspace.initialize(create_project(context, suite))
             calls = []

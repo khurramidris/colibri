@@ -63,6 +63,7 @@ def deployment_environment(workspace: Workspace, *, adaptive: bool = False) -> t
         deep=False,
         context_length=int(project["qualification_context"]),
         qualification_overrides=project.get("qualification_environment"),
+        frozen_plan=project.get("plan"),
     )
     env = dict(context.base_environment)
     env.update({str(key): str(value) for key, value in profile["winner"]["environment"].items()})

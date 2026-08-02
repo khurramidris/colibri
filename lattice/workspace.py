@@ -66,7 +66,8 @@ class Workspace:
         required = {
             "repo_root", "model_path", "engine_path", "model_family",
             "model_fingerprint", "runtime_fingerprint", "hardware_fingerprint",
-            "execution_fingerprint", "qualification_context",
+            "execution_fingerprint", "plan_fingerprint", "replay_cap",
+            "qualification_context",
             "qualification_environment", "storage_topology", "suite",
             "suite_fingerprint", "plan", "doctor",
         }
@@ -77,6 +78,11 @@ class Workspace:
                 or not isinstance(data["qualification_context"], int)
                 or not 128 <= data["qualification_context"] <= 262144):
             raise LatticeError("project.json has an invalid qualification_context")
+        if not isinstance(data.get("plan_fingerprint"), str) or len(data["plan_fingerprint"]) != 64:
+            raise LatticeError("project.json has an invalid plan_fingerprint")
+        if (isinstance(data.get("replay_cap"), bool) or not isinstance(data.get("replay_cap"), int)
+                or data["replay_cap"] < 0):
+            raise LatticeError("project.json has an invalid replay_cap")
         if not isinstance(data["qualification_environment"], dict):
             raise LatticeError("project.json has an invalid qualification_environment")
         if not isinstance(data["storage_topology"], dict):
