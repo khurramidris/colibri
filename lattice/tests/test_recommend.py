@@ -13,6 +13,19 @@ from lattice.workspace import Workspace
 PLAN_FINGERPRINT = "p" * 64
 
 
+def successful_process() -> dict:
+    return {
+        "returncode": 0,
+        "timed_out": False,
+        "duration_seconds": 0.01,
+        "output_truncated": False,
+        "stdout": "",
+        "stderr": "",
+        "stdout_bytes": 0,
+        "stderr_bytes": 0,
+    }
+
+
 class RecommendTests(unittest.TestCase):
     def _workspace(self, root: Path) -> tuple[Workspace, str]:
         ws = Workspace(root)
@@ -75,6 +88,7 @@ class RecommendTests(unittest.TestCase):
                     "sha256": replay_hash,
                     "prompt_tokens": 2,
                     "continuation_tokens": 2,
+                    "calibration": successful_process(),
                 }
             },
             "run_ids": [],
@@ -115,8 +129,10 @@ class RecommendTests(unittest.TestCase):
         suffix: str = "",
         *,
         top1: int = 2,
+        attempt: int = 0,
     ) -> dict:
         environment = {} if candidate == "baseline" else {"PIPE": "1"}
+        stdout = "fixture stdout"
         return {
             "schema_version": 1,
             "id": f"run-{candidate}-{repeat}{suffix}",
@@ -124,6 +140,7 @@ class RecommendTests(unittest.TestCase):
             "candidate_id": candidate,
             "case_id": "case",
             "repeat": repeat,
+            "attempt": attempt,
             "replay_sha256": replay_hash,
             "execution_fingerprint": "e",
             "plan_fingerprint": PLAN_FINGERPRINT,
@@ -141,8 +158,10 @@ class RecommendTests(unittest.TestCase):
             "timed_out": False,
             "duration_seconds": 0.01,
             "output_truncated": False,
-            "stdout": "fixture stdout",
+            "stdout": stdout,
             "stderr": "",
+            "stdout_bytes": len(stdout.encode()),
+            "stderr_bytes": 0,
             "error": None,
         }
 
@@ -209,7 +228,7 @@ class RecommendTests(unittest.TestCase):
             self.assertEqual(profile["winner"]["id"], "baseline")
             self.assertIn("numerical oracle mismatch", scores[0].reason)
 
-    def test_duplicate_task_is_rejected_even_when_records_have_unique_ids(self):
+    def test_duplicate_attempt_is_rejected_even_when_records_have_unique_ids(self):
         with tempfile.TemporaryDirectory() as directory:
             ws, replay_hash = self._workspace(Path(directory))
             session = self._session(ws, replay_hash, repeats=1)
@@ -222,7 +241,7 @@ class RecommendTests(unittest.TestCase):
                 ws.write_run(run)
                 session["run_ids"].append(run["id"])
             self._finalize(ws, session)
-            with self.assertRaisesRegex(LatticeError, "duplicate run task"):
+            with self.assertRaisesRegex(LatticeError, "duplicate run attempt"):
                 recommend(
                     ws, "session-a", min_runs=1, require_confidence=False
                 )
