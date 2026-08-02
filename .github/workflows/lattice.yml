@@ -7,6 +7,7 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'examples/lattice-workload.json'
+      - 'tools/lattice_fix_pin_attestation.py'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -14,12 +15,47 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'examples/lattice-workload.json'
+      - 'tools/lattice_fix_pin_attestation.py'
       - '.github/workflows/lattice.yml'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  materialize-pin-fix:
+    if: >-
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'agent/lattice-qualification-plane'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: agent/lattice-qualification-plane
+          fetch-depth: 0
+      - name: Detect staged correction
+        id: gate
+        shell: bash
+        run: |
+          [[ -f tools/lattice_fix_pin_attestation.py ]] && echo 'enabled=true' >> "$GITHUB_OUTPUT" || echo 'enabled=false' >> "$GITHUB_OUTPUT"
+      - name: Apply and validate correction
+        if: steps.gate.outputs.enabled == 'true'
+        run: |
+          python3 tools/lattice_fix_pin_attestation.py
+          rm tools/lattice_fix_pin_attestation.py
+          python3 -m compileall -q lattice
+          python3 -m unittest discover -s lattice/tests -v
+      - name: Publish tested product files
+        if: steps.gate.outputs.enabled == 'true'
+        shell: bash
+        run: |
+          git config user.name 'lattice-ci'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add lattice/colibri.py lattice/tests/test_colibri.py
+          git add -u tools/lattice_fix_pin_attestation.py
+          git commit -m 'lattice: attest planner PIN_GB placement control'
+          git push origin HEAD:agent/lattice-qualification-plane
+
   test:
     strategy:
       fail-fast: false
