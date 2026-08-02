@@ -95,8 +95,10 @@ class ColibriTests(unittest.TestCase):
             clean_environment({}, {"COLI_UNREVIEWED_APPROX": "1"})
         with self.assertRaisesRegex(LatticeError, "DRAFT must remain"):
             clean_environment({}, {"DRAFT": "3"})
-        env = clean_environment({}, {"DRAFT": "0", "COLI_CUDA": "1"})
-        self.assertEqual(env["DRAFT"], "0")
+        env = clean_environment({}, {"DRAFT": "0", "PIN_GB": "all", "COLI_CUDA": "1"})
+        snapshot = qualification_environment(env)
+        self.assertEqual(snapshot["DRAFT"], "0")
+        self.assertEqual(snapshot["PIN_GB"], "all")
 
     def test_out_of_bounds_tensor_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

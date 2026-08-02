@@ -281,7 +281,7 @@ def fingerprint_runtime(c_dir: Path, coli: Path, engine: Path) -> str:
 def _qualification_key(key: str) -> bool:
     if key in SERVING_ONLY_KEYS:
         return False
-    if key in FORBIDDEN_AMBIENT_KEYS and key not in {"DRAFT", "AUTOPIN", "REPIN"}:
+    if key in FORBIDDEN_AMBIENT_KEYS and key not in {"DRAFT", "PIN_GB", "AUTOPIN", "REPIN"}:
         return False
     return key in (
         SAFE_TUNABLE_KEYS
