@@ -7,9 +7,15 @@ from lattice.common import LatticeError
 from lattice.oracle import ORACLE_POLICY, ORACLE_SCHEMA, compare_oracles, validate_oracle
 
 
-def row(*, top1: int = 2, forced_logit: float = 1.25, topk: list[int] | None = None) -> list:
+def row(
+    *,
+    forced: int = 3,
+    top1: int = 2,
+    forced_logit: float = 1.25,
+    topk: list[int] | None = None,
+) -> list:
     return [
-        3, top1, 4, 0,
+        forced, top1, 4, 0,
         3.0, forced_logit, 0.5, 0.8, 1.9,
         1.0, -2.0, 3.0, -4.0,
         topk or [top1, 4, 3, 1, 5, 6, 7, 8],
@@ -44,6 +50,23 @@ class OracleTests(unittest.TestCase):
         value = fixture(); value["steps"][0][13] = [2, 4]
         with self.assertRaisesRegex(LatticeError, "top-k identity"):
             validate_oracle(value)
+        value = fixture(); value["steps"][0][3] = 2
+        with self.assertRaisesRegex(LatticeError, "non-finite flag"):
+            validate_oracle(value)
+
+    def test_oracle_is_bound_to_exact_continuation(self):
+        value = {
+            "schema": ORACLE_SCHEMA,
+            "policy": dict(ORACLE_POLICY),
+            "steps": [row(forced=3), row(forced=4)],
+        }
+        self.assertIs(validate_oracle(value, expected_forced=[3, 4]), value)
+        with self.assertRaisesRegex(LatticeError, "step count"):
+            validate_oracle(value, expected_forced=[3])
+        changed = copy.deepcopy(value)
+        changed["steps"][1][0] = 9
+        with self.assertRaisesRegex(LatticeError, "does not match continuation token"):
+            validate_oracle(changed, expected_forced=[3, 4])
 
 
 if __name__ == "__main__":
