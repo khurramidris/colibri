@@ -45,7 +45,8 @@ jobs:
           rm .lattice-sync/env-hardening.py
           python3 - <<'PY'
           from pathlib import Path
-          Path('.github/workflows/lattice.yml').write_text('''name: Lattice qualification plane
+          expression_open = '${' + '{'
+          permanent = '''name: Lattice qualification plane
 
           on:
             push:
@@ -73,19 +74,20 @@ jobs:
                 matrix:
                   os: [ubuntu-latest, macos-latest, windows-latest]
                   python: ['3.10', '3.13']
-              runs-on: ${{ matrix.os }}
+              runs-on: __OPEN__ matrix.os }}
               steps:
                 - uses: actions/checkout@v4
                 - uses: actions/setup-python@v5
                   with:
-                    python-version: ${{ matrix.python }}
+                    python-version: __OPEN__ matrix.python }}
                 - name: Compile
                   run: python -m compileall -q lattice
                 - name: Unit and protocol integration tests
                   run: python -m unittest discover -s lattice/tests -v
                 - name: CLI smoke test
                   run: python -m lattice --version
-          '''.replace('          ', ''), encoding='utf-8')
+          '''.replace('          ', '').replace('__OPEN__', expression_open)
+          Path('.github/workflows/lattice.yml').write_text(permanent, encoding='utf-8')
           PY
 
       - name: Validate exact final tree
