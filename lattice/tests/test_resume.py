@@ -10,6 +10,7 @@ from lattice.colibri import ColibriContext
 from lattice.common import LatticeError
 from lattice.experiment import create_project, resume_experiment, run_experiment
 from lattice.process import ProcessResult
+from lattice.oracle import ORACLE_POLICY, ORACLE_SCHEMA
 from lattice.suite import parse_suite
 from lattice.workspace import Workspace
 
@@ -52,7 +53,19 @@ class ResumeTests(unittest.TestCase):
                 return replay, result("calibration")
 
             def replay(_context, *, replay_path, candidate, ctx, timeout):
-                return {"tok_s": 1.0, "hit_pct": 50.0, "p50_ms": 1.0, "p99_ms": 2.0}, result("replay")
+                oracle = {
+                    "schema": ORACLE_SCHEMA,
+                    "policy": dict(ORACLE_POLICY),
+                    "steps": [{
+                        "step": 0, "forced": 3, "top1": 2, "top2": 4, "nonfinite": 0,
+                        "top1_logit": 3.0, "forced_logit": 1.25, "margin": 0.5,
+                        "mean": 0.8, "rms": 1.9,
+                        "projection_0": 1.0, "projection_1": -2.0,
+                        "projection_2": 3.0, "projection_3": -4.0,
+                        "topk_ids_hash": "0123456789abcdef",
+                    }],
+                }
+                return {"tok_s": 1.0, "hit_pct": 50.0, "p50_ms": 1.0, "p99_ms": 2.0, "oracle": oracle}, result("replay")
 
             with patch("lattice.experiment.calibrate_case", side_effect=calibrate), \
                     patch("lattice.experiment.run_replay", side_effect=replay):

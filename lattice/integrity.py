@@ -7,6 +7,7 @@ from .candidates import Candidate, validate_candidate
 from .common import LatticeError, canonical_json, ensure_under, load_json, sha256_bytes, validate_id
 from .evidence import session_evidence_root, verify_record_digest
 from .colibri import SAFE_TUNABLE_KEYS
+from .oracle import ORACLE_POLICY, validate_oracle
 from .suite import WorkloadSuite
 from .workspace import Workspace
 
@@ -62,6 +63,8 @@ def validate_session_evidence(
         raise LatticeError("session execution fingerprint does not match project")
     if session.get("qualification_context") != project.get("qualification_context"):
         raise LatticeError("session qualification context does not match project")
+    if session.get("oracle_policy") != ORACLE_POLICY:
+        raise LatticeError("session replay numerical oracle policy does not match Lattice")
     repeats = session.get("repeats")
     if isinstance(repeats, bool) or not isinstance(repeats, int) or not 1 <= repeats <= 20:
         raise LatticeError("session repeats is invalid")
@@ -142,6 +145,7 @@ def validate_session_evidence(
             if (not isinstance(tok_s, (int, float)) or isinstance(tok_s, bool) or tok_s <= 0
                     or run.get("returncode") != 0 or run.get("output_truncated") is not False):
                 raise LatticeError(f"successful run is incomplete: {run.get('id')}")
+            validate_oracle(metrics.get("oracle"))
         elif status == "failed":
             if not isinstance(run.get("error"), str) or not run["error"]:
                 raise LatticeError(f"failed run has no error evidence: {run.get('id')}")

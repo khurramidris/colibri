@@ -1,26 +1,44 @@
-name: Lattice qualification plane
+name: Lattice numerical replay oracle
 
 on:
   push:
     paths:
+      - 'c/colibri.c'
+      - 'c/replay_oracle.h'
+      - 'c/tests/test_replay_oracle.c'
+      - 'c/Makefile'
       - 'lattice/**'
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
-      - 'examples/lattice-workload.json'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
+      - 'c/colibri.c'
+      - 'c/replay_oracle.h'
+      - 'c/tests/test_replay_oracle.c'
+      - 'c/Makefile'
       - 'lattice/**'
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
-      - 'examples/lattice-workload.json'
       - '.github/workflows/lattice.yml'
 
 permissions:
   contents: read
 
 jobs:
-  test:
+  engine-and-controller:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Validate controller
+        run: |
+          python3 -m compileall -q lattice
+          python3 -m unittest discover -s lattice/tests -v
+          python3 -m lattice --version
+      - name: Validate Colibri engine and oracle
+        run: make -C c check
+
+  python-matrix:
     strategy:
       fail-fast: false
       matrix:

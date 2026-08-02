@@ -73,6 +73,13 @@ if os.environ.get('PIPE') == '1': speed=1.15
 if os.environ.get('DIRECT') == '1': speed=1.35
 if os.environ.get('PILOT_REAL') == '1': speed=1.25
 if os.environ.get('OMP_NUM_THREADS') == '2': speed=0.90
+for step, forced in enumerate(range(4, 12)):
+    print(
+        f'REPLAY_ORACLE_STEP v1 step={step} forced={forced} top1=2 top2=4 '
+        'top1_logit=3 forced_logit=1.25 margin=0.5 mean=0.8 rms=1.9 '
+        'p0=1 p1=-2 p2=3 p3=-4 topk_ids=0123456789abcdef nonfinite=0'
+    )
+print('REPLAY_ORACLE_SUMMARY v1 steps=8 topk=8 measurement=separate_replay_pass')
 print(f'REPLAY decode: 8 tokens | {speed:.2f} tok/s')
 print('expert hit 70.0%')
 print('latency p50 10.0 ms p99 20.0 ms')
@@ -106,9 +113,14 @@ print('latency p50 10.0 ms p99 20.0 ms')
             session = json.loads(sessions[0].read_text(encoding="utf-8"))
             self.assertEqual(session["status"], "completed")
             self.assertRegex(session["evidence_root_sha256"], r"^[0-9a-f]{64}$")
+            self.assertEqual(session["oracle_policy"]["schema"], "coli-replay-oracle/1")
             runs = workspace.list_runs(session["id"])
             self.assertEqual(len(runs), len(session["candidates"]) * 2 * 2)
             self.assertTrue(all("record_sha256" in run for run in runs))
+            self.assertTrue(all(
+                run["status"] != "success" or "oracle" in run["metrics"]
+                for run in runs
+            ))
             has_io_uring = any(candidate["id"] == "io-uring" for candidate in session["candidates"])
             expected_failures = 4 if has_io_uring else 0
             self.assertEqual(sum(run["status"] == "failed" for run in runs), expected_failures)
@@ -120,6 +132,7 @@ print('latency p50 10.0 ms p99 20.0 ms')
             profile = workspace.load_profile()
             self.assertEqual(profile["winner"]["id"], "direct-pipeline")
             self.assertEqual(profile["evidence_root_sha256"], session["evidence_root_sha256"])
+            self.assertEqual(profile["oracle_policy"], session["oracle_policy"])
             report_path = root / "report.md"
             self.assertEqual(main([
                 "report", "--workspace", str(workspace_path), "--output", str(report_path),
@@ -127,7 +140,8 @@ print('latency p50 10.0 ms p99 20.0 ms')
             report = report_path.read_text(encoding="utf-8")
             self.assertIn("Promoted `direct-pipeline`", report)
             self.assertIn("per million generated tokens", report)
-            self.assertIn("Deterministic replay consistency", report)
+            self.assertIn("Numerical replay consistency", report)
+            self.assertIn("Absolute tolerance", report)
             self.assertIn(session["evidence_root_sha256"], report)
             self.assertEqual(main(["verify", "--workspace", str(workspace_path)]), 0)
             original_project = workspace.load_project()

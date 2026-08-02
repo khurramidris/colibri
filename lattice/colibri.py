@@ -4,6 +4,7 @@ import contextlib
 import hashlib
 import importlib.util
 import json
+import math
 import os
 import platform
 import re
@@ -16,12 +17,15 @@ from typing import Any
 
 from .common import LatticeError, canonical_json, sha256_bytes, sha256_file
 from .process import ProcessResult, run_bounded
+from .oracle import ORACLE_POLICY, ORACLE_SCHEMA, validate_oracle
 
 PROMPT_RE = re.compile(r"\[PROMPT_TOKENS\]\s+\d+:\s*([0-9 ]+)")
 TOKENS_RE = re.compile(r"\[TOKENS\]\s+\d+\s+generated:\s*([0-9 ]+)")
 SPEED_RE = re.compile(r"REPLAY decode:\s+\d+\s+tokens.*?\|\s*([0-9.]+)\s+tok/s")
 HIT_RE = re.compile(r"expert hit\s+([0-9.]+)%")
 LATENCY_RE = re.compile(r"latency p50\s+([0-9.]+)\s*ms.*?p99\s+([0-9.]+)\s*ms")
+ORACLE_STEP_PREFIX = "REPLAY_ORACLE_STEP "
+ORACLE_SUMMARY_PREFIX = "REPLAY_ORACLE_SUMMARY "
 
 SAFE_TUNABLE_KEYS = frozenset({
     "OMP_NUM_THREADS",
@@ -525,7 +529,70 @@ def parse_calibration(output: str) -> dict[str, list[int]]:
     return {"prompt_ids": prompt_ids, "full_ids": prompt_ids + continuation}
 
 
-def parse_replay_metrics(output: str) -> dict[str, float | None]:
+def _oracle_fields(line: str, prefix: str) -> tuple[str, dict[str, str]]:
+    parts = line.strip().split()
+    prefix_parts = prefix.strip().split()
+    if parts[:len(prefix_parts)] != prefix_parts or len(parts) <= len(prefix_parts):
+        raise LatticeError("malformed replay numerical oracle line")
+    version = parts[len(prefix_parts)]
+    fields: dict[str, str] = {}
+    for part in parts[len(prefix_parts) + 1:]:
+        if "=" not in part:
+            raise LatticeError("malformed replay numerical oracle field")
+        key, value = part.split("=", 1)
+        if not key or key in fields:
+            raise LatticeError("duplicate replay numerical oracle field")
+        fields[key] = value
+    return version, fields
+
+
+def parse_replay_oracle(output: str) -> dict[str, Any]:
+    raw_steps = [line for line in output.splitlines() if line.startswith(ORACLE_STEP_PREFIX)]
+    summaries = [line for line in output.splitlines() if line.startswith(ORACLE_SUMMARY_PREFIX)]
+    if not raw_steps or len(summaries) != 1:
+        raise LatticeError("engine did not emit a complete replay numerical oracle")
+    steps: list[dict[str, Any]] = []
+    integer_fields = ("step", "forced", "top1", "top2", "nonfinite")
+    float_mapping = {
+        "top1_logit": "top1_logit", "forced_logit": "forced_logit", "margin": "margin",
+        "mean": "mean", "rms": "rms", "p0": "projection_0", "p1": "projection_1",
+        "p2": "projection_2", "p3": "projection_3",
+    }
+    for expected_step, line in enumerate(raw_steps):
+        version, fields = _oracle_fields(line, ORACLE_STEP_PREFIX)
+        if version != "v1":
+            raise LatticeError(f"unsupported replay numerical oracle version: {version}")
+        required = set(integer_fields) | set(float_mapping) | {"topk_ids"}
+        if set(fields) != required:
+            raise LatticeError("replay numerical oracle step has an unexpected field set")
+        try:
+            step = {field: int(fields[field]) for field in integer_fields}
+            step.update({target: float(fields[source]) for source, target in float_mapping.items()})
+        except ValueError as error:
+            raise LatticeError("replay numerical oracle step has an invalid number") from error
+        step["topk_ids_hash"] = fields["topk_ids"].lower()
+        if step["step"] != expected_step or any(not math.isfinite(step[target]) for target in float_mapping.values()):
+            raise LatticeError("replay numerical oracle step is not finite or sequential")
+        steps.append(step)
+    version, summary = _oracle_fields(summaries[0], ORACLE_SUMMARY_PREFIX)
+    if version != "v1" or set(summary) != {"steps", "topk", "measurement"}:
+        raise LatticeError("invalid replay numerical oracle summary")
+    if summary["measurement"] != ORACLE_POLICY["measurement"]:
+        raise LatticeError("replay numerical oracle measurement method mismatch")
+    try:
+        summary_steps, topk = int(summary["steps"]), int(summary["topk"])
+    except ValueError as error:
+        raise LatticeError("invalid replay numerical oracle summary number") from error
+    if summary_steps != len(steps) or topk != ORACLE_POLICY["topk"]:
+        raise LatticeError("replay numerical oracle summary does not match policy")
+    return validate_oracle({
+        "schema": ORACLE_SCHEMA,
+        "policy": dict(ORACLE_POLICY),
+        "steps": steps,
+    })
+
+
+def parse_replay_metrics(output: str) -> dict[str, Any]:
     speed = SPEED_RE.search(output)
     if not speed:
         raise LatticeError("engine did not emit REPLAY throughput")
@@ -536,6 +603,7 @@ def parse_replay_metrics(output: str) -> dict[str, float | None]:
         "hit_pct": float(hit.group(1)) if hit else None,
         "p50_ms": float(latency.group(1)) if latency else None,
         "p99_ms": float(latency.group(2)) if latency else None,
+        "oracle": parse_replay_oracle(output),
     }
 
 
@@ -580,7 +648,7 @@ def run_replay(
     candidate: dict[str, str],
     ctx: int,
     timeout: int,
-) -> tuple[dict[str, float | None], ProcessResult]:
+) -> tuple[dict[str, Any], ProcessResult]:
     unknown = set(candidate) - SAFE_TUNABLE_KEYS
     if unknown:
         raise LatticeError(f"candidate contains unsupported or quality-affecting keys: {', '.join(sorted(unknown))}")
@@ -590,6 +658,8 @@ def run_replay(
         "REF": str(replay_path),
         "REF_FORCE": "1",
         "REPLAY": "1",
+        "REPLAY_ORACLE": "1",
+        "REPLAY_ORACLE_TOPK": str(ORACLE_POLICY["topk"]),
         "PROF": "1",
         "CTX": str(ctx),
     })

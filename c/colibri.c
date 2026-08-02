@@ -63,6 +63,7 @@
 #include "schema_gbnf.h"                          /* SCHEMA=: JSON-Schema -> GBNF for method F */
 #include "decode_batch.h"
 #include "route_trace.h"                           /* ROUTE_TRACE + .coli_usage, engine-agnostic (#700) */
+#include "replay_oracle.h"                         /* opt-in numerical sketch for fixed-token replay */
 #ifdef _OPENMP
 #include <omp.h>                                  /* scratch per-thread nell'attention */
 #else
@@ -6543,9 +6544,19 @@ static void prof_report(Model *m, const ProfBase *b, double elapsed, int tokens,
 
 /* Fixed-token decode benchmark: prefill all but the prompt's last token, then
  * replay the oracle sequence one token at a time. CPU and CUDA therefore see
- * identical hidden-state inputs even if their argmax predictions differ. */
+ * identical hidden-state inputs even if their argmax predictions differ.
+ *
+ * Numerical validation deliberately runs in a SECOND replay pass. Computing
+ * top-k identities and full-vector projections inside the timed loop would
+ * contaminate the throughput that the oracle is meant to gate. */
 static void run_replay(Model *m, const int *full, int nfull, int np){
     if(np<2||nfull<=np){ fprintf(stderr,"REPLAY requires a non-empty prompt and continuation\n"); return; }
+    int oracle_on=getenv("REPLAY_ORACLE")?atoi(getenv("REPLAY_ORACLE")):0;
+    int oracle_topk=getenv("REPLAY_ORACLE_TOPK")?atoi(getenv("REPLAY_ORACLE_TOPK")):8;
+    if(oracle_topk<2) oracle_topk=2;
+    if(oracle_topk>COLI_REPLAY_ORACLE_TOPK_MAX) oracle_topk=COLI_REPLAY_ORACLE_TOPK_MAX;
+
+    /* Phase 1: uninstrumented performance replay. */
     kv_alloc(m,nfull+2);
     float *logit=step(m,full,np-1,0); free(logit);
     m->hits=m->miss=m->ereq=m->gpu_expert_calls=0; m->hit_pin=m->hit_ecache=0; m->hit_vk=0;
@@ -6568,6 +6579,34 @@ static void run_replay(Model *m, const int *full, int nfull, int np){
         m->gpu_expert_count,m->gpu_expert_bytes/1e9,(unsigned long long)m->gpu_expert_calls);
     if(g_cuda_enabled) cuda_stats_print();
 #endif
+
+    if(!oracle_on) return;
+
+    /* Phase 2: reset KV state and replay again for the numerical sketch. This
+     * phase is outside the published decode time and cannot alter its ranking. */
+    kv_alloc(m,nfull+2);
+    logit=step(m,full,np-1,0); free(logit);
+    int oracle_steps=0;
+    for(int i=np-1;i<nfull-1;i++){
+        logit=step(m,full+i,1,i);
+        ColiReplayOracleStep o;
+        if(!coli_replay_oracle_step(logit,m->c.vocab,full[i+1],oracle_topk,&o)){
+            fprintf(stderr,"REPLAY_ORACLE failed at step %d (invalid/non-finite forced logit)\n",oracle_steps);
+            free(logit); exit(2);
+        }
+        printf("REPLAY_ORACLE_STEP v1 step=%d forced=%d top1=%d top2=%d "
+               "top1_logit=%.9g forced_logit=%.9g margin=%.9g mean=%.12g rms=%.12g "
+               "p0=%.12g p1=%.12g p2=%.12g p3=%.12g topk_ids=%016llx nonfinite=%d\n",
+               oracle_steps,o.forced,o.top1,o.top2,(double)o.top1_logit,(double)o.forced_logit,
+               (double)o.margin,o.mean,o.rms,o.projection[0],o.projection[1],
+               o.projection[2],o.projection[3],(unsigned long long)o.topk_ids_hash,o.nonfinite);
+        free(logit); oracle_steps++;
+    }
+    if(oracle_steps!=steps){
+        fprintf(stderr,"REPLAY_ORACLE step count differs from measured replay\n"); exit(2);
+    }
+    printf("REPLAY_ORACLE_SUMMARY v1 steps=%d topk=%d measurement=separate_replay_pass\n",
+           oracle_steps,oracle_topk);
 }
 
 /* generazione reale: tokenizza PROMPT, prefill + decode greedy con stop su EOS,
