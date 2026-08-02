@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .common import atomic_write_json, utc_now
+from .common import utc_now
 from .suite import parse_suite
 from .workspace import Workspace
 
@@ -39,24 +39,31 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
         speedup = winner_score.get("weighted_speedup") if winner_score else None
         ci = winner_score.get("confidence_interval") if winner_score else None
         lines.append(
-            f"**Promoted `{winner['id']}`** with a workload-weighted speedup of "
+            f"**Promoted `{winner['id']}`** with a measured workload-weighted replay speedup of "
             f"**{_fmt((speedup - 1.0) * 100 if speedup else None)}%** over the generated Colibri plan."
         )
         if ci:
-            lines.append(f"Bootstrap confidence interval: **{(ci[0]-1)*100:.2f}% to {(ci[1]-1)*100:.2f}%**.")
+            lines.append(f"Bootstrap confidence interval for replay throughput: **{(ci[0]-1)*100:.2f}% to {(ci[1]-1)*100:.2f}%**.")
         cost = winner_score.get("cost_per_million_usd") if winner_score else None
         if cost is not None:
             lines.append(f"Estimated decode-only hardware cost at the supplied hourly rate: **${cost:.2f} per million generated tokens**.")
             lines.append("This estimate excludes prompt prefill, idle capacity, batching effects, queueing and service overhead.")
     lines.extend([
         "",
-        "## Qualified system",
+        "## Assurance level",
+        "",
+        "**Deterministic replay consistency.** Every measured candidate was forced over the same recorded prompt and continuation token IDs.",
+        "",
+        "This controls generation randomness for the timing comparison. It does not prove equal logits, token probabilities, numerical error, router decisions, free-running outputs or downstream task quality.",
+        "",
+        "## Qualified system fingerprints",
         "",
         f"- Model family: `{project.get('model_family')}`",
-        f"- Model fingerprint: `{project.get('model_fingerprint')}`",
+        f"- Sampled model/topology fingerprint: `{project.get('model_fingerprint')}`",
         f"- Runtime fingerprint: `{project.get('runtime_fingerprint')}`",
-        f"- Hardware fingerprint: `{project.get('hardware_fingerprint')}`",
-        f"- Execution fingerprint: `{project.get('execution_fingerprint')}`",
+        f"- Hardware-plan fingerprint: `{project.get('hardware_fingerprint')}`",
+        f"- Execution-environment fingerprint: `{project.get('execution_fingerprint')}`",
+        f"- Session evidence root: `{profile.get('evidence_root_sha256', 'missing')}`",
         f"- Qualification context: `{project.get('qualification_context')}` tokens",
         f"- Expected bottleneck: `{plan.get('expected_bottleneck', 'unknown')}`",
         f"- Session: `{session['id']}`",
@@ -110,13 +117,13 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
         "",
         "## Interpretation and boundaries",
         "",
-        "This report qualifies one exact combination of model bytes, Colibri runtime bytes, hardware plan and workload suite. "
-        "It does not establish universal performance for other models, machines or workloads. A changed fingerprint requires requalification.",
+        "This report applies to the recorded sampled model/topology fingerprint, runtime fingerprint, hardware-plan fingerprint, controlled execution environment and workload suite. It does not establish universal performance for other models, machines or workloads. A changed fingerprint requires requalification.",
         "",
-        "The promoted candidate is limited to execution and placement controls. Lattice does not change quantization, expert selection, "
-        "sampling policy, model weights or router semantics during this qualification.",
+        "The promoted candidate is limited to reviewed execution and placement controls. Lattice does not intentionally change quantization, expert selection, sampling policy, model weights or router semantics during this qualification.",
         "",
-        "Failed candidates remain part of the evidence rather than being hidden from the report.",
+        "Run records carry individual SHA-256 digests and the completed session carries an evidence root over the session definition, replay hashes and run digests. This detects ordinary local edits but is not remote attestation, a digital signature or write-once storage.",
+        "",
+        "Failed candidates remain part of the retained evidence rather than being hidden from the report.",
         "",
     ])
     return "\n".join(lines)
