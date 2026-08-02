@@ -8,6 +8,7 @@ on:
       - 'docs/lattice-qualification.md'
       - 'examples/lattice-workload.json'
       - 'tools/lattice_harden_v02.py'
+      - 'tools/lattice_harden_v02_fix.py'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -16,6 +17,7 @@ on:
       - 'docs/lattice-qualification.md'
       - 'examples/lattice-workload.json'
       - 'tools/lattice_harden_v02.py'
+      - 'tools/lattice_harden_v02_fix.py'
       - '.github/workflows/lattice.yml'
 
 permissions:
@@ -35,12 +37,14 @@ jobs:
           fetch-depth: 0
 
       - name: Apply reviewed v0.2 hardening
-        run: python3 tools/lattice_harden_v02.py
+        run: |
+          python3 tools/lattice_harden_v02.py
+          python3 tools/lattice_harden_v02_fix.py
 
       - name: Restore permanent read-only workflow
         shell: bash
         run: |
-          rm tools/lattice_harden_v02.py
+          rm tools/lattice_harden_v02.py tools/lattice_harden_v02_fix.py
           python3 - <<'PY'
           from pathlib import Path
           expression_open = '${' + '{'
@@ -100,7 +104,7 @@ jobs:
           git config user.name 'lattice-ci'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add lattice LATTICE.md docs/lattice-qualification.md .github/workflows/lattice.yml
-          git add -u tools/lattice_harden_v02.py
+          git add -u tools/lattice_harden_v02.py tools/lattice_harden_v02_fix.py
           git commit -m 'lattice: add tamper-evident qualification records'
           git push origin HEAD:agent/lattice-qualification-plane
 
