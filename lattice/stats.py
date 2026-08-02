@@ -4,7 +4,7 @@ import math
 import random
 import statistics
 from dataclasses import dataclass
-from typing import Iterable
+from typing import Any, Iterable
 
 from .common import LatticeError
 
@@ -29,7 +29,7 @@ class CandidateScore:
     worst_case_regression: float | None
     ci_low: float | None
     ci_high: float | None
-    per_case: dict[str, dict[str, float | int]]
+    per_case: dict[str, dict[str, Any]]
 
     def as_dict(self) -> dict:
         return {
@@ -123,8 +123,8 @@ def bootstrap_speedup(
 def score_candidate(
     candidate_id: str,
     case_weights: dict[str, float],
-    baseline: dict[str, list[float]],
-    candidate: dict[str, list[float]],
+    baseline: dict[str, dict[int, float]],
+    candidate: dict[str, dict[int, float]],
     *,
     min_runs: int,
     min_gain: float,
@@ -133,36 +133,51 @@ def score_candidate(
     require_confidence: bool,
     hourly_cost_usd: float | None,
 ) -> CandidateScore:
-    per_case: dict[str, dict[str, float | int]] = {}
+    per_case: dict[str, dict[str, Any]] = {}
     case_speedups: list[float] = []
     weights_for_score: list[float] = []
     paired_by_case: dict[str, list[float]] = {}
     candidate_medians: list[float] = []
     throughput_weights: list[float] = []
     for case_id, weight in case_weights.items():
-        base_values = baseline.get(case_id, [])
-        trial_values = candidate.get(case_id, [])
-        if len(base_values) < min_runs or len(trial_values) < min_runs:
-            return CandidateScore(candidate_id, False, f"insufficient successful runs for {case_id}", None, None, None, None, None, None, per_case)
-        count = min(len(base_values), len(trial_values))
-        if count < min_runs:
-            return CandidateScore(candidate_id, False, f"insufficient paired runs for {case_id}", None, None, None, None, None, None, per_case)
-        pairs = []
-        for index in range(count):
-            base_value, trial_value = base_values[index], trial_values[index]
+        base_by_repeat = baseline.get(case_id, {})
+        trial_by_repeat = candidate.get(case_id, {})
+        paired_repeats = sorted(set(base_by_repeat) & set(trial_by_repeat))
+        if len(paired_repeats) < min_runs:
+            return CandidateScore(
+                candidate_id,
+                False,
+                f"insufficient paired successful runs for {case_id}",
+                None,
+                None,
+                None,
+                None,
+                None,
+                None,
+                per_case,
+            )
+        base_values: list[float] = []
+        trial_values: list[float] = []
+        pairs: list[float] = []
+        for repeat in paired_repeats:
+            base_value = base_by_repeat[repeat]
+            trial_value = trial_by_repeat[repeat]
             if (base_value <= 0 or trial_value <= 0 or not math.isfinite(base_value)
                     or not math.isfinite(trial_value)):
-                raise LatticeError(f"non-positive or non-finite throughput for {case_id}")
+                raise LatticeError(f"non-positive or non-finite throughput for {case_id}/repeat-{repeat}")
+            base_values.append(base_value)
+            trial_values.append(trial_value)
             pairs.append(trial_value / base_value)
         speedup = statistics.median(pairs)
-        base_median = statistics.median(base_values[:count])
-        trial_median = statistics.median(trial_values[:count])
+        base_median = statistics.median(base_values)
+        trial_median = statistics.median(trial_values)
         per_case[case_id] = {
             "baseline_tok_s": base_median,
             "candidate_tok_s": trial_median,
             "speedup": speedup,
             "regression": min(0.0, speedup - 1.0),
-            "paired_runs": count,
+            "paired_runs": len(paired_repeats),
+            "paired_repeat_ids": paired_repeats,
         }
         paired_by_case[case_id] = pairs
         case_speedups.append(speedup)
