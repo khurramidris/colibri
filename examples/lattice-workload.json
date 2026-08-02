@@ -1,0 +1,37 @@
+{
+  "schema_version": 1,
+  "name": "lattice-investor-demo",
+  "default_context": 4096,
+  "default_tokens": 24,
+  "hourly_cost_usd": 2.5,
+  "metadata": {
+    "purpose": "Replace these prompts and weights with a customer's representative production mix before using the results commercially."
+  },
+  "cases": [
+    {
+      "id": "coding",
+      "prompt": "Write a robust Python function that parses a JSON Lines file, validates each object, and reports malformed line numbers without stopping the stream.",
+      "weight": 3,
+      "tokens": 32
+    },
+    {
+      "id": "analysis",
+      "prompt": "Compare two inference deployments: one with 64 GB RAM and a fast NVMe drive, and one with 256 GB RAM and a slower drive. Explain the likely bottlenecks and what should be measured.",
+      "weight": 2,
+      "tokens": 32
+    },
+    {
+      "id": "multilingual",
+      "prompt": "Explain in clear Urdu why deterministic benchmarking matters when comparing two AI inference configurations.",
+      "weight": 1,
+      "tokens": 24
+    },
+    {
+      "id": "long-context",
+      "prompt": "You are reviewing a long enterprise policy document. Produce a concise risk register covering privacy, reliability, security, cost, and operational ownership.",
+      "weight": 1,
+      "context": 16384,
+      "tokens": 48
+    }
+  ]
+}
