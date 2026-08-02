@@ -7,7 +7,6 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'examples/lattice-workload.json'
-      - '.lattice-sync/**'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -15,100 +14,12 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'examples/lattice-workload.json'
-      - '.lattice-sync/**'
       - '.github/workflows/lattice.yml'
 
-# One-shot write permission for the same-repository hardening publisher below.
-# The publisher restores this workflow to read-only in the commit it creates.
 permissions:
-  contents: write
+  contents: read
 
 jobs:
-  materialize:
-    if: >-
-      github.event_name == 'pull_request' &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'agent/lattice-qualification-plane'
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: agent/lattice-qualification-plane
-          fetch-depth: 0
-
-      - name: Apply reviewed hardening patches
-        run: |
-          python3 .lattice-sync/env-hardening.py
-          python3 .lattice-sync/deploy-hardening.py
-
-      - name: Restore permanent read-only workflow and remove transport
-        shell: bash
-        run: |
-          rm .lattice-sync/env-hardening.py .lattice-sync/deploy-hardening.py
-          python3 - <<'PY'
-          from pathlib import Path
-          expression_open = '${' + '{'
-          permanent = '''name: Lattice qualification plane
-
-          on:
-            push:
-              paths:
-                - 'lattice/**'
-                - 'LATTICE.md'
-                - 'docs/lattice-qualification.md'
-                - 'examples/lattice-workload.json'
-                - '.github/workflows/lattice.yml'
-            pull_request:
-              paths:
-                - 'lattice/**'
-                - 'LATTICE.md'
-                - 'docs/lattice-qualification.md'
-                - 'examples/lattice-workload.json'
-                - '.github/workflows/lattice.yml'
-
-          permissions:
-            contents: read
-
-          jobs:
-            test:
-              strategy:
-                fail-fast: false
-                matrix:
-                  os: [ubuntu-latest, macos-latest, windows-latest]
-                  python: ['3.10', '3.13']
-              runs-on: __OPEN__ matrix.os }}
-              steps:
-                - uses: actions/checkout@v4
-                - uses: actions/setup-python@v5
-                  with:
-                    python-version: __OPEN__ matrix.python }}
-                - name: Compile
-                  run: python -m compileall -q lattice
-                - name: Unit and protocol integration tests
-                  run: python -m unittest discover -s lattice/tests -v
-                - name: CLI smoke test
-                  run: python -m lattice --version
-          '''.replace('          ', '').replace('__OPEN__', expression_open)
-          Path('.github/workflows/lattice.yml').write_text(permanent, encoding='utf-8')
-          PY
-
-      - name: Validate exact final tree
-        run: |
-          python3 -m compileall -q lattice
-          python3 -m unittest discover -s lattice/tests -v
-
-      - name: Publish exact tested files
-        shell: bash
-        run: |
-          git config user.name 'lattice-ci'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add lattice/colibri.py lattice/tests/test_colibri.py
-          git add lattice/deploy.py lattice/tests/test_deploy.py
-          git add .github/workflows/lattice.yml
-          git add -u .lattice-sync/env-hardening.py .lattice-sync/deploy-hardening.py
-          git commit -m 'lattice: close qualification and deployment override paths'
-          git push origin HEAD:agent/lattice-qualification-plane
-
   test:
     strategy:
       fail-fast: false
