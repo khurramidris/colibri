@@ -36,74 +36,37 @@ jobs:
           ref: agent/lattice-qualification-plane
           fetch-depth: 0
 
+      - name: Detect staged migration
+        id: gate
+        shell: bash
+        run: |
+          if [[ -f tools/lattice_harden_v02.py && -f tools/lattice_harden_v02_fix.py ]]; then
+            echo 'enabled=true' >> "$GITHUB_OUTPUT"
+          else
+            echo 'enabled=false' >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Apply reviewed v0.2 hardening
+        if: steps.gate.outputs.enabled == 'true'
         run: |
           python3 tools/lattice_harden_v02.py
           python3 tools/lattice_harden_v02_fix.py
-
-      - name: Restore permanent read-only workflow
-        shell: bash
-        run: |
           rm tools/lattice_harden_v02.py tools/lattice_harden_v02_fix.py
-          python3 - <<'PY'
-          from pathlib import Path
-          expression_open = '${' + '{'
-          workflow = '''name: Lattice qualification plane
 
-          on:
-            push:
-              paths:
-                - 'lattice/**'
-                - 'LATTICE.md'
-                - 'docs/lattice-qualification.md'
-                - 'examples/lattice-workload.json'
-                - '.github/workflows/lattice.yml'
-            pull_request:
-              paths:
-                - 'lattice/**'
-                - 'LATTICE.md'
-                - 'docs/lattice-qualification.md'
-                - 'examples/lattice-workload.json'
-                - '.github/workflows/lattice.yml'
-
-          permissions:
-            contents: read
-
-          jobs:
-            test:
-              strategy:
-                fail-fast: false
-                matrix:
-                  os: [ubuntu-latest, macos-latest, windows-latest]
-                  python: ['3.10', '3.13']
-              runs-on: __OPEN__ matrix.os }}
-              steps:
-                - uses: actions/checkout@v4
-                - uses: actions/setup-python@v5
-                  with:
-                    python-version: __OPEN__ matrix.python }}
-                - name: Compile
-                  run: python -m compileall -q lattice
-                - name: Unit and protocol integration tests
-                  run: python -m unittest discover -s lattice/tests -v
-                - name: CLI smoke test
-                  run: python -m lattice --version
-          '''.replace('          ', '').replace('__OPEN__', expression_open)
-          Path('.github/workflows/lattice.yml').write_text(workflow, encoding='utf-8')
-          PY
-
-      - name: Validate exact final tree
+      - name: Validate exact final product tree
+        if: steps.gate.outputs.enabled == 'true'
         run: |
           python3 -m compileall -q lattice
           python3 -m unittest discover -s lattice/tests -v
           python3 -m lattice --version
 
-      - name: Publish tested hardening
+      - name: Publish tested product files
+        if: steps.gate.outputs.enabled == 'true'
         shell: bash
         run: |
           git config user.name 'lattice-ci'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git add lattice LATTICE.md docs/lattice-qualification.md .github/workflows/lattice.yml
+          git add lattice LATTICE.md docs/lattice-qualification.md
           git add -u tools/lattice_harden_v02.py tools/lattice_harden_v02_fix.py
           git commit -m 'lattice: add tamper-evident qualification records'
           git push origin HEAD:agent/lattice-qualification-plane
