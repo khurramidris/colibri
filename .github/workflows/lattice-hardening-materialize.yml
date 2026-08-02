@@ -41,4 +41,4 @@ jobs:
           git commit -m 'Bind qualification evidence to the frozen execution plan'
           git push origin HEAD:agent/lattice-comprehensive-hardening
 
-# Retry marker: strict write-once terminology test updated.
+# Retry marker: latest strict-JSON and suite-validation head.
