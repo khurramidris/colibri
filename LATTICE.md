@@ -14,23 +14,29 @@ The current implementation lives in [`lattice/`](lattice/) and is intentionally 
 - an uninstrumented timed pass followed by a separate numerical-validation pass;
 - exact forced-token, top-1, top-2 and ordered top-k token-ID checks;
 - non-finite rejection plus bounded comparisons of selected logits, moments and four deterministic full-vector projections;
-- a controller-created private oracle artifact, independently capped at 4 MiB, so long validation traces do not weaken the 64 KiB process-output limit;
-- a compact row representation tested with a full 2,048-step replay artifact;
+- a controller-created private oracle artifact independently capped at 4 MiB;
 - an explicit allowlist for reviewed qualification environment controls;
-- hardware-specific scheduling and placement candidates only;
-- rotated candidate order to reduce simple warm-cache/order bias;
-- SHA-256-sealed run records and a session evidence root, including failed attempts;
-- per-workload regression gates and paired bootstrap confidence intervals;
-- decode-only cost-per-million-token estimates from an operator-supplied hourly cost;
-- a deployment profile bound to the evidence root, numerical-oracle policy and selection policy;
-- verification that recomputes the winner from retained run evidence;
-- a customer-readable Markdown qualification report.
+- topology-aware execution candidates and rotated order across workloads/repeats;
+- SHA-256-sealed run records and a completed-session evidence root;
+- paired per-repeat throughput ratios inside each workload;
+- workload-stratified bootstrap intervals that preserve declared workload weights;
+- Bonferroni adjustment across all non-baseline candidate comparisons;
+- at least three paired repeats for confidence-gated promotion;
+- per-workload regression and aggregate gain gates;
+- decode-only cost estimates from an operator-supplied hourly cost;
+- a deployment profile bound to evidence, numerical-oracle, statistical and selection policies;
+- recomputed verification, guarded environment export and launch;
+- an explicit customer-readable qualification report.
 
 ## Assurance level
 
-Lattice v0.4 measures candidates while forcing the same prompt and continuation token IDs through each run. Colibri first performs an uninstrumented timed replay. It then resets KV state and performs a separate numerical-validation replay. Detailed oracle rows are written to a private bounded artifact; stdout receives only a compact publication marker.
+Lattice v0.5 measures candidates while forcing the same prompt and continuation token IDs through each run. Colibri first performs an uninstrumented timed replay. It then resets KV state and performs a separate numerical-validation replay. Detailed oracle rows are written to a private bounded artifact; stdout receives only a compact publication marker.
 
-This is **numerical replay consistency**, not complete logit equality. Exact token identities eliminate the earlier top-k hash-collision ambiguity, but the remaining numerical sketch cannot prove that every logit matches, that free-running generations are identical, or that downstream task quality is unchanged. The absolute and relative tolerances are explicit and versioned, but still require calibration against real supported CPU/GPU deployments.
+This is **numerical replay consistency**, not complete logit equality. The numerical tolerances are explicit and versioned but still require calibration against real supported CPU/GPU deployments.
+
+Performance promotion uses the median paired candidate/baseline ratio for each workload, then applies the declared workload weights through a geometric aggregate. Bootstrap resampling occurs independently within each workload, so a workload with more observations cannot silently dominate the interval. The requested family-wise confidence is adjusted across the complete candidate family using Bonferroni correction.
+
+This remains screening methodology rather than a complete benchmarking study. Thermal stabilization, formal power analysis, robust outlier modelling, multiple-machine replication and real-backend tolerance calibration remain open work.
 
 The evidence files are locally tamper-evident, not cryptographically immutable. Coordinated rewriting by a malicious filesystem administrator remains outside the current threat model.
 
@@ -61,6 +67,6 @@ python3 -m lattice env --workspace .lattice --format shell
 python3 -m lattice launch --workspace .lattice -- serve --port 8000
 ```
 
-The v0.4 qualification adapter remains GLM-only. Inkling, Kimi K3 and OLMoE require dedicated replay and numerical-oracle adapters before Lattice will claim qualification coverage.
+The v0.5 qualification adapter remains GLM-only. Inkling, Kimi K3 and OLMoE require dedicated replay and numerical-oracle adapters before Lattice will claim qualification coverage.
 
-Read [`docs/lattice-qualification.md`](docs/lattice-qualification.md) for the broader architecture, evidence contract and limitations. PR #3 documents the v0.4 exact-ID and bounded-artifact delta while that detailed document is consolidated after the dependent PR stack is merged.
+Read [`docs/lattice-qualification.md`](docs/lattice-qualification.md) for the complete architecture, evidence, numerical and statistical contract.
