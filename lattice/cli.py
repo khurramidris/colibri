@@ -6,7 +6,12 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .acceptance import prepare_olmoe_acceptance, run_olmoe_acceptance, write_acceptance_outputs
+from .acceptance import (
+    load_and_verify_olmoe_acceptance,
+    prepare_olmoe_acceptance,
+    run_olmoe_acceptance,
+    write_acceptance_outputs,
+)
 from .colibri import create_context, fingerprint_runtime, hardware_summary
 from .common import LatticeError, load_json
 from .deploy import deployment_environment, launch
@@ -224,6 +229,7 @@ def cmd_accept_olmoe(args: argparse.Namespace) -> int:
     print(json.dumps({
         "status": record["status"],
         "acceptance_id": record["id"],
+        "record_sha256": record["record_sha256"],
         "evidence_root_sha256": record["evidence_root_sha256"],
         "successful_runs": record["summary"]["successful_runs"],
         "required_runs": record["summary"]["required_runs"],
@@ -231,6 +237,14 @@ def cmd_accept_olmoe(args: argparse.Namespace) -> int:
         "report": str(report),
     }, indent=2))
     return 0 if record["status"] == "accepted" else 3
+
+
+def cmd_verify_olmoe(args: argparse.Namespace) -> int:
+    result = load_and_verify_olmoe_acceptance(
+        Path(args.input), live=args.live
+    )
+    print(json.dumps(result, indent=2))
+    return 0
 
 
 def build_parser() -> argparse.ArgumentParser:
@@ -305,20 +319,31 @@ def build_parser() -> argparse.ArgumentParser:
 
     accept = sub.add_parser(
         "accept-olmoe",
-        help="run a token-exact real-model acceptance against an OLMoE reference continuation",
+        help="run a single-reference token-exact OLMoE execution check",
     )
     accept.add_argument("--repo", default=".", help="Colibri checkout root")
     accept.add_argument("--model", required=True, help="converted OLMoE model directory")
-    accept.add_argument("--reference", required=True, help="reference JSON with prompt_ids and full_ids")
+    accept.add_argument("--reference", required=True, help="version-2 provenance-bound reference JSON")
     accept.add_argument("--engine", help="explicit OLMoE engine binary")
-    accept.add_argument("--cache-cap", type=int, default=16, help="expert cache entries per layer")
+    accept.add_argument("--cache-cap", type=int, default=16, help="positive expert cache entries per layer")
     accept.add_argument("--quant-bits", type=int, default=8, help="expert quantization bits used by the engine")
     accept.add_argument("--repeats", type=int, default=3)
     accept.add_argument("--timeout", type=int, default=1800, help="seconds per real-model run")
     accept.add_argument("--threads", type=int, help="fixed OpenMP thread count; default uses engine tuning")
     accept.add_argument("--output", default="olmoe-acceptance.json", help="write-once JSON evidence output")
-    accept.add_argument("--report", help="Markdown report path; defaults beside --output")
+    accept.add_argument("--report", help="write-once Markdown report path; defaults beside --output")
     accept.set_defaults(func=cmd_accept_olmoe)
+
+    verify_olmoe = sub.add_parser(
+        "verify-olmoe",
+        help="verify retained OLMoE acceptance evidence",
+    )
+    verify_olmoe.add_argument("--input", required=True, help="OLMoE acceptance JSON evidence")
+    verify_olmoe.add_argument(
+        "--live", action="store_true",
+        help="also recheck current model, runtime, reference and machine identity",
+    )
+    verify_olmoe.set_defaults(func=cmd_verify_olmoe)
     return parser
 
 
