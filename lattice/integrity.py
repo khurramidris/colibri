@@ -5,6 +5,7 @@ from typing import Any
 
 from .candidates import Candidate, validate_candidate
 from .common import LatticeError, canonical_json, ensure_under, load_json, sha256_bytes, validate_id
+from .evidence import session_evidence_root, verify_record_digest
 from .colibri import SAFE_TUNABLE_KEYS
 from .suite import WorkloadSuite
 from .workspace import Workspace
@@ -98,6 +99,8 @@ def validate_session_evidence(
         raise LatticeError("session run_ids is invalid")
     if len(run_ids) != len(set(run_ids)):
         raise LatticeError("session run_ids contains duplicates")
+    for run in runs:
+        verify_record_digest(run, f"run {run.get('id', '<unknown>')}")
     actual_ids = {run.get("id") for run in runs}
     if set(run_ids) != actual_ids:
         raise LatticeError("session run set does not match immutable run records")
@@ -149,4 +152,11 @@ def validate_session_evidence(
     if require_complete and actual_tasks != expected_tasks:
         missing = expected_tasks - actual_tasks
         raise LatticeError(f"session task matrix is incomplete ({len(missing)} missing)")
+    if status == "completed":
+        expected_root = session.get("evidence_root_sha256")
+        if not isinstance(expected_root, str) or len(expected_root) != 64:
+            raise LatticeError("completed session has no valid evidence root")
+        actual_root = session_evidence_root(session, runs)
+        if actual_root != expected_root:
+            raise LatticeError("completed session evidence root mismatch")
     return candidates

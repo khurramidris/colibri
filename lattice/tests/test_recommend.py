@@ -5,6 +5,7 @@ import unittest
 from pathlib import Path
 
 from lattice.common import atomic_write_json, canonical_json, sha256_bytes
+from lattice.evidence import session_evidence_root
 from lattice.recommend import recommend
 from lattice.workspace import Workspace
 
@@ -72,6 +73,12 @@ class RecommendTests(unittest.TestCase):
             "run_ids": [],
         }
 
+    def _finalize(self, ws: Workspace, session: dict) -> None:
+        session["evidence_root_sha256"] = session_evidence_root(
+            session, ws.list_runs(session["id"])
+        )
+        ws.write_session(session)
+
     def _run(self, candidate: str, repeat: int, tok_s: float, replay_hash: str, suffix: str = "") -> dict:
         environment = {} if candidate == "baseline" else {"PIPE": "1"}
         return {
@@ -99,7 +106,7 @@ class RecommendTests(unittest.TestCase):
                     run = self._run(candidate, repeat, value, replay_hash)
                     ws.write_run(run)
                     session["run_ids"].append(run["id"])
-            ws.write_session(session)
+            self._finalize(ws, session)
             profile, _ = recommend(ws, "session-a", min_runs=2, require_confidence=True)
             self.assertEqual(profile["winner"]["id"], "fast")
 
@@ -115,7 +122,7 @@ class RecommendTests(unittest.TestCase):
             for run in runs:
                 ws.write_run(run)
                 session["run_ids"].append(run["id"])
-            ws.write_session(session)
+            self._finalize(ws, session)
             with self.assertRaisesRegex(Exception, "duplicate successful run task"):
                 recommend(ws, "session-a", min_runs=1)
 

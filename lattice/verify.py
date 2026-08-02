@@ -39,6 +39,7 @@ def verify_workspace(workspace: Workspace, *, deep: bool = False) -> dict[str, A
             "session_id": profile["session_id"],
             "winner": evaluation["winner"]["id"],
             "policy": evaluation["selection_policy"],
+            "evidence_root_sha256": evaluation["evidence_root_sha256"],
         })
         checks.update({
             "profile_id": profile.get("id") == expected_id,
@@ -48,6 +49,7 @@ def verify_workspace(workspace: Workspace, *, deep: bool = False) -> dict[str, A
             "profile_execution_fingerprint": profile.get("execution_fingerprint") == context.execution_fingerprint,
             "profile_qualification_context": profile.get("qualification_context") == context.qualification_context,
             "profile_suite_fingerprint": profile.get("suite_fingerprint") == project.get("suite_fingerprint"),
+            "profile_evidence_root": profile.get("evidence_root_sha256") == evaluation.get("evidence_root_sha256"),
             "profile_recomputed": canonical_json({k: profile.get(k) for k in evaluation}) == canonical_json(evaluation),
         })
     failed = [name for name, passed in checks.items() if not passed]

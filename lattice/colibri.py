@@ -55,15 +55,29 @@ SERVING_ONLY_KEYS = frozenset({
 
 QUALIFICATION_SCALAR_KEYS = frozenset({
     "RAM_GB", "CTX", "CUDA_EXPERT_GB", "CAP", "CAP_RAISE", "MLOCK",
-    "COLI_MMAP", "COLI_SSD_FAST_GBS", "COLI_NO_FUSED_PAIR", "DISK_SPLIT",
-    "COLI_RAM_OVERCOMMIT", "DRAFT", "MTP", "IDOT", "ABSORB", "I4S", "SPEC_PIN",
-    "PIPE", "PIPE_WORKERS", "DIRECT", "URING", "PREFETCH", "PILOT",
-    "PILOT_REAL", "PILOT_K", "SEED", "KVSAVE", "AUTOPIN", "REPIN",
-    "SNAP", "OMP_NUM_THREADS", "OMP_WAIT_POLICY", "OMP_PROC_BIND", "OMP_PLACES",
-    "GOMP_SPINCOUNT", "CUDA_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES",
+    "DISK_SPLIT", "DRAFT", "PIN_GB", "PIPE", "PIPE_WORKERS", "DIRECT",
+    "URING", "PREFETCH", "PILOT", "PILOT_REAL", "PILOT_K", "SEED",
+    "KVSAVE", "AUTOPIN", "REPIN", "SNAP", "OMP_NUM_THREADS",
+    "OMP_WAIT_POLICY", "OMP_PROC_BIND", "OMP_PLACES", "GOMP_SPINCOUNT",
+    "CUDA_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES",
 })
 
 TOPOLOGY_KEYS = frozenset({"COLI_MODEL_DIRS", "COLI_MODEL_MIRROR", "COLI_DISK_WEIGHTS"})
+
+# Explicitly reviewed Colibri variables permitted in qualification identity.
+# New upstream knobs fail closed until their semantics are reviewed here.
+QUALIFICATION_COLI_KEYS = frozenset({
+    "COLI_POLICY", "COLI_COLOR", "COLI_MODEL", "COLI_GPU", "COLI_GPUS",
+    "COLI_CUDA", "COLI_METAL", "COLI_VULKAN", "COLI_NUMA",
+    "COLI_NO_OMP_TUNE", "COLI_CUDA_PIPE", "COLI_CUDA_ASYNC", "COLI_MMAP",
+    "COLI_SSD_FAST_GBS", "COLI_NO_FUSED_PAIR", "COLI_RAM_OVERCOMMIT",
+})
+
+# Only hardware and storage selectors may be inherited from the operator shell.
+AMBIENT_QUALIFICATION_KEYS = TOPOLOGY_KEYS | frozenset({
+    "COLI_GPU", "COLI_GPUS", "COLI_CUDA", "COLI_METAL", "COLI_VULKAN",
+    "CUDA_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES",
+})
 
 
 @dataclass(frozen=True)
@@ -265,16 +279,64 @@ def fingerprint_runtime(c_dir: Path, coli: Path, engine: Path) -> str:
 
 
 def _qualification_key(key: str) -> bool:
-    return key.startswith("COLI_") or key.startswith("OMP_") or key.startswith("GOMP_") or key in QUALIFICATION_SCALAR_KEYS
+    if key in SERVING_ONLY_KEYS:
+        return False
+    if key in FORBIDDEN_AMBIENT_KEYS and key not in {"DRAFT", "AUTOPIN", "REPIN"}:
+        return False
+    return key in (
+        SAFE_TUNABLE_KEYS
+        | QUALIFICATION_SCALAR_KEYS
+        | TOPOLOGY_KEYS
+        | QUALIFICATION_COLI_KEYS
+    )
+
+
+def _validate_qualification_value(key: str, value: str) -> None:
+    if not value or any(char in value for char in "\r\n\x00"):
+        raise LatticeError(f"invalid qualification environment value: {key}")
+    fixed = {
+        "COLI_POLICY": "quality",
+        "DRAFT": "0",
+        "KVSAVE": "0",
+        "AUTOPIN": "0",
+        "REPIN": "0",
+    }
+    if key in fixed and value != fixed[key]:
+        raise LatticeError(
+            f"qualification environment {key} must remain {fixed[key]!r}; got {value!r}"
+        )
+    if key == "PIN_GB" and value != "all":
+        try:
+            if float(value) <= 0:
+                raise ValueError
+        except ValueError as error:
+            raise LatticeError("qualification environment PIN_GB must be 'all' or positive") from error
 
 
 def clean_environment(
     source: dict[str, str] | None = None,
     overrides: dict[str, str] | None = None,
 ) -> dict[str, str]:
-    env = dict(os.environ if source is None else source)
-    for key in FORBIDDEN_AMBIENT_KEYS | SAFE_TUNABLE_KEYS | SERVING_ONLY_KEYS:
-        env.pop(key, None)
+    original = dict(os.environ if source is None else source)
+    env = dict(original)
+    inherited = {
+        key: str(original[key])
+        for key in AMBIENT_QUALIFICATION_KEYS
+        if key in original
+    }
+    for key in list(env):
+        if (
+            key.startswith("COLI_")
+            or key.startswith("OMP_")
+            or key.startswith("GOMP_")
+            or key in QUALIFICATION_SCALAR_KEYS
+            or key in SAFE_TUNABLE_KEYS
+            or key in SERVING_ONLY_KEYS
+            or key in FORBIDDEN_AMBIENT_KEYS
+            or key in TOPOLOGY_KEYS
+        ):
+            env.pop(key, None)
+    env.update(inherited)
     env.update({
         "COLI_POLICY": "quality",
         "COLI_COLOR": "0",
@@ -286,16 +348,28 @@ def clean_environment(
     if overrides:
         for key, value in overrides.items():
             text = str(value)
-            if not _qualification_key(key) or key in SERVING_ONLY_KEYS:
+            if not _qualification_key(key):
                 raise LatticeError(f"invalid qualification environment override: {key}")
-            if not text or any(char in text for char in "\r\n\x00"):
-                raise LatticeError(f"invalid qualification environment value: {key}")
+            _validate_qualification_value(key, text)
             env[key] = text
     return env
 
 
 def qualification_environment(env: dict[str, str]) -> dict[str, str]:
-    return {key: str(value) for key, value in sorted(env.items()) if _qualification_key(key)}
+    unreviewed = sorted(
+        key
+        for key in env
+        if (key.startswith("COLI_") or key.startswith("OMP_") or key.startswith("GOMP_"))
+        and not _qualification_key(key)
+    )
+    if unreviewed:
+        raise LatticeError(
+            "unreviewed Colibri qualification keys: " + ", ".join(unreviewed)
+        )
+    selected = {key: str(value) for key, value in sorted(env.items()) if _qualification_key(key)}
+    for key, value in selected.items():
+        _validate_qualification_value(key, value)
+    return selected
 
 
 @contextlib.contextmanager

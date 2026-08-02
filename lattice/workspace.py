@@ -6,6 +6,7 @@ from pathlib import Path
 from typing import Any
 
 from .common import LatticeError, atomic_write_json, load_json, validate_id
+from .evidence import seal_record, verify_record_digest
 
 
 @dataclass(frozen=True)
@@ -82,12 +83,19 @@ class Workspace:
     def write_run(self, run: dict[str, Any]) -> Path:
         run_id = validate_id(run.get("id"), "run id")
         path = self.runs_dir / f"{run_id}.json"
-        atomic_write_json(path, run, exclusive=True)
+        sealed = seal_record(run)
+        atomic_write_json(path, sealed, exclusive=True)
+        run.clear()
+        run.update(sealed)
         return path
 
     def write_session(self, session: dict[str, Any], *, immutable: bool = False) -> Path:
         session_id = validate_id(session.get("id"), "session id")
         path = self.sessions_dir / f"{session_id}.json"
+        if path.exists():
+            existing = load_json(path)
+            if isinstance(existing, dict) and existing.get("status") == "completed" and existing != session:
+                raise LatticeError(f"refusing to rewrite completed session: {session_id}")
         atomic_write_json(path, session, exclusive=immutable)
         return path
 
@@ -106,6 +114,7 @@ class Workspace:
             data = load_json(path)
             if not isinstance(data, dict) or data.get("schema_version") != 1:
                 raise LatticeError(f"invalid run record: {path}")
+            verify_record_digest(data, f"run record {path.name}")
             if session_id is None or data.get("session_id") == session_id:
                 runs.append(data)
         return runs

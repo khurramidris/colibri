@@ -100,6 +100,7 @@ def evaluate_session(
         "execution_fingerprint": project["execution_fingerprint"],
         "qualification_context": project["qualification_context"],
         "suite_fingerprint": suite.fingerprint,
+        "evidence_root_sha256": session["evidence_root_sha256"],
         "scores": [score.as_dict() for score in scores],
     }
 
@@ -111,6 +112,7 @@ def recommend(workspace: Workspace, session_id: str, **policy: Any) -> tuple[dic
         "session_id": session_id,
         "winner": evaluation["winner"]["id"],
         "policy": seed_policy,
+        "evidence_root_sha256": evaluation["evidence_root_sha256"],
     }
     profile = {
         "schema_version": 1,

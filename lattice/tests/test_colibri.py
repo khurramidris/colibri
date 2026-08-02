@@ -79,10 +79,24 @@ class ColibriTests(unittest.TestCase):
             self.assertNotEqual(before["fingerprint"], after["fingerprint"])
 
     def test_quality_environment_is_stripped_but_backend_is_attested(self):
-        env = clean_environment({"COLI_TEMP": "0.8", "IDOT": "0", "COLI_METAL": "1"})
+        env = clean_environment({
+            "COLI_TEMP": "0.8",
+            "IDOT": "0",
+            "COLI_METAL": "1",
+            "COLI_UNREVIEWED_APPROX": "1",
+        })
         self.assertNotIn("COLI_TEMP", env)
         self.assertNotIn("IDOT", env)
+        self.assertNotIn("COLI_UNREVIEWED_APPROX", env)
         self.assertEqual(qualification_environment(env)["COLI_METAL"], "1")
+
+    def test_unknown_or_semantic_override_is_rejected(self):
+        with self.assertRaisesRegex(LatticeError, "invalid qualification environment override"):
+            clean_environment({}, {"COLI_UNREVIEWED_APPROX": "1"})
+        with self.assertRaisesRegex(LatticeError, "DRAFT must remain"):
+            clean_environment({}, {"DRAFT": "3"})
+        env = clean_environment({}, {"DRAFT": "0", "COLI_CUDA": "1"})
+        self.assertEqual(env["DRAFT"], "0")
 
     def test_out_of_bounds_tensor_rejected(self):
         with tempfile.TemporaryDirectory() as directory:

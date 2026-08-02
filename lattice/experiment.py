@@ -7,6 +7,7 @@ from typing import Any, Callable
 from .candidates import Candidate, default_candidates, validate_candidate
 from .colibri import ColibriContext, calibrate_case, run_replay
 from .common import LatticeError, atomic_write_json, canonical_json, sha256_bytes, short_id, utc_now
+from .evidence import session_evidence_root
 from .integrity import validate_session_evidence
 from .suite import WorkloadCase, WorkloadSuite
 from .workspace import Workspace
@@ -179,6 +180,7 @@ def _run_pending_tasks(
     attempts = {(run["candidate_id"], run["case_id"], run["repeat"]) for run in existing}
     session["status"] = "running"
     session["completed_at"] = None
+    session.pop("evidence_root_sha256", None)
     workspace.write_session(session)
     try:
         for repeat, case, candidate in _task_order(list(suite.cases), candidates, session["repeats"]):
@@ -191,11 +193,15 @@ def _run_pending_tasks(
             )
         session["status"] = "completed"
         session["completed_at"] = utc_now()
+        session["evidence_root_sha256"] = session_evidence_root(
+            session, workspace.list_runs(session["id"])
+        )
         workspace.write_session(session)
         return session
     except BaseException:
         session["status"] = "interrupted"
         session["completed_at"] = utc_now()
+        session.pop("evidence_root_sha256", None)
         workspace.write_session(session)
         raise
 
@@ -264,6 +270,7 @@ def run_experiment(
         except BaseException:
             session["status"] = "interrupted"
             session["completed_at"] = utc_now()
+            session.pop("evidence_root_sha256", None)
             workspace.write_session(session)
             raise
 
@@ -316,5 +323,6 @@ def resume_experiment(
         except BaseException:
             session["status"] = "interrupted"
             session["completed_at"] = utc_now()
+            session.pop("evidence_root_sha256", None)
             workspace.write_session(session)
             raise

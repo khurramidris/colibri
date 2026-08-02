@@ -24,7 +24,7 @@ Colibri deep doctor ──► resource plan ──► model/runtime fingerprint
                 rotated candidate × workload × repeat
                                │
                                ▼
-                     immutable run evidence
+                     tamper-evident run evidence
                                │
               regression + gain + confidence gates
                                │
@@ -73,7 +73,7 @@ Sessions are checkpointed before calibration, after every completed workload rep
 python3 -m lattice qualify --workspace .lattice --resume <session-id>
 ```
 
-Failed attempts remain immutable evidence. By default a resume retries failed and missing tasks but never reruns a successful task, so retries cannot inflate the minimum-run or confidence gates. Use `--no-retry-failed` to fill only tasks that were never attempted.
+Failed attempts remain tamper-evident evidence. By default a resume retries failed and missing tasks but never reruns a successful task, so retries cannot inflate the minimum-run or confidence gates. Use `--no-retry-failed` to fill only tasks that were never attempted.
 
 The built-in matrix is topology-aware and may include:
 

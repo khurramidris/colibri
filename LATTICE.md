@@ -13,7 +13,7 @@ The first implementation lives in [`lattice/`](lattice/) and is intentionally na
 - deterministic, teacher-forced replay across a weighted workload suite;
 - hardware-specific scheduling and placement candidates only;
 - rotated candidate order to reduce warm-cache/order bias;
-- immutable run evidence, including failures;
+- tamper-evident run evidence, including failures;
 - per-workload regression gates and paired bootstrap confidence intervals;
 - decode-only cost-per-million-token estimates from an operator-supplied hourly cost;
 - an immutable promoted deployment profile;
