@@ -17,21 +17,22 @@ on:
       - 'examples/lattice-workload.json'
       - '.github/workflows/lattice.yml'
 
-# Temporary write permission is used only by the guarded push-only materialize
-# job below. It is removed together with the one-shot transport files.
+# Temporary write permission is used only by the guarded, same-repository
+# materialization job below. It is removed with the one-shot transport files.
 permissions:
   contents: write
 
 jobs:
   materialize:
     if: >-
-      github.event_name == 'push' &&
-      github.ref == 'refs/heads/agent/lattice-qualification-plane' &&
-      !contains(github.event.head_commit.message, 'harden qualification identity and reproducibility')
+      github.event_name == 'pull_request' &&
+      github.event.pull_request.head.repo.full_name == github.repository &&
+      github.head_ref == 'agent/lattice-qualification-plane'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
+          ref: agent/lattice-qualification-plane
           fetch-depth: 0
 
       - name: Verify and materialize hardened source
