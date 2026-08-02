@@ -1,13 +1,15 @@
 from __future__ import annotations
 
+import contextlib
 import hashlib
 import importlib.util
 import json
 import os
 import platform
 import re
+import shutil
 import sys
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from pathlib import Path
 from types import ModuleType
 from typing import Any
@@ -42,7 +44,26 @@ FORBIDDEN_AMBIENT_KEYS = frozenset({
     "TOPK", "TOPP", "NUCLEUS", "CACHE_ROUTE", "ROUTE_M", "ROUTE_J",
     "ROUTE_P", "ROUTE_ALPHA", "DRAFT", "MTP", "PIN", "PIN_GB", "REPIN",
     "AUTOPIN", "STATS", "REF", "REF_FORCE", "REPLAY", "TOKENS", "PROMPT",
+    "NGEN", "THINK", "COLI_CUDA_MTP", "COLI_TEMP", "IDOT", "ABSORB",
+    "I4S", "SPEC_PIN", "TOOL", "COLI_TOOL_SALVAGE",
 })
+
+SERVING_ONLY_KEYS = frozenset({
+    "COLI_API_KEY", "COLI_ALLOWED_HOSTS", "COLI_MAX_QUEUE", "COLI_QUEUE_TIMEOUT",
+    "COLI_MODEL_ID", "COLI_KV_SLOTS", "KV_SLOTS", "SERVE",
+})
+
+QUALIFICATION_SCALAR_KEYS = frozenset({
+    "RAM_GB", "CTX", "CUDA_EXPERT_GB", "CAP", "CAP_RAISE", "MLOCK",
+    "COLI_MMAP", "COLI_SSD_FAST_GBS", "COLI_NO_FUSED_PAIR", "DISK_SPLIT",
+    "COLI_RAM_OVERCOMMIT", "DRAFT", "MTP", "IDOT", "ABSORB", "I4S", "SPEC_PIN",
+    "PIPE", "PIPE_WORKERS", "DIRECT", "URING", "PREFETCH", "PILOT",
+    "PILOT_REAL", "PILOT_K", "SEED", "KVSAVE", "AUTOPIN", "REPIN",
+    "SNAP", "OMP_NUM_THREADS", "OMP_WAIT_POLICY", "OMP_PROC_BIND", "OMP_PLACES",
+    "GOMP_SPINCOUNT", "CUDA_VISIBLE_DEVICES", "HIP_VISIBLE_DEVICES", "ROCR_VISIBLE_DEVICES",
+})
+
+TOPOLOGY_KEYS = frozenset({"COLI_MODEL_DIRS", "COLI_MODEL_MIRROR", "COLI_DISK_WEIGHTS"})
 
 
 @dataclass(frozen=True)
@@ -58,6 +79,11 @@ class ColibriContext:
     plan: dict[str, Any]
     doctor: dict[str, Any]
     base_environment: dict[str, str]
+    qualification_context: int = 4096
+    qualification_environment: dict[str, str] = field(default_factory=dict)
+    execution_fingerprint: str = ""
+    hardware_fingerprint: str = ""
+    storage_topology: dict[str, Any] = field(default_factory=dict)
 
 
 def _load_module(path: Path, name: str) -> ModuleType:
@@ -154,6 +180,55 @@ def _sample_payload(path: Path, header_bytes: int, sample_size: int = 65536) -> 
     return digest.hexdigest()
 
 
+def _fingerprint_weight_directory(directory: Path) -> str:
+    directory = directory.expanduser().resolve()
+    if not directory.is_dir():
+        raise LatticeError(f"weight directory not found: {directory}")
+    entries: list[dict[str, Any]] = []
+    shards = sorted(directory.glob("*.safetensors"))
+    if not shards:
+        raise LatticeError(f"no .safetensors shards found in {directory}")
+    for path in shards:
+        header = _safetensors_header(path)
+        entries.append({
+            "name": path.name,
+            "size": path.stat().st_size,
+            "header_sha256": sha256_bytes(header),
+            "sampled_payload_sha256": _sample_payload(path, len(header)),
+        })
+    return sha256_bytes(canonical_json({"schema": 1, "files": entries}))
+
+
+def _path_list(value: str | None) -> list[Path]:
+    if not value:
+        return []
+    return [Path(part.strip()).expanduser().resolve() for part in re.split(r"[;,]", value) if part.strip()]
+
+
+def fingerprint_storage_topology(model: Path, env: dict[str, str]) -> dict[str, Any]:
+    primary = model.expanduser().resolve()
+    seen = {primary}
+
+    def entries(key: str) -> list[dict[str, str]]:
+        result = []
+        for directory in _path_list(env.get(key)):
+            if directory in seen:
+                raise LatticeError(f"duplicate model directory in {key}: {directory}")
+            seen.add(directory)
+            result.append({"path": str(directory), "fingerprint": _fingerprint_weight_directory(directory)})
+        return result
+
+    topology: dict[str, Any] = {
+        "schema_version": 1,
+        "primary": {"path": str(primary), "fingerprint": fingerprint_model(primary)},
+        "split_directories": entries("COLI_MODEL_DIRS"),
+        "mirror_directories": entries("COLI_MODEL_MIRROR"),
+        "disk_weights": env.get("COLI_DISK_WEIGHTS"),
+    }
+    topology["fingerprint"] = sha256_bytes(canonical_json(topology))
+    return topology
+
+
 def fingerprint_model(model: Path) -> str:
     model = model.expanduser().resolve()
     if not model.is_dir():
@@ -189,9 +264,16 @@ def fingerprint_runtime(c_dir: Path, coli: Path, engine: Path) -> str:
     return sha256_bytes(canonical_json({"schema": 1, "files": entries}))
 
 
-def clean_environment(source: dict[str, str] | None = None) -> dict[str, str]:
+def _qualification_key(key: str) -> bool:
+    return key.startswith("COLI_") or key.startswith("OMP_") or key.startswith("GOMP_") or key in QUALIFICATION_SCALAR_KEYS
+
+
+def clean_environment(
+    source: dict[str, str] | None = None,
+    overrides: dict[str, str] | None = None,
+) -> dict[str, str]:
     env = dict(os.environ if source is None else source)
-    for key in FORBIDDEN_AMBIENT_KEYS | SAFE_TUNABLE_KEYS:
+    for key in FORBIDDEN_AMBIENT_KEYS | SAFE_TUNABLE_KEYS | SERVING_ONLY_KEYS:
         env.pop(key, None)
     env.update({
         "COLI_POLICY": "quality",
@@ -201,7 +283,70 @@ def clean_environment(source: dict[str, str] | None = None) -> dict[str, str]:
         "REPIN": "0",
         "SEED": "104729",
     })
+    if overrides:
+        for key, value in overrides.items():
+            text = str(value)
+            if not _qualification_key(key) or key in SERVING_ONLY_KEYS:
+                raise LatticeError(f"invalid qualification environment override: {key}")
+            if not text or any(char in text for char in "\r\n\x00"):
+                raise LatticeError(f"invalid qualification environment value: {key}")
+            env[key] = text
     return env
+
+
+def qualification_environment(env: dict[str, str]) -> dict[str, str]:
+    return {key: str(value) for key, value in sorted(env.items()) if _qualification_key(key)}
+
+
+@contextlib.contextmanager
+def _temporary_environment(environment: dict[str, str]):
+    original = dict(os.environ)
+    os.environ.clear()
+    os.environ.update(environment)
+    try:
+        yield
+    finally:
+        os.environ.clear()
+        os.environ.update(original)
+
+
+def fingerprint_hardware(plan: dict[str, Any], storage_topology: dict[str, Any]) -> str:
+    devices = plan.get("tiers", {}).get("vram", {}).get("devices") or []
+    storage = []
+    topology_entries = [storage_topology.get("primary", {})]
+    topology_entries.extend(storage_topology.get("split_directories") or [])
+    topology_entries.extend(storage_topology.get("mirror_directories") or [])
+    for entry in topology_entries:
+        path_value = entry.get("path")
+        if not path_value:
+            continue
+        path = Path(path_value)
+        stat = path.stat()
+        usage = shutil.disk_usage(path)
+        storage.append({
+            "path": str(path.resolve()),
+            "device": int(getattr(stat, "st_dev", 0)),
+            "volume_total_bytes": int(usage.total),
+        })
+    payload = {
+        "schema": 1,
+        "platform": {
+            "system": platform.system(),
+            "release": platform.release(),
+            "machine": platform.machine(),
+        },
+        "cpu": plan.get("cpu"),
+        "gpus": [
+            {
+                "index": device.get("index"),
+                "name": device.get("name"),
+                "total_bytes": device.get("total_bytes"),
+            }
+            for device in devices
+        ],
+        "storage": storage,
+    }
+    return sha256_bytes(canonical_json(payload))
 
 
 def create_context(
@@ -210,6 +355,8 @@ def create_context(
     *,
     engine: Path | None = None,
     deep: bool = True,
+    context_length: int = 4096,
+    qualification_overrides: dict[str, str] | None = None,
 ) -> ColibriContext:
     repo_root = repo_root.expanduser().resolve()
     c_dir = repo_root / "c"
@@ -217,6 +364,8 @@ def create_context(
     if not coli.is_file():
         raise LatticeError(f"not a Colibri checkout (missing c/coli): {repo_root}")
     model = model.expanduser().resolve()
+    if isinstance(context_length, bool) or not isinstance(context_length, int) or not 128 <= context_length <= 262144:
+        raise LatticeError("qualification context must be between 128 and 262144 tokens")
     resolved_engine, family = resolve_engine(c_dir, model, engine)
     if family != "colibri":
         raise LatticeError(
@@ -224,16 +373,31 @@ def create_context(
             "deterministic replay contract only; Inkling, Kimi and OLMoE "
             "require engine-specific calibration/replay adapters"
         )
+    controlled = clean_environment(dict(os.environ), qualification_overrides)
+    controlled.update({
+        "SNAP": str(model),
+        "COLI_MODEL": str(model),
+        "COLI_POLICY": "quality",
+        "CTX": str(context_length),
+    })
     sys.path.insert(0, str(c_dir))
-    resource_plan = _load_module(c_dir / "resource_plan.py", "lattice_colibri_resource_plan")
-    doctor_module = _load_module(c_dir / "doctor.py", "lattice_colibri_doctor")
-    plan = resource_plan.build_plan(str(model), policy="quality")
-    report = doctor_module.run_doctor(
-        str(model), 0, 4096, None, 0,
-        engine_path=str(resolved_engine),
-        deep=deep,
-        mirror_dir=os.environ.get("COLI_MODEL_MIRROR"),
-    )
+    with _temporary_environment(controlled):
+        resource_plan = _load_module(c_dir / "resource_plan.py", "lattice_colibri_resource_plan")
+        doctor_module = _load_module(c_dir / "doctor.py", "lattice_colibri_doctor")
+        plan = resource_plan.build_plan(str(model), context=context_length, policy="quality")
+        report = doctor_module.run_doctor(
+            str(model), 0, context_length, None, 0,
+            engine_path=str(resolved_engine),
+            deep=deep,
+            mirror_dir=controlled.get("COLI_MODEL_MIRROR"),
+        )
+        controlled = resource_plan.environment_for_plan(plan, env=controlled, cuda_enabled=True)
+    controlled.update({
+        "SNAP": str(model),
+        "COLI_MODEL": str(model),
+        "COLI_POLICY": "quality",
+        "CTX": str(context_length),
+    })
     status = str(report.get("status") or "").lower()
     if status not in {"ok", "pass", "warning", "warn"}:
         failures = [
@@ -243,10 +407,18 @@ def create_context(
         ]
         detail = "; ".join(map(str, failures[:5])) or f"doctor status={status or 'unknown'}"
         raise LatticeError(f"Colibri deep doctor failed: {detail}")
-    env = clean_environment()
-    env["SNAP"] = str(model)
-    env["COLI_MODEL"] = str(model)
-    env = resource_plan.environment_for_plan(plan, env=env, cuda_enabled=True)
+    topology = fingerprint_storage_topology(model, controlled)
+    runtime_fingerprint = fingerprint_runtime(c_dir, coli, resolved_engine)
+    hardware_fingerprint = fingerprint_hardware(plan, topology)
+    controlled_snapshot = qualification_environment(controlled)
+    execution_fingerprint = sha256_bytes(canonical_json({
+        "schema": 1,
+        "context": context_length,
+        "environment": controlled_snapshot,
+        "hardware_fingerprint": hardware_fingerprint,
+        "model_fingerprint": topology["fingerprint"],
+        "runtime_fingerprint": runtime_fingerprint,
+    }))
     return ColibriContext(
         repo_root=repo_root,
         c_dir=c_dir,
@@ -254,11 +426,16 @@ def create_context(
         engine=resolved_engine,
         model=model,
         model_family=family,
-        runtime_fingerprint=fingerprint_runtime(c_dir, coli, resolved_engine),
-        model_fingerprint=fingerprint_model(model),
+        runtime_fingerprint=runtime_fingerprint,
+        model_fingerprint=topology["fingerprint"],
         plan=plan,
         doctor=report,
-        base_environment={str(k): str(v) for k, v in env.items()},
+        base_environment={str(k): str(v) for k, v in controlled.items()},
+        qualification_context=context_length,
+        qualification_environment=controlled_snapshot,
+        execution_fingerprint=execution_fingerprint,
+        hardware_fingerprint=hardware_fingerprint,
+        storage_topology=topology,
     )
 
 

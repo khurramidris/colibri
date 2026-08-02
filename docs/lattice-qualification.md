@@ -46,13 +46,14 @@ python3 -m lattice init --repo . --model /models/glm52_i4 \
 `init` performs the following:
 
 1. detects the model family and requires the currently proven GLM/`colibri` replay adapter;
-2. executes Colibri's deep doctor;
+2. chooses the maximum context required by the workload suite and uses it for deep doctor and planning;
 3. captures Colibri's generated resource plan;
 4. validates every Safetensors header and tensor offset;
-5. fingerprints config/tokenizer/index files, shard metadata and deterministic payload samples;
+5. fingerprints primary, split and mirror weight directories, including deterministic payload samples;
 6. hashes the launcher, engine and execution-critical support modules;
-7. validates and fingerprints the workload suite;
-8. writes `project.json`.
+7. fingerprints CPU/GPU/storage-device identity and the controlled qualification environment;
+8. validates and fingerprints the workload suite;
+9. writes `project.json`.
 
 The model fingerprint is intentionally practical rather than a full hash of hundreds of gigabytes. It hashes all structural metadata and deterministic samples from every shard. A deployment requiring full cryptographic payload attestation should add an offline complete-shard manifest.
 
@@ -104,11 +105,11 @@ Promotion requires:
 - workload-weighted geometric speedup of at least `min-gain`;
 - optionally, a paired bootstrap lower confidence bound above zero gain.
 
-Cost per million generated tokens uses the operator-supplied hardware cost and the weighted harmonic effective throughput, which reflects time spent across the workload mix.
+Cost per million generated tokens uses the operator-supplied hardware cost and the weighted harmonic effective throughput, which reflects time spent across the workload mix. It is explicitly a **decode-only** estimate: prompt prefill, idle capacity, batching, queueing and service overhead require a serving benchmark.
 
 ### `verify`
 
-`verify` does not trust `current-profile.json`. It recomputes current model and runtime identities, validates replay hashes and every run's candidate/task identity, checks the complete task matrix, reruns the selection calculation using the recorded promotion policy, and confirms the profile ID and winner.
+`verify` does not trust `current-profile.json`. It recomputes current model, runtime, hardware, storage-topology, maximum-context and controlled-environment identities, validates replay hashes and every run's candidate/task identity, checks the complete task matrix, reruns the selection calculation using the recorded promotion policy, and confirms the profile ID and winner.
 
 ### `report`
 
@@ -139,7 +140,7 @@ A model override is rejected. Adaptive KV persistence and expert-history learnin
   reports/
 ```
 
-Run and profile records are immutable. A workspace containing evidence cannot be force-reinitialized; use a new workspace to preserve provenance.
+Run and profile records are immutable. A workspace containing evidence cannot be force-reinitialized; use a new workspace to preserve provenance. Qualification and deployment share one exclusive workspace lock, so a live launch cannot silently contaminate a benchmark on the same model and machine.
 
 ## Workload schema
 

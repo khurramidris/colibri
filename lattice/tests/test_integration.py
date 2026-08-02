@@ -7,6 +7,8 @@ import unittest
 from pathlib import Path
 
 from lattice.cli import main
+from lattice.common import atomic_write_json
+from lattice.suite import parse_suite
 from lattice.workspace import Workspace
 
 
@@ -32,7 +34,7 @@ class IntegrationTests(unittest.TestCase):
             (c_dir / "autotune.py").write_text('# fixture\n', encoding="utf-8")
             (c_dir / "resource_plan.py").write_text(
                 """
-def build_plan(model, policy='quality'):
+def build_plan(model, context=4096, policy='quality'):
     return {
       'cpu': {'physical_cores': 4, 'sockets': 1},
       'tiers': {
@@ -40,7 +42,8 @@ def build_plan(model, policy='quality'):
         'ram': {'cache_slots_per_layer': 2, 'budget_bytes': 1024},
         'vram': {'devices': []}
       },
-      'expected_bottleneck': 'disk expert misses'
+      'expected_bottleneck': 'disk expert misses',
+      'requested_context': context
     }
 def environment_for_plan(plan, env=None, cuda_enabled=True):
     out=dict(env or {})
@@ -82,7 +85,7 @@ print('latency p50 10.0 ms p99 20.0 ms')
                 "hourly_cost_usd": 2.0,
                 "cases": [
                     {"id": "coding", "prompt": "Write a safe parser.", "tokens": 8, "weight": 2},
-                    {"id": "analysis", "prompt": "Compare two systems.", "tokens": 8, "weight": 1},
+                    {"id": "analysis", "prompt": "Compare two systems.", "tokens": 8, "weight": 1, "context": 8192},
                 ],
             }
             suite_path.write_text(json.dumps(suite), encoding="utf-8")
@@ -95,6 +98,9 @@ print('latency p50 10.0 ms p99 20.0 ms')
                 "qualify", "--workspace", str(workspace_path), "--repeats", "2", "--timeout", "10",
             ]), 0)
             workspace = Workspace(workspace_path)
+            project = workspace.load_project()
+            self.assertEqual(project["qualification_context"], 8192)
+            self.assertEqual(project["plan"]["requested_context"], 8192)
             sessions = list(workspace.sessions_dir.glob("*.json"))
             self.assertEqual(len(sessions), 1)
             session = json.loads(sessions[0].read_text(encoding="utf-8"))
@@ -118,6 +124,14 @@ print('latency p50 10.0 ms p99 20.0 ms')
             report = report_path.read_text(encoding="utf-8")
             self.assertIn("Promoted `direct-pipeline`", report)
             self.assertIn("per million generated tokens", report)
+            self.assertEqual(main(["verify", "--workspace", str(workspace_path)]), 0)
+            original_project = workspace.load_project()
+            tampered = dict(original_project)
+            tampered["qualification_environment"] = dict(original_project["qualification_environment"])
+            tampered["qualification_environment"]["COLI_METAL"] = "1"
+            atomic_write_json(workspace.project_path, tampered)
+            self.assertEqual(main(["verify", "--workspace", str(workspace_path)]), 2)
+            atomic_write_json(workspace.project_path, original_project)
             self.assertEqual(main(["verify", "--workspace", str(workspace_path)]), 0)
             self.assertEqual(main(["env", "--workspace", str(workspace_path), "--format", "json"]), 0)
             self.assertEqual(main(["launch", "--workspace", str(workspace_path), "--", "info"]), 0)

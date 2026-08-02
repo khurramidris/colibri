@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -21,6 +22,8 @@ def deployment_environment(workspace: Workspace, *, adaptive: bool = False) -> t
         Path(project["model_path"]),
         engine=Path(project["engine_path"]),
         deep=False,
+        context_length=int(project["qualification_context"]),
+        qualification_overrides=project.get("qualification_environment"),
     )
     env = dict(context.base_environment)
     env.update({str(key): str(value) for key, value in profile["winner"]["environment"].items()})
@@ -31,6 +34,9 @@ def deployment_environment(workspace: Workspace, *, adaptive: bool = False) -> t
         "LATTICE_PROFILE_ID": profile["id"],
     })
     if adaptive:
+        # Adaptive state is useful in production but was deliberately frozen
+        # during qualification. The opt-in is explicit so operators know this
+        # deployment is no longer byte-for-byte the measured environment.
         for key in ("KVSAVE", "AUTOPIN", "REPIN"):
             env.pop(key, None)
     return env, profile
@@ -45,6 +51,7 @@ def launch(workspace: Workspace, coli_args: list[str], *, adaptive: bool = False
     coli = Path(project["repo_root"]) / "c" / "coli"
     if not coli.is_file():
         raise LatticeError(f"Colibri launcher is missing: {coli}")
-    env, _profile = deployment_environment(workspace, adaptive=adaptive)
-    command = [sys.executable, str(coli), *coli_args]
-    return subprocess.call(command, env=env, cwd=str(Path(project["repo_root"])))
+    with workspace.acquire_lock("operation"):
+        env, _profile = deployment_environment(workspace, adaptive=adaptive)
+        command = [sys.executable, str(coli), *coli_args]
+        return subprocess.call(command, env=env, cwd=str(Path(project["repo_root"])))

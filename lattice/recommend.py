@@ -96,6 +96,9 @@ def evaluate_session(
         "selection_policy": policy,
         "model_fingerprint": project["model_fingerprint"],
         "runtime_fingerprint": project["runtime_fingerprint"],
+        "hardware_fingerprint": project["hardware_fingerprint"],
+        "execution_fingerprint": project["execution_fingerprint"],
+        "qualification_context": project["qualification_context"],
         "suite_fingerprint": suite.fingerprint,
         "scores": [score.as_dict() for score in scores],
     }

@@ -38,7 +38,7 @@ def validate_candidate(candidate: Candidate) -> Candidate:
     return Candidate(candidate.id, candidate.description, clean)
 
 
-def default_candidates(plan: dict[str, Any]) -> tuple[Candidate, ...]:
+def default_candidates(plan: dict[str, Any], base_environment: dict[str, str] | None = None) -> tuple[Candidate, ...]:
     candidates: list[Candidate] = [
         Candidate("baseline", "Colibri's generated quality-preserving plan", {}),
     ]
@@ -86,9 +86,12 @@ def default_candidates(plan: dict[str, Any]) -> tuple[Candidate, ...]:
         ])
     unique: list[Candidate] = []
     seen_env: set[tuple[tuple[str, str], ...]] = set()
+    baseline = {key: str(value) for key, value in (base_environment or {}).items() if key in SAFE_TUNABLE_KEYS}
     for candidate in candidates:
         checked = validate_candidate(candidate)
-        signature = tuple(sorted(checked.environment.items()))
+        effective = dict(baseline)
+        effective.update(checked.environment)
+        signature = tuple(sorted(effective.items()))
         if signature in seen_env:
             continue
         seen_env.add(signature)

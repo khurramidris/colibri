@@ -59,6 +59,24 @@ class Workspace:
         data = load_json(self.project_path)
         if not isinstance(data, dict) or data.get("schema_version") != 1:
             raise LatticeError("invalid or unsupported project.json")
+        required = {
+            "repo_root", "model_path", "engine_path", "model_family",
+            "model_fingerprint", "runtime_fingerprint", "hardware_fingerprint",
+            "execution_fingerprint", "qualification_context",
+            "qualification_environment", "storage_topology", "suite",
+            "suite_fingerprint", "plan", "doctor",
+        }
+        missing = sorted(required - set(data))
+        if missing:
+            raise LatticeError("project.json is missing required fields: " + ", ".join(missing))
+        if (isinstance(data["qualification_context"], bool)
+                or not isinstance(data["qualification_context"], int)
+                or not 128 <= data["qualification_context"] <= 262144):
+            raise LatticeError("project.json has an invalid qualification_context")
+        if not isinstance(data["qualification_environment"], dict):
+            raise LatticeError("project.json has an invalid qualification_environment")
+        if not isinstance(data["storage_topology"], dict):
+            raise LatticeError("project.json has an invalid storage_topology")
         return data
 
     def write_run(self, run: dict[str, Any]) -> Path:

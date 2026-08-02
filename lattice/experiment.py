@@ -33,6 +33,11 @@ def create_project(context: ColibriContext, suite: WorkloadSuite) -> dict[str, A
         "model_family": context.model_family,
         "model_fingerprint": context.model_fingerprint,
         "runtime_fingerprint": context.runtime_fingerprint,
+        "hardware_fingerprint": context.hardware_fingerprint,
+        "execution_fingerprint": context.execution_fingerprint,
+        "qualification_context": context.qualification_context,
+        "qualification_environment": context.qualification_environment,
+        "storage_topology": context.storage_topology,
         "suite": suite.as_dict(),
         "suite_fingerprint": suite.fingerprint,
         "plan": context.plan,
@@ -113,6 +118,7 @@ def _execute_task(
         "case_id": case.id,
         "repeat": repeat,
         "replay_sha256": replays[case.id]["sha256"],
+        "execution_fingerprint": context.execution_fingerprint,
     }
     run_id = short_id("run", {**task, "attempt_ns": time.time_ns()})
     progress(f"{case.id}: {candidate.id} ({repeat + 1}/{session['repeats']})")
@@ -209,7 +215,7 @@ def run_experiment(
     if not 1 <= timeout <= 86400:
         raise LatticeError("timeout must be between 1 and 86400 seconds")
     progress = progress or (lambda _message: None)
-    candidate_tuple = candidates or default_candidates(context.plan)
+    candidate_tuple = candidates or default_candidates(context.plan, context.base_environment)
     if not candidate_tuple or candidate_tuple[0].id != "baseline":
         raise LatticeError("candidate matrix must begin with baseline")
     session_seed = {
@@ -220,7 +226,7 @@ def run_experiment(
         "started_at_ns": time.time_ns(),
     }
     session_id = short_id("session", session_seed)
-    with workspace.acquire_lock("experiment"):
+    with workspace.acquire_lock("operation"):
         session: dict[str, Any] = {
             "schema_version": 1,
             "id": session_id,
@@ -230,6 +236,9 @@ def run_experiment(
             "suite_fingerprint": suite.fingerprint,
             "model_fingerprint": context.model_fingerprint,
             "runtime_fingerprint": context.runtime_fingerprint,
+            "hardware_fingerprint": context.hardware_fingerprint,
+            "execution_fingerprint": context.execution_fingerprint,
+            "qualification_context": context.qualification_context,
             "repeats": repeats,
             "timeout_seconds": timeout,
             "candidates": [candidate.as_dict() for candidate in candidate_tuple],
@@ -270,7 +279,7 @@ def resume_experiment(
     progress: Progress | None = None,
 ) -> dict[str, Any]:
     progress = progress or (lambda _message: None)
-    with workspace.acquire_lock("experiment"):
+    with workspace.acquire_lock("operation"):
         project = workspace.load_project()
         session = workspace.load_session(session_id)
         if session.get("status") == "completed":

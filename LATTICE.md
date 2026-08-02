@@ -9,13 +9,13 @@ Colibri is the inference engine: it moves frontier MoE weights across NVMe, RAM 
 The first implementation lives in [`lattice/`](lattice/) and is intentionally narrow. It does **not** claim a new kernel or universal speedup. It provides:
 
 - deep Colibri preflight and plan capture for the currently proven GLM/`colibri` adapter;
-- sampled model-payload and exact runtime fingerprints;
+- sampled primary/split/mirror model-payload, runtime, hardware and controlled-environment fingerprints;
 - deterministic, teacher-forced replay across a weighted workload suite;
 - hardware-specific scheduling and placement candidates only;
 - rotated candidate order to reduce warm-cache/order bias;
 - immutable run evidence, including failures;
 - per-workload regression gates and paired bootstrap confidence intervals;
-- cost-per-million-token estimates from an operator-supplied hourly cost;
+- decode-only cost-per-million-token estimates from an operator-supplied hourly cost;
 - an immutable promoted deployment profile;
 - verification that recomputes the winner from raw run evidence;
 - a customer/investor-readable Markdown qualification report.

@@ -5,6 +5,7 @@ from typing import Any
 
 from .candidates import Candidate, validate_candidate
 from .common import LatticeError, canonical_json, ensure_under, load_json, sha256_bytes, validate_id
+from .colibri import SAFE_TUNABLE_KEYS
 from .suite import WorkloadSuite
 from .workspace import Workspace
 
@@ -54,6 +55,12 @@ def validate_session_evidence(
         raise LatticeError("session model fingerprint does not match project")
     if session.get("runtime_fingerprint") != project.get("runtime_fingerprint"):
         raise LatticeError("session runtime fingerprint does not match project")
+    if session.get("hardware_fingerprint") != project.get("hardware_fingerprint"):
+        raise LatticeError("session hardware fingerprint does not match project")
+    if session.get("execution_fingerprint") != project.get("execution_fingerprint"):
+        raise LatticeError("session execution fingerprint does not match project")
+    if session.get("qualification_context") != project.get("qualification_context"):
+        raise LatticeError("session qualification context does not match project")
     repeats = session.get("repeats")
     if isinstance(repeats, bool) or not isinstance(repeats, int) or not 1 <= repeats <= 20:
         raise LatticeError("session repeats is invalid")
@@ -120,6 +127,8 @@ def validate_session_evidence(
             raise LatticeError(f"run references an uncalibrated workload: {run.get('id')}")
         if run.get("replay_sha256") != replay_hashes[case_id]:
             raise LatticeError(f"replay identity mismatch in run {run.get('id')}")
+        if run.get("execution_fingerprint") != project.get("execution_fingerprint"):
+            raise LatticeError(f"execution identity mismatch in run {run.get('id')}")
         status = run.get("status")
         if status == "success":
             if task in successful_tasks:

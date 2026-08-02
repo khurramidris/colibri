@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
-from .common import utc_now
+from .common import atomic_write_json, utc_now
 from .suite import parse_suite
 from .workspace import Workspace
 
@@ -46,7 +46,8 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
             lines.append(f"Bootstrap confidence interval: **{(ci[0]-1)*100:.2f}% to {(ci[1]-1)*100:.2f}%**.")
         cost = winner_score.get("cost_per_million_usd") if winner_score else None
         if cost is not None:
-            lines.append(f"Estimated hardware cost at the supplied hourly rate: **${cost:.2f} per million generated tokens**.")
+            lines.append(f"Estimated decode-only hardware cost at the supplied hourly rate: **${cost:.2f} per million generated tokens**.")
+            lines.append("This estimate excludes prompt prefill, idle capacity, batching effects, queueing and service overhead.")
     lines.extend([
         "",
         "## Qualified system",
@@ -54,6 +55,9 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
         f"- Model family: `{project.get('model_family')}`",
         f"- Model fingerprint: `{project.get('model_fingerprint')}`",
         f"- Runtime fingerprint: `{project.get('runtime_fingerprint')}`",
+        f"- Hardware fingerprint: `{project.get('hardware_fingerprint')}`",
+        f"- Execution fingerprint: `{project.get('execution_fingerprint')}`",
+        f"- Qualification context: `{project.get('qualification_context')}` tokens",
         f"- Expected bottleneck: `{plan.get('expected_bottleneck', 'unknown')}`",
         f"- Session: `{session['id']}`",
         f"- Repeats per workload/candidate: `{session['repeats']}`",
@@ -90,24 +94,36 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
             f"{_fmt((weighted-1)*100 if weighted else None)}% | {_fmt(worst*100 if worst is not None else None)}% | "
             f"{ci_text} | {_fmt(score.get('effective_tok_s'))} | {score['reason']} |"
         )
-    lines.extend(["", "## Promoted environment", "", "```text"])
+    lines.extend([
+        "",
+        "## Promoted environment",
+        "",
+        "```text",
+    ])
     env = winner.get("environment") or {}
     if env:
         lines.extend(f"{key}={value}" for key, value in sorted(env.items()))
     else:
         lines.append("# baseline: no additional environment overrides")
     lines.extend([
-        "```", "", "## Interpretation and boundaries", "",
-        "This report qualifies one exact combination of model bytes, Colibri runtime bytes, hardware plan and workload suite. It does not establish universal performance for other models, machines or workloads. A changed fingerprint requires requalification.",
+        "```",
         "",
-        "The promoted candidate is limited to execution and placement controls. Lattice does not change quantization, expert selection, sampling policy, model weights or router semantics during this qualification.",
+        "## Interpretation and boundaries",
         "",
-        "Failed candidates remain part of the evidence rather than being hidden from the report.", "",
+        "This report qualifies one exact combination of model bytes, Colibri runtime bytes, hardware plan and workload suite. "
+        "It does not establish universal performance for other models, machines or workloads. A changed fingerprint requires requalification.",
+        "",
+        "The promoted candidate is limited to execution and placement controls. Lattice does not change quantization, expert selection, "
+        "sampling policy, model weights or router semantics during this qualification.",
+        "",
+        "Failed candidates remain part of the evidence rather than being hidden from the report.",
+        "",
     ])
     return "\n".join(lines)
 
 
 def write_report(workspace: Workspace, output: Path, profile_id: str | None = None) -> Path:
     output.parent.mkdir(parents=True, exist_ok=True)
-    output.write_text(render_report(workspace, profile_id), encoding="utf-8", newline="\n")
+    text = render_report(workspace, profile_id)
+    output.write_text(text, encoding="utf-8", newline="\n")
     return output
