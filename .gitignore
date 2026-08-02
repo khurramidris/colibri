@@ -78,3 +78,6 @@ c/tiny_inkling/
 
 # Claude Code working directory (agent worktrees, session scratch) — never a repo artifact
 .claude/
+
+# Local Lattice qualification evidence can include confidential prompts and runtime logs.
+.lattice/
