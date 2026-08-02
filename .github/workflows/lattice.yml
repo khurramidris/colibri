@@ -86,3 +86,6 @@ jobs:
         run: python -m unittest discover -s lattice/tests -v
       - name: CLI smoke test
         run: python -m lattice --version
+
+# Publication is deliberately one-shot: the migration deletes itself, and the
+# workflow is restored to read-only immediately after the tested commit lands.
