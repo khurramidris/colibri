@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import math
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
@@ -8,6 +9,7 @@ from .common import LatticeError, canonical_json, load_json, sha256_bytes, valid
 
 MAX_CASES = 64
 MAX_PROMPT_CHARS = 32768
+MAX_METADATA_BYTES = 65536
 
 
 @dataclass(frozen=True)
@@ -72,11 +74,11 @@ def _as_positive_float(value: Any, label: str, *, allow_zero: bool = False) -> f
     if isinstance(value, bool) or not isinstance(value, (int, float)):
         raise LatticeError(f"{label} must be a number")
     number = float(value)
+    if not math.isfinite(number):
+        raise LatticeError(f"{label} must be finite")
     if number < 0 or (number == 0 and not allow_zero):
         comparator = "non-negative" if allow_zero else "positive"
         raise LatticeError(f"{label} must be {comparator}")
-    if number != number or number == float("inf"):
-        raise LatticeError(f"{label} must be finite")
     return number
 
 
@@ -122,6 +124,9 @@ def parse_suite(data: Any) -> WorkloadSuite:
     metadata = data.get("metadata", {})
     if not isinstance(metadata, dict):
         raise LatticeError("metadata must be an object")
+    metadata_bytes = canonical_json(metadata)
+    if len(metadata_bytes) > MAX_METADATA_BYTES:
+        raise LatticeError(f"metadata exceeds {MAX_METADATA_BYTES} canonical JSON bytes")
     return WorkloadSuite(name.strip(), tuple(cases), hourly_cost, metadata)
 
 
