@@ -9,6 +9,7 @@ on:
       - 'c/Makefile'
       - 'lattice/**'
       - 'tools/lattice_oracle_artifacts.py'
+      - 'tools/lattice_oracle_artifacts_debug.py'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -18,6 +19,7 @@ on:
       - 'c/Makefile'
       - 'lattice/**'
       - 'tools/lattice_oracle_artifacts.py'
+      - 'tools/lattice_oracle_artifacts_debug.py'
       - '.github/workflows/lattice.yml'
 
 permissions:
@@ -44,7 +46,8 @@ jobs:
         if: steps.gate.outputs.enabled == 'true'
         run: |
           python3 tools/lattice_oracle_artifacts.py
-          rm tools/lattice_oracle_artifacts.py
+          python3 tools/lattice_oracle_artifacts_debug.py
+          rm tools/lattice_oracle_artifacts.py tools/lattice_oracle_artifacts_debug.py
       - name: Validate exact transformed tree
         if: steps.gate.outputs.enabled == 'true'
         run: |
@@ -60,7 +63,7 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add c/colibri.c c/replay_oracle.h c/tests/test_replay_oracle.c
           git add lattice
-          git add -u tools/lattice_oracle_artifacts.py
+          git add -u tools/lattice_oracle_artifacts.py tools/lattice_oracle_artifacts_debug.py
           git commit -m 'engine: move exact replay oracle to bounded artifacts'
           git push origin HEAD:agent/lattice-oracle-artifacts
 
