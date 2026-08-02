@@ -7,7 +7,7 @@ from pathlib import Path
 from lattice.common import LatticeError, atomic_write_json, canonical_json, sha256_bytes
 from lattice.evidence import session_evidence_root
 from lattice.oracle import ORACLE_POLICY, ORACLE_SCHEMA
-from lattice.recommend import recommend
+from lattice.recommend import EXPLORATORY_ASSURANCE, SCREENED_ASSURANCE, recommend
 from lattice.workspace import Workspace
 
 PLAN_FINGERPRINT = "p" * 64
@@ -146,7 +146,7 @@ class RecommendTests(unittest.TestCase):
             "error": None,
         }
 
-    def test_fast_candidate_promoted_with_recorded_statistics_policy(self):
+    def test_fast_candidate_is_screened_but_not_declared_deployable(self):
         with tempfile.TemporaryDirectory() as directory:
             ws, replay_hash = self._workspace(Path(directory))
             session = self._session(ws, replay_hash, repeats=3)
@@ -156,17 +156,40 @@ class RecommendTests(unittest.TestCase):
                     ws.write_run(run)
                     session["run_ids"].append(run["id"])
             self._finalize(ws, session)
-            profile, _ = recommend(ws, "session-a", min_runs=3, require_confidence=True)
+            profile, _ = recommend(ws, "session-a")
             self.assertEqual(profile["winner"]["id"], "fast")
-            self.assertEqual(profile["statistics_policy"]["schema"], "lattice-statistics/2")
+            self.assertEqual(profile["statistics_policy"]["schema"], "lattice-statistics/3")
             self.assertEqual(profile["statistics_policy"]["candidate_comparisons"], 1)
             self.assertAlmostEqual(profile["statistics_policy"]["per_candidate_confidence"], 0.90)
+            self.assertEqual(profile["assurance_level"], SCREENED_ASSURANCE)
+            self.assertFalse(profile["deployable"])
+            self.assertIn("not been calibrated", profile["deployment_blocker"])
 
     def test_confidence_gate_requires_three_paired_runs(self):
         with tempfile.TemporaryDirectory() as directory:
             ws, _replay_hash = self._workspace(Path(directory))
             with self.assertRaisesRegex(LatticeError, "requires at least 3 paired runs"):
                 recommend(ws, "session-a", min_runs=2, require_confidence=True)
+
+    def test_two_run_analysis_is_explicitly_exploratory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ws, replay_hash = self._workspace(Path(directory))
+            session = self._session(ws, replay_hash, repeats=2)
+            for repeat in range(2):
+                for run in (
+                    self._run("baseline", repeat, 1.0, replay_hash),
+                    self._run("fast", repeat, 1.2, replay_hash),
+                ):
+                    ws.write_run(run)
+                    session["run_ids"].append(run["id"])
+            self._finalize(ws, session)
+            profile, scores = recommend(
+                ws, "session-a", min_runs=2, require_confidence=False
+            )
+            self.assertEqual(profile["assurance_level"], EXPLORATORY_ASSURANCE)
+            self.assertFalse(profile["deployable"])
+            self.assertIsNone(scores[0].ci_low)
+            self.assertFalse(scores[0].confidence_evaluated)
 
     def test_numerical_oracle_mismatch_retains_baseline(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -179,7 +202,9 @@ class RecommendTests(unittest.TestCase):
                     ws.write_run(run)
                     session["run_ids"].append(run["id"])
             self._finalize(ws, session)
-            profile, scores = recommend(ws, "session-a", min_runs=2)
+            profile, scores = recommend(
+                ws, "session-a", min_runs=2, require_confidence=False
+            )
             self.assertTrue(profile["baseline_retained"])
             self.assertEqual(profile["winner"]["id"], "baseline")
             self.assertIn("numerical oracle mismatch", scores[0].reason)
@@ -198,7 +223,9 @@ class RecommendTests(unittest.TestCase):
                 session["run_ids"].append(run["id"])
             self._finalize(ws, session)
             with self.assertRaisesRegex(LatticeError, "duplicate run task"):
-                recommend(ws, "session-a", min_runs=1)
+                recommend(
+                    ws, "session-a", min_runs=1, require_confidence=False
+                )
 
 
 if __name__ == "__main__":
