@@ -32,6 +32,14 @@ LOAD_RE = re.compile(
     r"resident weights loaded in\s+([0-9.]+)s\s*\|\s*RSS after load:\s*([0-9.]+)\s+GB",
     re.IGNORECASE,
 )
+REFERENCE_TOKENS_RE = re.compile(
+    r"^Reference:\s*([0-9]+(?:\s+[0-9]+)*)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
+ENGINE_TOKENS_RE = re.compile(
+    r"^C engine\s*:\s*([0-9]+(?:\s+[0-9]+)*)\s*$",
+    re.IGNORECASE | re.MULTILINE,
+)
 MATCH_RE = re.compile(r"Matching tokens:\s*(\d+)\s*/\s*(\d+)", re.IGNORECASE)
 PEAK_RE = re.compile(r"PEAK RSS:\s*([0-9.]+)\s+GB", re.IGNORECASE)
 HIT_RE = re.compile(
@@ -74,8 +82,20 @@ def load_reference(path: Path, *, vocab_size: int | None = None) -> dict[str, li
     return {"prompt_ids": list(prompt_ids), "full_ids": list(full_ids)}
 
 
+def _parse_token_line(match: re.Match[str], label: str) -> list[int]:
+    try:
+        values = [int(value) for value in match.group(1).split()]
+    except ValueError as error:
+        raise LatticeError(f"OLMoE {label} token list contains an invalid integer") from error
+    if not values or any(value < 0 for value in values):
+        raise LatticeError(f"OLMoE {label} token list is empty or invalid")
+    return values
+
+
 def parse_olmoe_output(output: str) -> dict[str, Any]:
     load = LOAD_RE.search(output)
+    reference_tokens_match = REFERENCE_TOKENS_RE.search(output)
+    engine_tokens_match = ENGINE_TOKENS_RE.search(output)
     match = MATCH_RE.search(output)
     peak = PEAK_RE.search(output)
     hit = HIT_RE.search(output)
@@ -83,6 +103,8 @@ def parse_olmoe_output(output: str) -> dict[str, Any]:
     missing = [
         name for name, value in (
             ("load telemetry", load),
+            ("printed reference tokens", reference_tokens_match),
+            ("printed engine tokens", engine_tokens_match),
             ("token-match telemetry", match),
             ("peak RSS telemetry", peak),
             ("expert-hit telemetry", hit),
@@ -91,10 +113,16 @@ def parse_olmoe_output(output: str) -> dict[str, Any]:
     ]
     if missing:
         raise LatticeError("OLMoE engine output is missing: " + ", ".join(missing))
-    assert load is not None and match is not None and peak is not None and hit is not None and speed is not None
+    assert load is not None
+    assert reference_tokens_match is not None and engine_tokens_match is not None
+    assert match is not None and peak is not None and hit is not None and speed is not None
+    reference_tokens = _parse_token_line(reference_tokens_match, "reference")
+    engine_tokens = _parse_token_line(engine_tokens_match, "engine")
     metrics = {
         "load_seconds": float(load.group(1)),
         "rss_after_load_gb": float(load.group(2)),
+        "reference_tokens": reference_tokens,
+        "engine_tokens": engine_tokens,
         "matching_tokens": int(match.group(1)),
         "continuation_tokens": int(match.group(2)),
         "peak_rss_gb": float(peak.group(1)),
@@ -113,9 +141,18 @@ def parse_olmoe_output(output: str) -> dict[str, Any]:
         raise LatticeError("OLMoE engine emitted non-finite or negative telemetry")
     if metrics["tok_s"] <= 0 or metrics["continuation_tokens"] <= 0:
         raise LatticeError("OLMoE engine emitted non-positive throughput or token count")
-    if metrics["reported_tokens"] != metrics["continuation_tokens"]:
+    expected_count = metrics["continuation_tokens"]
+    if len(reference_tokens) != expected_count or len(engine_tokens) != expected_count:
+        raise LatticeError("OLMoE printed token-list length does not match continuation length")
+    if metrics["reported_tokens"] != expected_count:
         raise LatticeError("OLMoE speed token count does not match reference continuation")
-    if not 0 <= metrics["matching_tokens"] <= metrics["continuation_tokens"]:
+    actual_matches = sum(
+        reference == generated
+        for reference, generated in zip(reference_tokens, engine_tokens)
+    )
+    if metrics["matching_tokens"] != actual_matches:
+        raise LatticeError("OLMoE printed match counter disagrees with printed token arrays")
+    if not 0 <= metrics["matching_tokens"] <= expected_count:
         raise LatticeError("OLMoE token-match count is invalid")
     if not 0 <= metrics["expert_hit_pct"] <= 100:
         raise LatticeError("OLMoE expert hit percentage is invalid")
@@ -235,6 +272,8 @@ def prepare_olmoe_acceptance(
     hardware, hardware_fingerprint = _hardware_identity(model)
     _, controlled_environment = _acceptance_environment(model, threads)
     reference_sha256 = sha256_file(reference_path)
+    prompt_ids = reference["prompt_ids"]
+    expected_continuation = reference["full_ids"][len(prompt_ids):]
     configuration = {
         "cache_cap_per_layer": cache_cap,
         "quant_bits": quant_bits,
@@ -272,15 +311,16 @@ def prepare_olmoe_acceptance(
         "hardware": hardware,
         "reference_sha256": reference_sha256,
         "reference": {
-            "prompt_tokens": len(reference["prompt_ids"]),
-            "continuation_tokens": len(reference["full_ids"]) - len(reference["prompt_ids"]),
+            "prompt_tokens": len(prompt_ids),
+            "continuation_tokens": len(expected_continuation),
+            "continuation_sha256": sha256_bytes(canonical_json(expected_continuation)),
         },
         "configuration": configuration,
         "runs": [],
     }
 
 
-def _verify_prepared_identity(prepared: dict[str, Any]) -> tuple[dict[str, str], dict[str, str]]:
+def _verify_prepared_identity(prepared: dict[str, Any]) -> tuple[dict[str, str], dict[str, str], list[int]]:
     if prepared.get("schema") != ACCEPTANCE_SCHEMA or prepared.get("model_family") != "olmoe":
         raise LatticeError("invalid OLMoE acceptance record")
     repo_root = Path(prepared["repo_root"])
@@ -290,11 +330,18 @@ def _verify_prepared_identity(prepared: dict[str, Any]) -> tuple[dict[str, str],
     c_dir = repo_root / "c"
     coli = c_dir / "coli"
     config = prepared["configuration"]
+    reference = load_reference(reference_path)
+    prompt_ids = reference["prompt_ids"]
+    expected_continuation = reference["full_ids"][len(prompt_ids):]
     env, controlled = _acceptance_environment(model, config.get("threads"))
     checks = {
         "model": fingerprint_model(model) == prepared.get("model_fingerprint"),
         "runtime": fingerprint_runtime(c_dir, coli, engine) == prepared.get("runtime_fingerprint"),
         "reference": sha256_file(reference_path) == prepared.get("reference_sha256"),
+        "reference continuation": (
+            sha256_bytes(canonical_json(expected_continuation))
+            == prepared.get("reference", {}).get("continuation_sha256")
+        ),
         "environment": controlled == config.get("environment"),
     }
     hardware, hardware_fingerprint = _hardware_identity(model)
@@ -312,15 +359,23 @@ def _verify_prepared_identity(prepared: dict[str, Any]) -> tuple[dict[str, str],
         raise LatticeError("OLMoE acceptance identity changed before execution: " + ", ".join(failed))
     if hardware != prepared.get("hardware"):
         raise LatticeError("OLMoE acceptance hardware description changed before execution")
-    return env, controlled
+    return env, controlled, expected_continuation
+
+
+def _first_token_mismatch(expected: list[int], actual: list[int]) -> str:
+    for index, (expected_token, actual_token) in enumerate(zip(expected, actual)):
+        if expected_token != actual_token:
+            return f"token {index}: expected {expected_token}, got {actual_token}"
+    if len(expected) != len(actual):
+        return f"length differs: expected {len(expected)}, got {len(actual)}"
+    return "unknown mismatch"
 
 
 def run_olmoe_acceptance(prepared: dict[str, Any]) -> dict[str, Any]:
-    model = Path(prepared["model_path"])
     engine = Path(prepared["engine_path"])
     reference_path = Path(prepared["reference_path"])
     config = prepared["configuration"]
-    env, controlled = _verify_prepared_identity(prepared)
+    env, controlled, expected_continuation = _verify_prepared_identity(prepared)
     command = [
         str(engine),
         str(config["cache_cap_per_layer"]),
@@ -348,12 +403,18 @@ def run_olmoe_acceptance(prepared: dict[str, Any]) -> dict[str, Any]:
         else:
             try:
                 metrics = parse_olmoe_output(output)
-                expected = prepared["reference"]["continuation_tokens"]
-                if metrics["continuation_tokens"] != expected:
-                    raise LatticeError("OLMoE engine continuation length differs from reference")
-                if metrics["matching_tokens"] != expected:
+                if metrics["reference_tokens"] != expected_continuation:
                     raise LatticeError(
-                        f"OLMoE token mismatch: {metrics['matching_tokens']}/{expected} matched"
+                        "OLMoE engine printed reference tokens that differ from the supplied reference"
+                    )
+                if metrics["engine_tokens"] != expected_continuation:
+                    raise LatticeError(
+                        "OLMoE token mismatch: "
+                        + _first_token_mismatch(expected_continuation, metrics["engine_tokens"])
+                    )
+                if metrics["matching_tokens"] != len(expected_continuation):
+                    raise LatticeError(
+                        f"OLMoE token mismatch: {metrics['matching_tokens']}/{len(expected_continuation)} matched"
                     )
             except LatticeError as exc:
                 status, error = "failed", str(exc)
@@ -406,6 +467,7 @@ def run_olmoe_acceptance(prepared: dict[str, Any]) -> dict[str, Any]:
         "summary": summary,
         "limitations": [
             "Token-exact agreement is checked against one supplied reference continuation.",
+            "The harness parses and compares the printed token arrays independently of the engine match counter.",
             "This acceptance does not compare complete logit vectors or downstream task quality.",
             "This acceptance does not tune or promote a deployment configuration.",
             "Real-model evidence exists only after this command is run with actual converted OLMoE weights.",
