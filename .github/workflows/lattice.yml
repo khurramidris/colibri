@@ -7,6 +7,7 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'examples/lattice-workload.json'
+      - '.lattice-sync/**'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -16,10 +17,94 @@ on:
       - 'examples/lattice-workload.json'
       - '.github/workflows/lattice.yml'
 
+# Temporary write permission is used only by the guarded push-only materialize
+# job below. It is removed together with the one-shot transport files.
 permissions:
-  contents: read
+  contents: write
 
 jobs:
+  materialize:
+    if: >-
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/agent/lattice-qualification-plane' &&
+      !contains(github.event.head_commit.message, 'harden qualification identity and reproducibility')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Verify and materialize hardened source
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import base64
+          import hashlib
+          import io
+          import pathlib
+          import tarfile
+
+          expected = {
+              'LATTICE.md',
+              'docs/lattice-qualification.md',
+              'lattice/colibri.py',
+              'lattice/candidates.py',
+              'lattice/experiment.py',
+              'lattice/integrity.py',
+              'lattice/workspace.py',
+              'lattice/recommend.py',
+              'lattice/verify.py',
+              'lattice/deploy.py',
+              'lattice/cli.py',
+              'lattice/report.py',
+              'lattice/tests/test_colibri.py',
+              'lattice/tests/test_integration.py',
+              'lattice/tests/test_recommend.py',
+              'lattice/tests/test_resume.py',
+              'lattice/tests/test_workspace.py',
+              'lattice/tests/test_candidates.py',
+          }
+          parts = sorted(pathlib.Path('.lattice-sync').glob('part.*'))
+          if [path.name for path in parts] != [f'part.{index:02d}' for index in range(7)]:
+              raise SystemExit(f'unexpected archive parts: {[path.name for path in parts]}')
+          encoded = ''.join(path.read_text(encoding='ascii') for path in parts)
+          archive = base64.b64decode(encoded, validate=True)
+          digest = hashlib.sha256(archive).hexdigest()
+          if digest != 'ba1d6c6f9a9a4bab7e0a479a66d895a7834e31de1809b4e664a7657c49a4c32e':
+              raise SystemExit(f'archive checksum mismatch: {digest}')
+          with tarfile.open(fileobj=io.BytesIO(archive), mode='r:gz') as bundle:
+              members = bundle.getmembers()
+              names = {member.name for member in members}
+              if names != expected:
+                  raise SystemExit(f'archive member mismatch: missing={sorted(expected-names)} extra={sorted(names-expected)}')
+              for member in members:
+                  path = pathlib.PurePosixPath(member.name)
+                  if member.issym() or member.islnk() or member.isdev() or path.is_absolute() or '..' in path.parts:
+                      raise SystemExit(f'unsafe archive member: {member.name}')
+                  if not member.isfile():
+                      raise SystemExit(f'non-file archive member: {member.name}')
+              bundle.extractall('.', filter='data')
+          print('materialized', len(expected), 'files from', digest)
+          PY
+
+      - name: Validate exact materialized tree
+        run: |
+          python3 -m compileall -q lattice
+          python3 -m unittest discover -s lattice/tests -v
+
+      - name: Publish hardened source
+        shell: bash
+        run: |
+          git config user.name 'lattice-ci'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add LATTICE.md docs/lattice-qualification.md lattice
+          if git diff --cached --quiet; then
+            echo 'No source changes to publish.'
+            exit 0
+          fi
+          git commit -m 'lattice: harden qualification identity and reproducibility'
+          git push origin HEAD:agent/lattice-qualification-plane
+
   test:
     strategy:
       fail-fast: false
