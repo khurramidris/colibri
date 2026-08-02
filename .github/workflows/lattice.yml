@@ -46,9 +46,11 @@ jobs:
           else
             echo 'needed=false' >> "$GITHUB_OUTPUT"
           fi
-      - name: Apply reviewed transformations
+      - name: Apply reviewed transformations and fixture upgrade
         if: steps.migration.outputs.needed == 'true'
-        run: python3 tools/materialize_lattice_identity.py
+        run: |
+          python3 tools/materialize_lattice_identity.py
+          python3 tools/materialize_lattice_test_fixtures.py
       - name: Validate transformed Python controller
         if: steps.migration.outputs.needed == 'true'
         run: |
@@ -63,7 +65,7 @@ jobs:
         run: |
           git config user.name 'lattice-hardening-bot'
           git config user.email 'actions@users.noreply.github.com'
-          git rm tools/materialize_lattice_identity.py .github/workflows/lattice-hardening-materialize.yml
+          git rm tools/materialize_lattice_identity.py tools/materialize_lattice_test_fixtures.py .github/workflows/lattice-hardening-materialize.yml
           git add -A
           git commit -m 'Bind qualification evidence to the frozen execution plan'
           git push origin HEAD:agent/lattice-comprehensive-hardening
