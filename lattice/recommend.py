@@ -6,7 +6,12 @@ from typing import Any
 from .common import LatticeError, short_id, utc_now
 from .integrity import validate_session_evidence
 from .oracle import ORACLE_POLICY, compare_oracles, validate_oracle
-from .stats import CandidateScore, score_candidate
+from .stats import (
+    STATISTICS_POLICY,
+    CandidateScore,
+    bonferroni_confidence,
+    score_candidate,
+)
 from .suite import WorkloadSuite, parse_suite
 from .workspace import Workspace
 
@@ -87,6 +92,10 @@ def evaluate_session(
 ) -> dict[str, Any]:
     if not 1 <= min_runs <= 20:
         raise LatticeError("min_runs must be between 1 and 20")
+    if require_confidence and min_runs < int(STATISTICS_POLICY["minimum_confidence_runs"]):
+        raise LatticeError(
+            f"confidence-gated promotion requires at least {STATISTICS_POLICY['minimum_confidence_runs']} paired runs"
+        )
     if not 0 <= min_gain <= 1:
         raise LatticeError("min_gain must be between 0 and 1")
     if not 0 <= max_regression <= 1:
@@ -102,6 +111,14 @@ def evaluate_session(
         raise LatticeError("promotion requires more runs than the session contains")
     runs = workspace.list_runs(session_id)
     candidate_defs = validate_session_evidence(workspace, project, suite, session, runs)
+    candidate_count = max(1, len(candidate_defs) - 1)
+    per_candidate_confidence = bonferroni_confidence(confidence, candidate_count)
+    statistics_policy = {
+        **STATISTICS_POLICY,
+        "familywise_confidence": confidence,
+        "candidate_comparisons": candidate_count,
+        "per_candidate_confidence": per_candidate_confidence,
+    }
     baseline = _successful_samples(runs, "baseline")
     baseline_runs = _successful_run_map(runs, "baseline")
     _baseline_oracle_stability(baseline_runs)
@@ -124,7 +141,7 @@ def evaluate_session(
             min_runs=min_runs,
             min_gain=min_gain,
             max_regression=max_regression,
-            confidence=confidence,
+            confidence=per_candidate_confidence,
             require_confidence=require_confidence,
             hourly_cost_usd=hourly,
         ))
@@ -145,6 +162,7 @@ def evaluate_session(
         "winner_score": None if winner_score is None else winner_score.as_dict(),
         "baseline_retained": winner_score is None,
         "selection_policy": policy,
+        "statistics_policy": statistics_policy,
         "oracle_policy": dict(ORACLE_POLICY),
         "model_fingerprint": project["model_fingerprint"],
         "runtime_fingerprint": project["runtime_fingerprint"],
@@ -164,6 +182,7 @@ def recommend(workspace: Workspace, session_id: str, **policy: Any) -> tuple[dic
         "session_id": session_id,
         "winner": evaluation["winner"]["id"],
         "policy": seed_policy,
+        "statistics_policy": evaluation["statistics_policy"],
         "oracle_policy": evaluation["oracle_policy"],
         "evidence_root_sha256": evaluation["evidence_root_sha256"],
     }
