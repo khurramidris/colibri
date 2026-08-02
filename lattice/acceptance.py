@@ -131,6 +131,7 @@ def _hardware_identity(model: Path) -> tuple[dict[str, Any], str]:
             "system": platform.system(),
             "release": platform.release(),
             "machine": platform.machine(),
+            "processor": platform.processor(),
             "python": platform.python_version(),
         },
         "logical_cpu_count": os.cpu_count(),
@@ -163,6 +164,24 @@ def _acceptance_environment(model: Path, threads: int | None) -> tuple[dict[str,
         controlled["OMP_NUM_THREADS"] = str(threads)
     env.update(controlled)
     return env, controlled
+
+
+def _execution_fingerprint(
+    *,
+    model_fingerprint: str,
+    runtime_fingerprint: str,
+    hardware_fingerprint: str,
+    reference_sha256: str,
+    configuration: dict[str, Any],
+) -> str:
+    return sha256_bytes(canonical_json({
+        "schema_version": 1,
+        "model_fingerprint": model_fingerprint,
+        "runtime_fingerprint": runtime_fingerprint,
+        "hardware_fingerprint": hardware_fingerprint,
+        "reference_sha256": reference_sha256,
+        "configuration": configuration,
+    }))
 
 
 def prepare_olmoe_acceptance(
@@ -224,13 +243,16 @@ def prepare_olmoe_acceptance(
         "threads": threads,
         "environment": controlled_environment,
     }
+    execution_fingerprint = _execution_fingerprint(
+        model_fingerprint=model_fingerprint,
+        runtime_fingerprint=runtime_fingerprint,
+        hardware_fingerprint=hardware_fingerprint,
+        reference_sha256=reference_sha256,
+        configuration=configuration,
+    )
     seed = {
         "schema": ACCEPTANCE_SCHEMA,
-        "model_fingerprint": model_fingerprint,
-        "runtime_fingerprint": runtime_fingerprint,
-        "hardware_fingerprint": hardware_fingerprint,
-        "reference_sha256": reference_sha256,
-        "configuration": configuration,
+        "execution_fingerprint": execution_fingerprint,
     }
     return {
         "schema_version": 1,
@@ -246,6 +268,7 @@ def prepare_olmoe_acceptance(
         "model_fingerprint": model_fingerprint,
         "runtime_fingerprint": runtime_fingerprint,
         "hardware_fingerprint": hardware_fingerprint,
+        "execution_fingerprint": execution_fingerprint,
         "hardware": hardware,
         "reference_sha256": reference_sha256,
         "reference": {
@@ -257,14 +280,47 @@ def prepare_olmoe_acceptance(
     }
 
 
+def _verify_prepared_identity(prepared: dict[str, Any]) -> tuple[dict[str, str], dict[str, str]]:
+    if prepared.get("schema") != ACCEPTANCE_SCHEMA or prepared.get("model_family") != "olmoe":
+        raise LatticeError("invalid OLMoE acceptance record")
+    repo_root = Path(prepared["repo_root"])
+    model = Path(prepared["model_path"])
+    engine = Path(prepared["engine_path"])
+    reference_path = Path(prepared["reference_path"])
+    c_dir = repo_root / "c"
+    coli = c_dir / "coli"
+    config = prepared["configuration"]
+    env, controlled = _acceptance_environment(model, config.get("threads"))
+    checks = {
+        "model": fingerprint_model(model) == prepared.get("model_fingerprint"),
+        "runtime": fingerprint_runtime(c_dir, coli, engine) == prepared.get("runtime_fingerprint"),
+        "reference": sha256_file(reference_path) == prepared.get("reference_sha256"),
+        "environment": controlled == config.get("environment"),
+    }
+    hardware, hardware_fingerprint = _hardware_identity(model)
+    checks["hardware"] = hardware_fingerprint == prepared.get("hardware_fingerprint")
+    expected_execution = _execution_fingerprint(
+        model_fingerprint=prepared["model_fingerprint"],
+        runtime_fingerprint=prepared["runtime_fingerprint"],
+        hardware_fingerprint=hardware_fingerprint,
+        reference_sha256=prepared["reference_sha256"],
+        configuration=config,
+    )
+    checks["execution"] = expected_execution == prepared.get("execution_fingerprint")
+    failed = [name for name, passed in checks.items() if not passed]
+    if failed:
+        raise LatticeError("OLMoE acceptance identity changed before execution: " + ", ".join(failed))
+    if hardware != prepared.get("hardware"):
+        raise LatticeError("OLMoE acceptance hardware description changed before execution")
+    return env, controlled
+
+
 def run_olmoe_acceptance(prepared: dict[str, Any]) -> dict[str, Any]:
     model = Path(prepared["model_path"])
     engine = Path(prepared["engine_path"])
     reference_path = Path(prepared["reference_path"])
     config = prepared["configuration"]
-    env, controlled = _acceptance_environment(model, config.get("threads"))
-    if controlled != config["environment"]:
-        raise LatticeError("OLMoE acceptance environment no longer matches prepared evidence")
+    env, controlled = _verify_prepared_identity(prepared)
     command = [
         str(engine),
         str(config["cache_cap_per_layer"]),
@@ -373,6 +429,7 @@ def render_acceptance_report(record: dict[str, Any]) -> str:
         f"- Model fingerprint: `{record['model_fingerprint']}`",
         f"- Runtime fingerprint: `{record['runtime_fingerprint']}`",
         f"- Hardware fingerprint: `{record['hardware_fingerprint']}`",
+        f"- Execution fingerprint: `{record['execution_fingerprint']}`",
         f"- Reference SHA-256: `{record['reference_sha256']}`",
         f"- Evidence root: `{record['evidence_root_sha256']}`",
         "",
@@ -413,10 +470,16 @@ def render_acceptance_report(record: dict[str, Any]) -> str:
 
 def write_acceptance_outputs(record: dict[str, Any], output: Path, report: Path | None = None) -> None:
     output = output.expanduser().resolve()
+    report_path = report.expanduser().resolve() if report is not None else None
+    report_text = render_acceptance_report(record) if report_path is not None else None
+    if report_path is not None and report_path.exists():
+        if report_path.read_text(encoding="utf-8") != report_text:
+            raise LatticeError(f"refusing to overwrite acceptance report: {report_path}")
     atomic_write_json(output, record, exclusive=True)
-    if report is not None:
-        report = report.expanduser().resolve()
-        report.parent.mkdir(parents=True, exist_ok=True)
-        if report.exists():
-            raise LatticeError(f"refusing to overwrite acceptance report: {report}")
-        report.write_text(render_acceptance_report(record), encoding="utf-8", newline="\n")
+    if report_path is not None and not report_path.exists():
+        report_path.parent.mkdir(parents=True, exist_ok=True)
+        try:
+            with report_path.open("x", encoding="utf-8", newline="\n") as stream:
+                stream.write(report_text or "")
+        except FileExistsError as error:
+            raise LatticeError(f"refusing to overwrite acceptance report: {report_path}") from error
