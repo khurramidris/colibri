@@ -2,11 +2,13 @@
 
 ## Product thesis
 
-Colibri proves that very large sparse models can execute across heterogeneous memory. Lattice addresses a different commercial question:
+Colibri demonstrates that very large sparse models can execute across heterogeneous memory. Lattice addresses a different commercial question:
 
-> Which exact model/runtime/hardware configuration should a company deploy for its own workload, and can that decision be reproduced and audited?
+> Which tested model/runtime/hardware configuration should a company deploy for its own workload, and can that decision be reproduced and audited?
 
-This is not another static planner. The generated Colibri plan is the baseline. Lattice creates fixed token replays from representative customer prompts, measures a bounded set of quality-preserving execution candidates, preserves every failed trial, applies explicit promotion gates, and emits a deployment profile tied to the exact bytes and workload that produced it.
+This is not another static planner. The generated Colibri plan is the baseline. Lattice creates fixed token replays from representative customer prompts, measures a bounded set of reviewed execution candidates, preserves every failed trial, applies explicit promotion gates, and emits a deployment profile tied to the recorded fingerprints, workload and evidence root.
+
+The current assurance level is **deterministic replay consistency**. It supports controlled throughput comparison under the same forced token path. It does not establish equal logits, probabilities, numerical error, free-running outputs or downstream model quality.
 
 ## Architecture
 
@@ -24,12 +26,14 @@ Colibri deep doctor ──► resource plan ──► model/runtime fingerprint
                 rotated candidate × workload × repeat
                                │
                                ▼
-                     tamper-evident run evidence
+             SHA-256-sealed local run records
+                               │
+                 completed-session evidence root
                                │
               regression + gain + confidence gates
                                │
                                ▼
-             promoted profile + qualification report
+             evidence-bound profile + qualification report
 ```
 
 Lattice imports and relies on the fork's existing `c/resource_plan.py` and `c/doctor.py`. It drives the same engine binaries used by `coli`, and uses Colibri's `TOKENS`, `REF`, `REF_FORCE`, `REPLAY` and `PROF` instrumentation. It deliberately does not duplicate tensor placement or pretend to predict performance without measurement.
@@ -50,12 +54,14 @@ python3 -m lattice init --repo . --model /models/glm52_i4 \
 3. captures Colibri's generated resource plan;
 4. validates every Safetensors header and tensor offset;
 5. fingerprints primary, split and mirror weight directories, including deterministic payload samples;
-6. hashes the launcher, engine and execution-critical support modules;
-7. fingerprints CPU/GPU/storage-device identity and the controlled qualification environment;
+6. hashes the launcher, engine and selected execution-critical support modules;
+7. fingerprints the CPU/GPU plan, storage-device identity and controlled qualification environment;
 8. validates and fingerprints the workload suite;
 9. writes `project.json`.
 
-The model fingerprint is intentionally practical rather than a full hash of hundreds of gigabytes. It hashes all structural metadata and deterministic samples from every shard. A deployment requiring full cryptographic payload attestation should add an offline complete-shard manifest.
+The model fingerprint is intentionally practical rather than a full hash of hundreds of gigabytes. It hashes structural metadata and deterministic samples from every shard. A deployment requiring full cryptographic payload attestation should add an offline complete-shard manifest.
+
+The runtime and hardware fingerprints are also scoped fingerprints, not exhaustive remote attestation. They do not currently cover every linked library, driver, firmware version, thermal state or background process.
 
 ### `qualify`
 
@@ -63,9 +69,13 @@ The model fingerprint is intentionally practical rather than a full hash of hund
 python3 -m lattice qualify --workspace .lattice --repeats 3 --timeout 900
 ```
 
-For each workload, Lattice first asks Colibri to generate one continuation while emitting prompt and generated token IDs. Those IDs become an immutable replay. Every candidate is then teacher-forced over the same token sequence, so scheduling is measured without changing sampling, routing inputs or the continuation.
+For each workload, Lattice first asks Colibri to generate one continuation while emitting prompt and generated token IDs. Those IDs become a hash-identified replay. Every candidate is then forced over the same token sequence, so execution scheduling can be compared without generation randomness.
 
-Candidate order is rotated across workload and repeat to reduce simple order and warm-cache bias. Adaptive pinning, mutable conversation state and quality-affecting environment keys are stripped from the qualification environment.
+This does **not** verify logit equality. A numerical correctness oracle remains a future engine-level requirement.
+
+Candidate order is rotated across workload and repeat to reduce simple order and warm-cache bias. Each trial launches a fresh engine process, but operating-system page cache, machine temperature and competing system load can still affect results. Real qualification should therefore use at least three repeats, a quiet machine and disclosed hardware conditions.
+
+Qualification uses an explicit reviewed allowlist. Unknown `COLI_*`, `OMP_*` and `GOMP_*` variables are stripped from ambient state and rejected when supplied through persisted overrides. Fixed semantic controls such as `COLI_POLICY=quality`, `DRAFT=0`, `KVSAVE=0`, `AUTOPIN=0` and `REPIN=0` are value-constrained and included in the execution fingerprint.
 
 Sessions are checkpointed before calibration, after every completed workload replay, and after every trial. If the process or machine is interrupted, resume the same session without recalibrating completed workloads:
 
@@ -73,7 +83,7 @@ Sessions are checkpointed before calibration, after every completed workload rep
 python3 -m lattice qualify --workspace .lattice --resume <session-id>
 ```
 
-Failed attempts remain tamper-evident evidence. By default a resume retries failed and missing tasks but never reruns a successful task, so retries cannot inflate the minimum-run or confidence gates. Use `--no-retry-failed` to fill only tasks that were never attempted.
+Failed attempts remain in the local evidence set. By default a resume retries failed and missing tasks but never reruns a successful task, so retries cannot inflate minimum-run or confidence gates. Use `--no-retry-failed` to fill only tasks that were never attempted.
 
 The built-in matrix is topology-aware and may include:
 
@@ -82,11 +92,25 @@ The built-in matrix is topology-aware and may include:
 - NUMA interleave on multi-socket hosts;
 - I/O pipeline;
 - direct I/O plus pipeline;
-- value-preserving real pilot prefetch;
+- real pilot prefetch;
 - Linux `io_uring` plus direct I/O;
-- CUDA resident pipeline variants.
+- CUDA resident-pipeline variants.
 
-Only an allowlist of execution and placement controls is eligible. Quantization, `TOPK`, `TOPP`, cache-aware routing, model weights and sampling policy are excluded.
+Only reviewed execution and placement controls are eligible. Quantization changes, `TOPK`, `TOPP`, cache-aware routing, model weights and sampling policy are excluded from the candidate matrix.
+
+### Evidence sealing
+
+Each successful or failed run is stored as JSON with a `record_sha256` digest computed over the complete record except the digest field itself. Loading run evidence verifies that digest.
+
+When a session completes, Lattice computes `evidence_root_sha256` over:
+
+- the completed session definition;
+- every replay hash;
+- every sealed run ID and run digest.
+
+The profile ID includes this evidence root and the exact selection policy. `verify` recomputes the root and winner before deployment.
+
+This is **local tamper evidence**, not cryptographic immutability. A malicious administrator who can rewrite every related file can construct a new internally consistent workspace. The current system has no digital signature, external timestamp, TPM attestation, transparency log or write-once storage.
 
 ### `recommend`
 
@@ -105,19 +129,21 @@ Promotion requires:
 - workload-weighted geometric speedup of at least `min-gain`;
 - optionally, a paired bootstrap lower confidence bound above zero gain.
 
-Cost per million generated tokens uses the operator-supplied hardware cost and the weighted harmonic effective throughput, which reflects time spent across the workload mix. It is explicitly a **decode-only** estimate: prompt prefill, idle capacity, batching, queueing and service overhead require a serving benchmark.
+The statistics are useful screening gates, not a substitute for a full performance study. The current implementation does not yet perform thermal stabilization, power-state control, formal outlier handling, multiple-comparison correction or replication across machines.
+
+Cost per million generated tokens uses the operator-supplied hardware cost and weighted harmonic effective throughput. It is explicitly a **decode-only** estimate: prompt prefill, idle capacity, batching, queueing and service overhead require a serving benchmark.
 
 ### `verify`
 
-`verify` does not trust `current-profile.json`. It recomputes current model, runtime, hardware, storage-topology, maximum-context and controlled-environment identities, validates replay hashes and every run's candidate/task identity, checks the complete task matrix, reruns the selection calculation using the recorded promotion policy, and confirms the profile ID and winner.
+`verify` does not trust `current-profile.json`. It recomputes current model, runtime, hardware, storage-topology, maximum-context and controlled-environment fingerprints; validates replay hashes and every sealed run record; checks the complete task matrix and completed-session evidence root; reruns selection using the recorded policy; and confirms the profile ID and winner.
 
 ### `report`
 
-The Markdown report contains the qualified identities, workload mix, promotion policy, all candidate outcomes, confidence interval, estimated cost and deployment environment. Failed candidates are visible rather than silently removed.
+The Markdown report contains the recorded fingerprints, assurance level, evidence root, workload mix, promotion policy, all candidate outcomes, confidence interval, estimated decode cost and deployment environment. Failed candidates are visible rather than silently removed.
 
 ### `env` and `launch`
 
-`env` and `launch` re-run full evidence verification immediately before deployment. `env` emits the promoted quality-preserving environment as JSON or shell exports. `launch` invokes the fork's own `c/coli` entrypoint with the model and engine bound to the verified profile:
+`env` and `launch` rerun evidence verification immediately before deployment. `env` emits the measured promoted environment as JSON or shell exports. `launch` invokes the fork's own `c/coli` entrypoint with model and engine bound to the verified profile:
 
 ```bash
 python3 -m lattice env --workspace .lattice --format shell
@@ -125,7 +151,9 @@ python3 -m lattice launch --workspace .lattice -- chat
 python3 -m lattice launch --workspace .lattice -- serve --host 127.0.0.1 --port 8000
 ```
 
-A model override is rejected. Adaptive KV persistence and expert-history learning were frozen during qualification; `--adaptive` is therefore an explicit production opt-in and is reported as a departure from the exact measured environment.
+Model, memory, context, accelerator, policy, sampling and auto-tier overrides are rejected during verified launch. Chat is forced to a private local engine rather than auto-attaching to an unrelated server, and Colibri's independent saved tune profile is disabled.
+
+Adaptive KV persistence and expert-history learning were frozen during qualification. `--adaptive` is therefore an explicit production departure from the measured environment.
 
 ## Workspace layout
 
@@ -140,7 +168,9 @@ A model override is rejected. Adaptive KV persistence and expert-history learnin
   reports/
 ```
 
-Run and profile records are immutable. A workspace containing evidence cannot be force-reinitialized; use a new workspace to preserve provenance. Qualification and deployment share one exclusive workspace lock, so a live launch cannot silently contaminate a benchmark on the same model and machine.
+The application refuses to overwrite sealed run records and completed sessions through normal APIs. A workspace containing evidence cannot be force-reinitialized; use a new workspace to preserve provenance. Qualification and deployment share one exclusive workspace lock, so a live launch cannot silently contaminate a benchmark on the same model and machine.
+
+The files remain ordinary local files. Filesystem administrators are outside the current integrity threat model.
 
 ## Workload schema
 
@@ -163,36 +193,40 @@ Run and profile records are immutable. A workspace containing evidence cannot be
 }
 ```
 
-`weight` represents relative production frequency. `expected_contains` may be supplied for a basic calibration-time semantic assertion. Prompts are stored in the local project because they define the workload; do not commit a workspace containing confidential prompts.
+`weight` represents relative production frequency. `expected_contains` may be supplied for a basic calibration-time text assertion. Prompts are stored in the local project because they define the workload; do not commit a workspace containing confidential prompts.
 
-## What this proves
+## What this establishes
 
-A completed qualification proves that, for one exact model/runtime/hardware/workload identity:
+A completed qualification establishes that, for the recorded fingerprints and workload:
 
-- every measured candidate consumed the same replayed tokens;
+- every measured candidate consumed the same forced token sequence;
 - performance telemetry existed and was not truncated;
-- the winner cleared explicit aggregate and per-workload gates;
-- the profile can be recomputed from retained evidence;
-- the estimated cost follows from a disclosed hourly cost assumption.
+- the selected candidate cleared explicit aggregate and per-workload throughput gates;
+- run edits and ordinary evidence-set inconsistencies are detectable;
+- the profile can be recomputed from the retained evidence root and selection policy;
+- the decode-cost estimate follows from a disclosed hourly-cost assumption.
 
-The v0.1 adapter is deliberately limited to GLM/`colibri`. Inkling, Kimi K3 and OLMoE remain Colibri engine capabilities, but they need dedicated Lattice calibration/replay adapters before Lattice can make the same qualification claim for them.
+The v0.2 adapter is deliberately limited to GLM/`colibri`. Inkling, Kimi K3 and OLMoE remain Colibri engine capabilities, but they need dedicated Lattice calibration/replay adapters before Lattice can make the same measurement claim for them.
 
-It does not prove:
+It does not establish:
 
+- real-model performance until run with real weights and target hardware;
 - universal speedup on other hardware or prompts;
-- semantic quality beyond deterministic replay and any supplied assertions;
+- logit, probability, router or free-generation equivalence;
+- downstream model quality;
 - full cryptographic hashing of every tensor payload byte;
+- protection against coordinated evidence rewriting by an administrator;
 - datacenter availability, concurrency or SLA;
 - a new inference kernel.
 
 ## Why this can become a company
 
-The immediate product is qualification and deployment evidence. The compounding assets are:
+The immediate product is workload-specific qualification and deployment evidence. The potential compounding assets are:
 
 1. a normalized corpus of model × hardware × workload × configuration observations;
-2. a performance predictor trained on those observations;
+2. a performance predictor trained on real observations;
 3. engine selection across Colibri, llama.cpp, vLLM, SGLang and vendor runtimes;
 4. continuous adaptation and drift detection in production;
 5. fleet-level placement and procurement recommendations.
 
-The open-source node creates trusted measurements. A commercial control plane can aggregate anonymized evidence, predict feasibility before hardware purchase, manage fleets, enforce deployment policy, and sell validated performance outcomes rather than raw infrastructure.
+Those are future product directions, not capabilities proven by the current prototype. The next decisive milestone is a sanitized qualification report generated with real Colibri weights on documented target hardware.
