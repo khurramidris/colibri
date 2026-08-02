@@ -73,7 +73,7 @@ class AcceptanceTests(unittest.TestCase):
         self.assertEqual(metrics["tok_s"], 2.0)
         self.assertEqual(metrics["peak_rss_gb"], 3.5)
         with self.assertRaisesRegex(LatticeError, "speed token count"):
-            parse_olmoe_output(valid_output(total=2).replace("for 2 tokens", "for 3 tokens"))
+            parse_olmoe_output(valid_output().replace("for 3 tokens", "for 2 tokens"))
         with self.assertRaisesRegex(LatticeError, "match counter disagrees"):
             parse_olmoe_output(valid_output(matching=2))
 
