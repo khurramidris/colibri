@@ -33,6 +33,27 @@ def valid_output(*, matching: int = 3, total: int = 3) -> str:
     )
 
 
+def prepare_fixture(root: Path) -> tuple[Path, Path, Path, Path]:
+    repo = root / "repo"
+    c_dir = repo / "c"
+    model = root / "model"
+    c_dir.mkdir(parents=True)
+    model.mkdir()
+    (c_dir / "coli").write_text("# fixture\n", encoding="utf-8")
+    engine = c_dir / "olmoe"
+    engine.write_text("fixture", encoding="utf-8")
+    (model / "config.json").write_text(
+        json.dumps({"model_type": "olmoe", "vocab_size": 128}), encoding="utf-8"
+    )
+    (model / "tokenizer.json").write_text("{}", encoding="utf-8")
+    write_safetensors(model / "model-00000.safetensors")
+    reference = root / "reference.json"
+    reference.write_text(
+        json.dumps({"prompt_ids": [1, 2], "full_ids": [1, 2, 3, 4, 5]}), encoding="utf-8"
+    )
+    return repo, model, engine, reference
+
+
 class AcceptanceTests(unittest.TestCase):
     def test_reference_validation(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -51,17 +72,23 @@ class AcceptanceTests(unittest.TestCase):
         with self.assertRaisesRegex(LatticeError, "speed token count"):
             parse_olmoe_output(valid_output(total=2).replace("for 2 tokens", "for 3 tokens"))
 
+    def test_reference_drift_stops_before_engine_execution(self):
+        with tempfile.TemporaryDirectory() as directory:
+            repo, model, engine, reference = prepare_fixture(Path(directory))
+            prepared = prepare_olmoe_acceptance(
+                repo, model, reference, engine=engine, repeats=1, timeout=10
+            )
+            reference.write_text(
+                json.dumps({"prompt_ids": [1, 2], "full_ids": [1, 2, 8, 9]}), encoding="utf-8"
+            )
+            with self.assertRaisesRegex(LatticeError, "identity changed.*reference"):
+                run_olmoe_acceptance(prepared)
+
     @unittest.skipIf(os.name == "nt", "fake executable fixture uses a POSIX script")
     def test_acceptance_lifecycle_preserves_exact_evidence(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
-            repo = root / "repo"
-            c_dir = repo / "c"
-            model = root / "model"
-            c_dir.mkdir(parents=True)
-            model.mkdir()
-            (c_dir / "coli").write_text("# fixture\n", encoding="utf-8")
-            engine = c_dir / "olmoe"
+            repo, model, engine, reference = prepare_fixture(root)
             engine.write_text(
                 """#!/usr/bin/env python3
 import os
@@ -76,15 +103,6 @@ print('Speed: 2.00 tok/s (1.5s for 3 tokens)')
                 encoding="utf-8",
             )
             engine.chmod(0o755)
-            (model / "config.json").write_text(
-                json.dumps({"model_type": "olmoe", "vocab_size": 128}), encoding="utf-8"
-            )
-            (model / "tokenizer.json").write_text("{}", encoding="utf-8")
-            write_safetensors(model / "model-00000.safetensors")
-            reference = root / "reference.json"
-            reference.write_text(
-                json.dumps({"prompt_ids": [1, 2], "full_ids": [1, 2, 3, 4, 5]}), encoding="utf-8"
-            )
             prepared = prepare_olmoe_acceptance(
                 repo,
                 model,
@@ -98,11 +116,13 @@ print('Speed: 2.00 tok/s (1.5s for 3 tokens)')
             record = run_olmoe_acceptance(prepared)
             self.assertEqual(record["status"], "accepted")
             self.assertEqual(record["summary"]["successful_runs"], 3)
+            self.assertRegex(record["execution_fingerprint"], r"^[0-9a-f]{64}$")
             self.assertRegex(record["evidence_root_sha256"], r"^[0-9a-f]{64}$")
             self.assertTrue(all(verify_record_digest(run) for run in record["runs"]))
             report = render_acceptance_report(record)
             self.assertIn("TOKEN-EXACT-REFERENCE-REPLAY", report.upper())
             self.assertIn("Exact successful runs: 3/3", report)
+            self.assertIn("Execution fingerprint", report)
             output = root / "acceptance.json"
             markdown = root / "acceptance.md"
             write_acceptance_outputs(record, output, markdown)
@@ -116,14 +136,7 @@ print('Speed: 2.00 tok/s (1.5s for 3 tokens)')
     @unittest.skipIf(os.name == "nt", "fake executable fixture uses a POSIX script")
     def test_token_mismatch_is_rejected_and_retained(self):
         with tempfile.TemporaryDirectory() as directory:
-            root = Path(directory)
-            repo = root / "repo"
-            c_dir = repo / "c"
-            model = root / "model"
-            c_dir.mkdir(parents=True)
-            model.mkdir()
-            (c_dir / "coli").write_text("# fixture\n", encoding="utf-8")
-            engine = c_dir / "olmoe"
+            repo, model, engine, reference = prepare_fixture(Path(directory))
             engine.write_text(
                 """#!/usr/bin/env python3
 print('resident weights loaded in 1.0s | RSS after load: 2.0 GB')
@@ -135,15 +148,6 @@ print('Speed: 1.0 tok/s (3.0s for 3 tokens)')
                 encoding="utf-8",
             )
             engine.chmod(0o755)
-            (model / "config.json").write_text(
-                json.dumps({"model_type": "olmoe", "vocab_size": 128}), encoding="utf-8"
-            )
-            (model / "tokenizer.json").write_text("{}", encoding="utf-8")
-            write_safetensors(model / "model-00000.safetensors")
-            reference = root / "reference.json"
-            reference.write_text(
-                json.dumps({"prompt_ids": [1, 2], "full_ids": [1, 2, 3, 4, 5]}), encoding="utf-8"
-            )
             record = run_olmoe_acceptance(
                 prepare_olmoe_acceptance(repo, model, reference, repeats=1, timeout=10)
             )
