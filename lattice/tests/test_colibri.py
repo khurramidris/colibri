@@ -33,7 +33,6 @@ class ColibriTests(unittest.TestCase):
         self.assertEqual(detect_family({"model_type": "olmoe"}), "olmoe")
         self.assertEqual(detect_family({"model_type": "glm_moe"}), "colibri")
 
-
     def test_non_glm_qualification_is_refused_until_adapter_exists(self):
         with tempfile.TemporaryDirectory() as directory:
             root = Path(directory)
@@ -61,7 +60,6 @@ class ColibriTests(unittest.TestCase):
             changed = fingerprint_model(root)
             shard.write_bytes(data + b"\x00")
             self.assertNotEqual(changed, fingerprint_model(root))
-
 
     def test_storage_topology_fingerprint_covers_mirror_payloads(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -146,7 +144,7 @@ class ColibriTests(unittest.TestCase):
         self.assertEqual(len(parsed["steps"]), 2048)
         with tempfile.TemporaryDirectory() as directory:
             path = Path(directory) / "oracle.tsv"
-            path.write_text(artifact, encoding="utf-8")
+            path.write_bytes(artifact.encode("utf-8"))
             self.assertEqual(read_replay_oracle_file(path), artifact)
 
 

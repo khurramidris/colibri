@@ -4,7 +4,7 @@ import tempfile
 import unittest
 from pathlib import Path
 
-from lattice.common import atomic_write_json, canonical_json, sha256_bytes
+from lattice.common import LatticeError, atomic_write_json, canonical_json, sha256_bytes
 from lattice.evidence import session_evidence_root
 from lattice.oracle import ORACLE_POLICY, ORACLE_SCHEMA
 from lattice.recommend import recommend
@@ -109,18 +109,27 @@ class RecommendTests(unittest.TestCase):
             "output_truncated": False,
         }
 
-    def test_fast_candidate_promoted(self):
+    def test_fast_candidate_promoted_with_recorded_statistics_policy(self):
         with tempfile.TemporaryDirectory() as directory:
             ws, replay_hash = self._workspace(Path(directory))
-            session = self._session(ws, replay_hash, repeats=2)
-            for candidate, values in (("baseline", [1.0, 1.0]), ("fast", [1.2, 1.2])):
+            session = self._session(ws, replay_hash, repeats=3)
+            for candidate, values in (("baseline", [1.0, 1.0, 1.0]), ("fast", [1.2, 1.2, 1.2])):
                 for repeat, value in enumerate(values):
                     run = self._run(candidate, repeat, value, replay_hash)
                     ws.write_run(run)
                     session["run_ids"].append(run["id"])
             self._finalize(ws, session)
-            profile, _ = recommend(ws, "session-a", min_runs=2, require_confidence=True)
+            profile, _ = recommend(ws, "session-a", min_runs=3, require_confidence=True)
             self.assertEqual(profile["winner"]["id"], "fast")
+            self.assertEqual(profile["statistics_policy"]["schema"], "lattice-statistics/2")
+            self.assertEqual(profile["statistics_policy"]["candidate_comparisons"], 1)
+            self.assertAlmostEqual(profile["statistics_policy"]["per_candidate_confidence"], 0.90)
+
+    def test_confidence_gate_requires_three_paired_runs(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ws, _replay_hash = self._workspace(Path(directory))
+            with self.assertRaisesRegex(LatticeError, "requires at least 3 paired runs"):
+                recommend(ws, "session-a", min_runs=2, require_confidence=True)
 
     def test_numerical_oracle_mismatch_retains_baseline(self):
         with tempfile.TemporaryDirectory() as directory:

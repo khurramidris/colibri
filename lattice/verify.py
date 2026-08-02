@@ -39,6 +39,7 @@ def verify_workspace(workspace: Workspace, *, deep: bool = False) -> dict[str, A
             "session_id": profile["session_id"],
             "winner": evaluation["winner"]["id"],
             "policy": evaluation["selection_policy"],
+            "statistics_policy": evaluation["statistics_policy"],
             "oracle_policy": evaluation["oracle_policy"],
             "evidence_root_sha256": evaluation["evidence_root_sha256"],
         })
@@ -52,6 +53,7 @@ def verify_workspace(workspace: Workspace, *, deep: bool = False) -> dict[str, A
             "profile_suite_fingerprint": profile.get("suite_fingerprint") == project.get("suite_fingerprint"),
             "profile_evidence_root": profile.get("evidence_root_sha256") == evaluation.get("evidence_root_sha256"),
             "profile_oracle_policy": profile.get("oracle_policy") == evaluation.get("oracle_policy"),
+            "profile_statistics_policy": profile.get("statistics_policy") == evaluation.get("statistics_policy"),
             "profile_recomputed": canonical_json({k: profile.get(k) for k in evaluation}) == canonical_json(evaluation),
         })
     failed = [name for name, passed in checks.items() if not passed]

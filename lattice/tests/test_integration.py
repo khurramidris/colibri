@@ -8,7 +8,6 @@ from pathlib import Path
 
 from lattice.cli import main
 from lattice.common import atomic_write_json
-from lattice.suite import parse_suite
 from lattice.workspace import Workspace
 
 
@@ -26,7 +25,8 @@ class IntegrationTests(unittest.TestCase):
             c_dir = repo / "c"
             model = root / "model"
             workspace_path = root / "workspace"
-            c_dir.mkdir(parents=True); model.mkdir()
+            c_dir.mkdir(parents=True)
+            model.mkdir()
             (model / "config.json").write_text('{"model_type":"glm_moe"}', encoding="utf-8")
             (model / "tokenizer.json").write_text('{}', encoding="utf-8")
             write_safetensors(model / "model-00001-of-00001.safetensors")
@@ -109,7 +109,7 @@ print('latency p50 10.0 ms p99 20.0 ms')
                 "--workspace", str(workspace_path),
             ]), 0)
             self.assertEqual(main([
-                "qualify", "--workspace", str(workspace_path), "--repeats", "2", "--timeout", "10",
+                "qualify", "--workspace", str(workspace_path), "--repeats", "3", "--timeout", "10",
             ]), 0)
             workspace = Workspace(workspace_path)
             project = workspace.load_project()
@@ -122,14 +122,14 @@ print('latency p50 10.0 ms p99 20.0 ms')
             self.assertRegex(session["evidence_root_sha256"], r"^[0-9a-f]{64}$")
             self.assertEqual(session["oracle_policy"]["schema"], "coli-replay-oracle/2")
             runs = workspace.list_runs(session["id"])
-            self.assertEqual(len(runs), len(session["candidates"]) * 2 * 2)
+            self.assertEqual(len(runs), len(session["candidates"]) * 2 * 3)
             self.assertTrue(all("record_sha256" in run for run in runs))
             self.assertTrue(all(
                 run["status"] != "success" or "oracle" in run["metrics"]
                 for run in runs
             ))
             has_io_uring = any(candidate["id"] == "io-uring" for candidate in session["candidates"])
-            expected_failures = 4 if has_io_uring else 0
+            expected_failures = 6 if has_io_uring else 0
             self.assertEqual(
                 sum(run["status"] == "failed" for run in runs),
                 expected_failures,
@@ -138,12 +138,15 @@ print('latency p50 10.0 ms p99 20.0 ms')
 
             self.assertEqual(main([
                 "recommend", "--workspace", str(workspace_path), "--session", session["id"],
-                "--min-runs", "2", "--min-gain", "0.03", "--require-confidence",
+                "--min-runs", "3", "--min-gain", "0.03", "--require-confidence",
             ]), 0)
             profile = workspace.load_profile()
             self.assertEqual(profile["winner"]["id"], "direct-pipeline")
             self.assertEqual(profile["evidence_root_sha256"], session["evidence_root_sha256"])
             self.assertEqual(profile["oracle_policy"], session["oracle_policy"])
+            self.assertEqual(profile["statistics_policy"]["schema"], "lattice-statistics/2")
+            self.assertEqual(profile["statistics_policy"]["bootstrap"], "stratified_paired_case_medians")
+            self.assertGreater(profile["statistics_policy"]["per_candidate_confidence"], 0.90)
             report_path = root / "report.md"
             self.assertEqual(main([
                 "report", "--workspace", str(workspace_path), "--output", str(report_path),
@@ -152,7 +155,8 @@ print('latency p50 10.0 ms p99 20.0 ms')
             self.assertIn("Promoted `direct-pipeline`", report)
             self.assertIn("per million generated tokens", report)
             self.assertIn("Numerical replay consistency", report)
-            self.assertIn("Absolute tolerance", report)
+            self.assertIn("Stratified", report)
+            self.assertIn("Bonferroni", report)
             self.assertIn(session["evidence_root_sha256"], report)
             self.assertEqual(main(["verify", "--workspace", str(workspace_path)]), 0)
             original_project = workspace.load_project()

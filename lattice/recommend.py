@@ -6,14 +6,18 @@ from typing import Any
 from .common import LatticeError, short_id, utc_now
 from .integrity import validate_session_evidence
 from .oracle import ORACLE_POLICY, compare_oracles, validate_oracle
-from .stats import CandidateScore, score_candidate
+from .stats import (
+    STATISTICS_POLICY,
+    CandidateScore,
+    bonferroni_confidence,
+    score_candidate,
+)
 from .suite import WorkloadSuite, parse_suite
 from .workspace import Workspace
 
 
-def _successful_samples(runs: list[dict[str, Any]], candidate_id: str) -> dict[str, list[float]]:
-    values: dict[str, list[tuple[int, float]]] = {}
-    seen: set[tuple[str, int]] = set()
+def _successful_samples(runs: list[dict[str, Any]], candidate_id: str) -> dict[str, dict[int, float]]:
+    values: dict[str, dict[int, float]] = {}
     for run in runs:
         if run.get("candidate_id") != candidate_id or run.get("status") != "success":
             continue
@@ -21,14 +25,14 @@ def _successful_samples(runs: list[dict[str, Any]], candidate_id: str) -> dict[s
         repeat = run.get("repeat")
         metrics = run.get("metrics") or {}
         tok_s = metrics.get("tok_s")
-        if not isinstance(case_id, str) or not isinstance(repeat, int) or not isinstance(tok_s, (int, float)) or tok_s <= 0:
+        if (not isinstance(case_id, str) or isinstance(repeat, bool) or not isinstance(repeat, int)
+                or isinstance(tok_s, bool) or not isinstance(tok_s, (int, float)) or tok_s <= 0):
             continue
-        key = (case_id, repeat)
-        if key in seen:
+        case_values = values.setdefault(case_id, {})
+        if repeat in case_values:
             raise LatticeError(f"duplicate successful evidence for {candidate_id}/{case_id}/repeat-{repeat}")
-        seen.add(key)
-        values.setdefault(case_id, []).append((repeat, float(tok_s)))
-    return {case_id: [value for _, value in sorted(samples)] for case_id, samples in values.items()}
+        case_values[repeat] = float(tok_s)
+    return values
 
 
 def _successful_run_map(runs: list[dict[str, Any]], candidate_id: str) -> dict[tuple[str, int], dict[str, Any]]:
@@ -87,6 +91,10 @@ def evaluate_session(
 ) -> dict[str, Any]:
     if not 1 <= min_runs <= 20:
         raise LatticeError("min_runs must be between 1 and 20")
+    if require_confidence and min_runs < int(STATISTICS_POLICY["minimum_confidence_runs"]):
+        raise LatticeError(
+            f"confidence-gated promotion requires at least {STATISTICS_POLICY['minimum_confidence_runs']} paired runs"
+        )
     if not 0 <= min_gain <= 1:
         raise LatticeError("min_gain must be between 0 and 1")
     if not 0 <= max_regression <= 1:
@@ -102,6 +110,14 @@ def evaluate_session(
         raise LatticeError("promotion requires more runs than the session contains")
     runs = workspace.list_runs(session_id)
     candidate_defs = validate_session_evidence(workspace, project, suite, session, runs)
+    candidate_count = max(1, len(candidate_defs) - 1)
+    per_candidate_confidence = bonferroni_confidence(confidence, candidate_count)
+    statistics_policy = {
+        **STATISTICS_POLICY,
+        "familywise_confidence": confidence,
+        "candidate_comparisons": candidate_count,
+        "per_candidate_confidence": per_candidate_confidence,
+    }
     baseline = _successful_samples(runs, "baseline")
     baseline_runs = _successful_run_map(runs, "baseline")
     _baseline_oracle_stability(baseline_runs)
@@ -124,7 +140,7 @@ def evaluate_session(
             min_runs=min_runs,
             min_gain=min_gain,
             max_regression=max_regression,
-            confidence=confidence,
+            confidence=per_candidate_confidence,
             require_confidence=require_confidence,
             hourly_cost_usd=hourly,
         ))
@@ -145,6 +161,7 @@ def evaluate_session(
         "winner_score": None if winner_score is None else winner_score.as_dict(),
         "baseline_retained": winner_score is None,
         "selection_policy": policy,
+        "statistics_policy": statistics_policy,
         "oracle_policy": dict(ORACLE_POLICY),
         "model_fingerprint": project["model_fingerprint"],
         "runtime_fingerprint": project["runtime_fingerprint"],
@@ -164,6 +181,7 @@ def recommend(workspace: Workspace, session_id: str, **policy: Any) -> tuple[dic
         "session_id": session_id,
         "winner": evaluation["winner"]["id"],
         "policy": seed_policy,
+        "statistics_policy": evaluation["statistics_policy"],
         "oracle_policy": evaluation["oracle_policy"],
         "evidence_root_sha256": evaluation["evidence_root_sha256"],
     }
