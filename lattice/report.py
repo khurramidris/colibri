@@ -25,6 +25,7 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
     winner_score = profile.get("winner_score")
     plan = project.get("plan") or {}
     policy = profile["selection_policy"]
+    oracle = profile.get("oracle_policy") or session.get("oracle_policy") or {}
     lines = [
         f"# Lattice qualification report — {suite.name}",
         "",
@@ -34,7 +35,7 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
         "",
     ]
     if profile.get("baseline_retained"):
-        lines.append("**Baseline retained.** No tested candidate cleared every performance, regression and evidence gate.")
+        lines.append("**Baseline retained.** No tested candidate cleared every numerical-consistency, performance, regression and evidence gate.")
     else:
         speedup = winner_score.get("weighted_speedup") if winner_score else None
         ci = winner_score.get("confidence_interval") if winner_score else None
@@ -52,9 +53,18 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
         "",
         "## Assurance level",
         "",
-        "**Deterministic replay consistency.** Every measured candidate was forced over the same recorded prompt and continuation token IDs.",
+        "**Numerical replay consistency.** Every measured candidate was forced over the same recorded prompt and continuation token IDs and compared with a versioned numerical sketch of every replay-step logit vector.",
         "",
-        "This controls generation randomness for the timing comparison. It does not prove equal logits, token probabilities, numerical error, router decisions, free-running outputs or downstream task quality.",
+        "The gate requires exact forced-token, top-1, top-2 and top-k identity; rejects non-finite logits; and compares selected logits, moments and four deterministic full-vector projections within the recorded tolerances.",
+        "",
+        "This is stronger than token replay alone, but it is not complete logit equality, formal numerical equivalence, semantic equivalence or downstream model-quality validation. The current tolerances still require calibration on real supported CPU/GPU deployments.",
+        "",
+        "## Numerical-oracle policy",
+        "",
+        f"- Schema: `{oracle.get('schema', 'missing')}`",
+        f"- Exact top-k identity size: `{oracle.get('topk', 'missing')}`",
+        f"- Absolute tolerance: `{oracle.get('absolute_tolerance', 'missing')}`",
+        f"- Relative tolerance: `{oracle.get('relative_tolerance', 'missing')}`",
         "",
         "## Qualified system fingerprints",
         "",
@@ -117,13 +127,13 @@ def render_report(workspace: Workspace, profile_id: str | None = None) -> str:
         "",
         "## Interpretation and boundaries",
         "",
-        "This report applies to the recorded sampled model/topology fingerprint, runtime fingerprint, hardware-plan fingerprint, controlled execution environment and workload suite. It does not establish universal performance for other models, machines or workloads. A changed fingerprint requires requalification.",
+        "This report applies to the recorded sampled model/topology fingerprint, runtime fingerprint, hardware-plan fingerprint, controlled execution environment and workload suite. It does not establish universal performance for other models, machines or workloads. A changed fingerprint or oracle policy requires requalification.",
         "",
         "The promoted candidate is limited to reviewed execution and placement controls. Lattice does not intentionally change quantization, expert selection, sampling policy, model weights or router semantics during this qualification.",
         "",
         "Run records carry individual SHA-256 digests and the completed session carries an evidence root over the session definition, replay hashes and run digests. This detects ordinary local edits but is not remote attestation, a digital signature or write-once storage.",
         "",
-        "Failed candidates remain part of the retained evidence rather than being hidden from the report.",
+        "Failed candidates and numerical-oracle mismatches remain part of the retained evidence rather than being hidden from the report.",
         "",
     ])
     return "\n".join(lines)
