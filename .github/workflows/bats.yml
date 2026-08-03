@@ -30,6 +30,10 @@ on:
       - "c/tools/bats_shadow_report.py"
       - ".github/workflows/bats.yml"
 
+concurrency:
+  group: bats-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
