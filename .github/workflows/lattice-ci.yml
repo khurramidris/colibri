@@ -12,6 +12,10 @@ on:
       - "lattice/**"
       - ".github/workflows/lattice-ci.yml"
 
+concurrency:
+  group: lattice-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 permissions:
   contents: read
 
