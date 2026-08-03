@@ -20,6 +20,15 @@ class TierCost:
     overlap: float = 0.0
 
 
+def marginal_bytes(expert: dict) -> int:
+    if expert.get("resident_in_exec") or expert["tier"] == "exec":
+        return 0
+    total = int(expert["bytes"])
+    if expert.get("in_flight") and int(expert.get("remaining_bytes", 0)) > 0:
+        return min(total, int(expert["remaining_bytes"]))
+    return total
+
+
 def transfer_us(expert: dict, tiers: dict[str, TierCost]) -> float:
     if expert.get("resident_in_exec") or expert["tier"] == "exec":
         return 0.0
@@ -29,8 +38,10 @@ def transfer_us(expert: dict, tiers: dict[str, TierCost]) -> float:
     if tier not in tiers or tiers[tier].bandwidth_gbps <= 0:
         return math.inf
     cfg = tiers[tier]
-    payload = float(expert["bytes"]) / (cfg.bandwidth_gbps * 1000.0)
-    return cfg.fixed_us + cfg.queue_us + payload * (1.0 - min(1.0, max(0.0, cfg.overlap)))
+    payload = float(marginal_bytes(expert)) / (cfg.bandwidth_gbps * 1000.0)
+    return cfg.fixed_us + cfg.queue_us + payload * (
+        1.0 - min(1.0, max(0.0, cfg.overlap))
+    )
 
 
 def choose(record: dict) -> dict:
@@ -46,7 +57,10 @@ def choose(record: dict) -> dict:
     total_bytes = 0
     total_tokens = 0.0
     budget = float(record.get("budget_us", 0.0))
-    limit = min(int(record.get("max_candidates", len(record["candidates"]))), len(record["candidates"]))
+    limit = min(
+        int(record.get("max_candidates", len(record["candidates"]))),
+        len(record["candidates"]),
+    )
 
     while len(selected) < limit:
         best = None
@@ -54,13 +68,14 @@ def choose(record: dict) -> dict:
             if index in selected:
                 continue
             new = set(map(int, candidate["experts"])) - union
-            cost = float(candidate.get("verify_compute_us", 0.0)) + float(candidate.get("kv_us", 0.0))
+            cost = float(candidate.get("verify_compute_us", 0.0)) + float(
+                candidate.get("kv_us", 0.0)
+            )
             byte_cost = 0
             for eid in new:
                 expert = experts[eid]
                 cost += transfer_us(expert, tiers)
-                if not expert.get("resident_in_exec") and expert["tier"] != "exec":
-                    byte_cost += int(expert["bytes"])
+                byte_cost += marginal_bytes(expert)
             if budget > 0 and total_us + cost > budget:
                 continue
             expected = float(candidate["expected_accepted_tokens"])
