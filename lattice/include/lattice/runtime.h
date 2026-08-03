@@ -110,6 +110,8 @@ int lt_runtime_run_until_idle(lt_runtime_t *runtime,
                               char *error,
                               size_t error_cap);
 
+/* Notify the runtime after the adapter evicts a completed tensor. */
+int lt_runtime_forget(lt_runtime_t *runtime, uint64_t tensor_id);
 size_t lt_runtime_cancel_speculative(lt_runtime_t *runtime,
                                      double min_confidence);
 lt_runtime_stats_t lt_runtime_stats(lt_runtime_t *runtime);
