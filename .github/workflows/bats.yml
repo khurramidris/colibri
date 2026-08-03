@@ -9,9 +9,11 @@ on:
       - "c/tests/test_bats.c"
       - "c/tests/test_bats_replay.py"
       - "c/tests/test_bats_route_trace.py"
+      - "c/tests/test_bats_shadow_report.py"
       - "c/tests/bats_trace.jsonl"
       - "c/tools/bats_replay.py"
       - "c/tools/bats_route_trace.py"
+      - "c/tools/bats_shadow_report.py"
       - ".github/workflows/bats.yml"
   pull_request:
     paths:
@@ -21,9 +23,11 @@ on:
       - "c/tests/test_bats.c"
       - "c/tests/test_bats_replay.py"
       - "c/tests/test_bats_route_trace.py"
+      - "c/tests/test_bats_shadow_report.py"
       - "c/tests/bats_trace.jsonl"
       - "c/tools/bats_replay.py"
       - "c/tools/bats_route_trace.py"
+      - "c/tools/bats_shadow_report.py"
       - ".github/workflows/bats.yml"
 
 permissions:
@@ -44,5 +48,7 @@ jobs:
         run: python3 c/tests/test_bats_replay.py -v
       - name: Test Colibri route trace adapter
         run: python3 c/tests/test_bats_route_trace.py -v
+      - name: Test shadow calibration report
+        run: python3 c/tests/test_bats_shadow_report.py -v
       - name: Compile exact OLMoE shadow runtime
         run: make -C c -f Makefile.bats olmoe-bats ARCH=x86-64-v3
