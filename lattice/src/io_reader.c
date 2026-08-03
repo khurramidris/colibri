@@ -20,10 +20,12 @@ struct lt_io_reader {
     size_t queue_count;
     pthread_mutex_t mutex;
     pthread_cond_t has_work;
+    pthread_cond_t has_space;
     pthread_cond_t idle;
     int stopping;
     int initialized_mutex;
     int initialized_has_work;
+    int initialized_has_space;
     int initialized_idle;
     int any_failure;
     lt_io_completion_fn completion;
@@ -54,6 +56,23 @@ static int lt_pread_full(const lt_io_job_t *job, uint64_t *out_read) {
     return 0;
 }
 
+static int lt_job_valid(const lt_io_job_t *job) {
+    return job && job->tensor_id != 0 && job->fd >= 0 &&
+           job->destination && job->bytes != 0 && job->bytes <= SIZE_MAX &&
+           job->offset <= (uint64_t)INT64_MAX &&
+           job->bytes - 1 <= (uint64_t)INT64_MAX - job->offset;
+}
+
+static void lt_enqueue_locked(lt_io_reader_t *reader, const lt_io_job_t *job) {
+    reader->queue[reader->queue_tail] = *job;
+    reader->queue_tail = (reader->queue_tail + 1) % reader->queue_capacity;
+    reader->queue_count++;
+    reader->stats.submitted_jobs++;
+    reader->stats.submitted_bytes += job->bytes;
+    reader->stats.queued_jobs++;
+    pthread_cond_signal(&reader->has_work);
+}
+
 static void *lt_io_worker(void *opaque) {
     lt_io_reader_t *reader = (lt_io_reader_t *)opaque;
     for (;;) {
@@ -72,6 +91,7 @@ static void *lt_io_worker(void *opaque) {
         reader->queue_count--;
         reader->stats.queued_jobs--;
         reader->stats.inflight_jobs++;
+        pthread_cond_signal(&reader->has_space);
         pthread_mutex_unlock(&reader->mutex);
 
         status = lt_pread_full(&job, &bytes_read);
@@ -121,6 +141,8 @@ lt_io_reader_t *lt_io_reader_create(size_t workers,
     reader->initialized_mutex = 1;
     if (pthread_cond_init(&reader->has_work, NULL) != 0) goto fail;
     reader->initialized_has_work = 1;
+    if (pthread_cond_init(&reader->has_space, NULL) != 0) goto fail;
+    reader->initialized_has_space = 1;
     if (pthread_cond_init(&reader->idle, NULL) != 0) goto fail;
     reader->initialized_idle = 1;
     for (created = 0; created < workers; ++created) {
@@ -133,6 +155,7 @@ fail_threads:
     pthread_mutex_lock(&reader->mutex);
     reader->stopping = 1;
     pthread_cond_broadcast(&reader->has_work);
+    pthread_cond_broadcast(&reader->has_space);
     pthread_mutex_unlock(&reader->mutex);
     while (created > 0) {
         --created;
@@ -140,6 +163,7 @@ fail_threads:
     }
 fail:
     if (reader->initialized_idle) pthread_cond_destroy(&reader->idle);
+    if (reader->initialized_has_space) pthread_cond_destroy(&reader->has_space);
     if (reader->initialized_has_work) pthread_cond_destroy(&reader->has_work);
     if (reader->initialized_mutex) pthread_mutex_destroy(&reader->mutex);
     free(reader->threads);
@@ -155,9 +179,11 @@ void lt_io_reader_destroy(lt_io_reader_t *reader) {
     pthread_mutex_lock(&reader->mutex);
     reader->stopping = 1;
     pthread_cond_broadcast(&reader->has_work);
+    pthread_cond_broadcast(&reader->has_space);
     pthread_mutex_unlock(&reader->mutex);
     for (i = 0; i < reader->workers; ++i) pthread_join(reader->threads[i], NULL);
     pthread_cond_destroy(&reader->idle);
+    pthread_cond_destroy(&reader->has_space);
     pthread_cond_destroy(&reader->has_work);
     pthread_mutex_destroy(&reader->mutex);
     free(reader->threads);
@@ -166,11 +192,7 @@ void lt_io_reader_destroy(lt_io_reader_t *reader) {
 }
 
 int lt_io_reader_submit(lt_io_reader_t *reader, const lt_io_job_t *job) {
-    if (!reader || !job || job->tensor_id == 0 || job->fd < 0 ||
-        !job->destination || job->bytes == 0 || job->bytes > SIZE_MAX ||
-        job->offset > (uint64_t)INT64_MAX ||
-        job->bytes - 1 > (uint64_t)INT64_MAX - job->offset)
-        return -1;
+    if (!reader || !lt_job_valid(job)) return -1;
     pthread_mutex_lock(&reader->mutex);
     if (reader->stopping) {
         pthread_mutex_unlock(&reader->mutex);
@@ -180,13 +202,21 @@ int lt_io_reader_submit(lt_io_reader_t *reader, const lt_io_job_t *job) {
         pthread_mutex_unlock(&reader->mutex);
         return 0;
     }
-    reader->queue[reader->queue_tail] = *job;
-    reader->queue_tail = (reader->queue_tail + 1) % reader->queue_capacity;
-    reader->queue_count++;
-    reader->stats.submitted_jobs++;
-    reader->stats.submitted_bytes += job->bytes;
-    reader->stats.queued_jobs++;
-    pthread_cond_signal(&reader->has_work);
+    lt_enqueue_locked(reader, job);
+    pthread_mutex_unlock(&reader->mutex);
+    return 1;
+}
+
+int lt_io_reader_submit_wait(lt_io_reader_t *reader, const lt_io_job_t *job) {
+    if (!reader || !lt_job_valid(job)) return -1;
+    pthread_mutex_lock(&reader->mutex);
+    while (reader->queue_count == reader->queue_capacity && !reader->stopping)
+        pthread_cond_wait(&reader->has_space, &reader->mutex);
+    if (reader->stopping) {
+        pthread_mutex_unlock(&reader->mutex);
+        return -1;
+    }
+    lt_enqueue_locked(reader, job);
     pthread_mutex_unlock(&reader->mutex);
     return 1;
 }
