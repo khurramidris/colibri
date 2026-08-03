@@ -5,6 +5,7 @@ on:
     paths:
       - "c/bats.h"
       - "c/tests/test_bats.c"
+      - "c/tests/test_bats_replay.py"
       - "c/tests/bats_trace.jsonl"
       - "c/tools/bats_replay.py"
       - ".github/workflows/bats.yml"
@@ -12,6 +13,7 @@ on:
     paths:
       - "c/bats.h"
       - "c/tests/test_bats.c"
+      - "c/tests/test_bats_replay.py"
       - "c/tests/bats_trace.jsonl"
       - "c/tools/bats_replay.py"
       - ".github/workflows/bats.yml"
@@ -30,3 +32,5 @@ jobs:
         run: /tmp/test_bats
       - name: Run independent replay oracle
         run: python3 c/tools/bats_replay.py c/tests/bats_trace.jsonl --pretty
+      - name: Test replay oracle
+        run: python3 c/tests/test_bats_replay.py -v
