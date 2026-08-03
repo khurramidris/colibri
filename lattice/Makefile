@@ -4,14 +4,14 @@ CSTD ?= -std=c11
 WARN ?= -Wall -Wextra -Wpedantic -Werror
 OPT ?= -O2
 CPPFLAGS += -Iinclude
-CFLAGS += $(CSTD) $(WARN) $(OPT)
-LDLIBS += -lm
+CFLAGS += $(CSTD) $(WARN) $(OPT) -pthread
+LDLIBS += -lm -pthread
 
 BUILD := build
 BIN := $(BUILD)/lattice-plan
 LIB := $(BUILD)/liblattice.a
-LIB_OBJECTS := $(BUILD)/planner.o $(BUILD)/scheduler.o $(BUILD)/signature.o $(BUILD)/block_layout.o
-TESTS := $(BUILD)/test_planner $(BUILD)/test_scheduler $(BUILD)/test_signature $(BUILD)/test_block_layout
+LIB_OBJECTS := $(BUILD)/planner.o $(BUILD)/scheduler.o $(BUILD)/signature.o $(BUILD)/block_layout.o $(BUILD)/io_reader.o
+TESTS := $(BUILD)/test_planner $(BUILD)/test_scheduler $(BUILD)/test_signature $(BUILD)/test_block_layout $(BUILD)/test_io_reader
 
 .PHONY: all test check sanitize demo clean
 
@@ -32,6 +32,9 @@ $(BUILD)/signature.o: src/signature.c include/lattice/signature.h include/lattic
 $(BUILD)/block_layout.o: src/block_layout.c include/lattice/block_layout.h | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+$(BUILD)/io_reader.o: src/io_reader.c include/lattice/io_reader.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 $(LIB): $(LIB_OBJECTS)
 	$(AR) rcs $@ $^
 
@@ -50,11 +53,15 @@ $(BUILD)/test_signature: tests/test_signature.c $(LIB) | $(BUILD)
 $(BUILD)/test_block_layout: tests/test_block_layout.c $(LIB) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIB) -o $@ $(LDFLAGS) $(LDLIBS)
 
+$(BUILD)/test_io_reader: tests/test_io_reader.c $(LIB) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIB) -o $@ $(LDFLAGS) $(LDLIBS)
+
 test: $(TESTS)
 	$(BUILD)/test_planner
 	$(BUILD)/test_scheduler
 	$(BUILD)/test_signature
 	$(BUILD)/test_block_layout
+	$(BUILD)/test_io_reader
 
 check: clean all test
 	$(BIN) --manifest examples/small-moe.tsv --ram-gib 8 --vram-gib 4 --nvme-gbps 5 --quiet --json $(BUILD)/plan.json
@@ -62,7 +69,7 @@ check: clean all test
 
 sanitize:
 	$(MAKE) clean
-	$(MAKE) test OPT='-O1 -g' CFLAGS='$(CSTD) $(WARN) -O1 -g -fsanitize=address,undefined -fno-omit-frame-pointer' LDFLAGS='-fsanitize=address,undefined'
+	$(MAKE) test OPT='-O1 -g' CFLAGS='$(CSTD) $(WARN) -O1 -g -pthread -fsanitize=address,undefined -fno-omit-frame-pointer' LDFLAGS='-fsanitize=address,undefined'
 
 demo: $(BIN)
 	$(BIN) --demo --ram-gib 16 --vram-gib 8 --nvme-gbps 7
