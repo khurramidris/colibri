@@ -56,6 +56,22 @@ static void test_schedule_and_promotion(void) {
     lt_signature_destroy(sig);
 }
 
+static void test_schedule_overflow_fails_closed(void) {
+    lt_signature_t *sig = lt_signature_create(2, 4);
+    lt_scheduler_t *scheduler = lt_scheduler_create(4, 0);
+    uint32_t ids[] = {3};
+    char error[128];
+    CHECK(sig != NULL && scheduler != NULL);
+    CHECK(lt_signature_observe(sig, 1, ids, NULL, 1) == 0);
+    CHECK(lt_signature_schedule(sig, scheduler, 1, 1, UINT64_MAX - 1,
+                                4096, 50, LT_PATH_PROACTIVE, 0.0,
+                                error, sizeof(error)) == -1);
+    CHECK(error[0] != '\0');
+    CHECK(lt_scheduler_queued(scheduler) == 0);
+    lt_scheduler_destroy(scheduler);
+    lt_signature_destroy(sig);
+}
+
 static void test_persistence(void) {
     lt_signature_t *a = lt_signature_create(2, 4);
     lt_signature_t *b = lt_signature_create(2, 4);
@@ -89,6 +105,7 @@ static void test_bad_observation_is_transactional(void) {
 int main(void) {
     test_ranking_and_decay();
     test_schedule_and_promotion();
+    test_schedule_overflow_fails_closed();
     test_persistence();
     test_bad_observation_is_transactional();
     if (failures) {
