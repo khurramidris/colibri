@@ -40,6 +40,7 @@ typedef struct {
     uint64_t completed;
     uint64_t failed;
     uint64_t cancelled;
+    uint64_t forgotten;
     uint64_t queued_bytes;
     uint64_t inflight_bytes;
     uint64_t completed_bytes;
@@ -79,6 +80,11 @@ int lt_scheduler_fail(lt_scheduler_t *scheduler,
                       uint64_t tensor_id,
                       char *error,
                       size_t error_cap);
+
+/* Tell the scheduler that a previously completed tensor was evicted. Returns
+ * 1 when forgotten, 0 when absent/already terminal, and -1 for queued/inflight
+ * tensors or invalid arguments. The next submission may read it again. */
+int lt_scheduler_forget(lt_scheduler_t *scheduler, uint64_t tensor_id);
 
 /* Cancel queued speculative work below min_confidence. Returns count removed. */
 size_t lt_scheduler_cancel_speculative(lt_scheduler_t *scheduler,
