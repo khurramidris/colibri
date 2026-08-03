@@ -42,6 +42,7 @@ typedef struct {
 
 typedef struct {
     uint64_t bytes;
+    uint64_t remaining_bytes;
     bats_tier tier;
     uint8_t resident_in_exec;
     uint8_t in_flight;
@@ -78,6 +79,15 @@ static inline double bats_clamp01(double x) {
     return x;
 }
 
+static inline uint64_t bats_expert_marginal_bytes(const bats_expert_state *expert) {
+    if (!expert || expert->resident_in_exec || expert->tier == BATS_TIER_EXEC)
+        return 0;
+    if (expert->in_flight && expert->remaining_bytes > 0)
+        return expert->remaining_bytes < expert->bytes
+            ? expert->remaining_bytes : expert->bytes;
+    return expert->bytes;
+}
+
 static inline double bats_expert_transfer_us(const bats_hw_profile *hw,
                                               const bats_expert_state *expert) {
     if (!hw || !expert || expert->resident_in_exec || expert->tier == BATS_TIER_EXEC)
@@ -91,8 +101,10 @@ static inline double bats_expert_transfer_us(const bats_hw_profile *hw,
     if (gbps <= 0.0) return DBL_MAX;
 
     /* 1 GB/s == 1000 bytes/us. Calibration supplies the effective rate. */
-    const double transfer_us = (double)expert->bytes / (gbps * 1000.0);
-    const double exposed = transfer_us * (1.0 - bats_clamp01(hw->overlap[expert->tier]));
+    const double transfer_us =
+        (double)bats_expert_marginal_bytes(expert) / (gbps * 1000.0);
+    const double exposed =
+        transfer_us * (1.0 - bats_clamp01(hw->overlap[expert->tier]));
     return hw->fixed_us[expert->tier] + hw->queue_us[expert->tier] + exposed;
 }
 
@@ -113,7 +125,8 @@ static inline double bats_candidate_marginal_cost(
     size_t i;
     double cost = 0.0;
     uint64_t bytes = 0;
-    if (!hw || !experts || !candidate || !new_mask || expert_count > BATS_MAX_EXPERTS)
+    if (!hw || !experts || !candidate || !new_mask ||
+        expert_count > BATS_MAX_EXPERTS)
         return DBL_MAX;
 
     memset(new_mask, 0, expert_count);
@@ -122,11 +135,12 @@ static inline double bats_candidate_marginal_cost(
         if (!bats_valid_expert_id(eid, expert_count)) return DBL_MAX;
         if ((union_mask && union_mask[eid]) || new_mask[eid]) continue;
         new_mask[eid] = 1;
-        if (!experts[eid].resident_in_exec && experts[eid].tier != BATS_TIER_EXEC) {
+        if (!experts[eid].resident_in_exec &&
+            experts[eid].tier != BATS_TIER_EXEC) {
             const double t = bats_expert_transfer_us(hw, &experts[eid]);
             if (t == DBL_MAX) return DBL_MAX;
             cost += t;
-            bytes += experts[eid].bytes;
+            bytes += bats_expert_marginal_bytes(&experts[eid]);
         }
     }
     if (new_bytes) *new_bytes = bytes;
@@ -149,7 +163,8 @@ static inline int bats_plan_candidates(
     size_t step;
 
     if (!out || !hw || !experts || !candidates ||
-        expert_count > BATS_MAX_EXPERTS || candidate_count > BATS_MAX_CANDIDATES)
+        expert_count > BATS_MAX_EXPERTS ||
+        candidate_count > BATS_MAX_CANDIDATES)
         return -1;
 
     memset(out, 0, sizeof(*out));
@@ -170,20 +185,23 @@ static inline int bats_plan_candidates(
             double cost;
             double score;
             if (chosen[i]) continue;
-            if (candidates[i].expected_accepted_tokens <= limits.minimum_gain) continue;
+            if (candidates[i].expected_accepted_tokens <= limits.minimum_gain)
+                continue;
 
-            cost = bats_candidate_marginal_cost(hw, experts, expert_count,
-                                                &candidates[i], union_mask,
-                                                trial_mask, &bytes);
+            cost = bats_candidate_marginal_cost(
+                hw, experts, expert_count, &candidates[i],
+                union_mask, trial_mask, &bytes);
             if (cost == DBL_MAX) continue;
-            if (limits.budget_us > 0.0 && out->predicted_us + cost > limits.budget_us)
+            if (limits.budget_us > 0.0 &&
+                out->predicted_us + cost > limits.budget_us)
                 continue;
 
             score = candidates[i].expected_accepted_tokens / (cost + 1e-9);
             if (best < 0 || score > best_score + 1e-15 ||
                 ((score >= best_score - 1e-15) &&
                  (candidates[i].id < candidates[best].id ||
-                  (candidates[i].id == candidates[best].id && (int)i < best)))) {
+                  (candidates[i].id == candidates[best].id &&
+                   (int)i < best)))) {
                 best = (int)i;
                 best_score = score;
                 best_cost = cost;
@@ -196,15 +214,18 @@ static inline int bats_plan_candidates(
         out->selected[out->selected_count++] = best;
         out->predicted_us += best_cost;
         out->marginal_bytes += best_bytes;
-        out->expected_accepted_tokens += candidates[best].expected_accepted_tokens;
+        out->expected_accepted_tokens +=
+            candidates[best].expected_accepted_tokens;
 
         for (size_t j = 0; j < candidates[best].expert_count; ++j) {
             int eid = candidates[best].expert_ids[j];
-            if (bats_valid_expert_id(eid, expert_count)) union_mask[eid] = 1;
+            if (bats_valid_expert_id(eid, expert_count))
+                union_mask[eid] = 1;
         }
     }
 
-    out->objective = out->expected_accepted_tokens / (out->predicted_us + 1e-9);
+    out->objective =
+        out->expected_accepted_tokens / (out->predicted_us + 1e-9);
     return 0;
 }
 
