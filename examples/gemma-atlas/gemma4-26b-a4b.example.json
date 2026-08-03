@@ -1,0 +1,46 @@
+{
+  "schema": "lattice.atlas.manifest.v1",
+  "model": "google/gemma-4-26B-A4B-it",
+  "model_revision": "REPLACE_WITH_IMMUTABLE_MODEL_COMMIT",
+  "n_layers": 30,
+  "n_experts": 128,
+  "top_k": 8,
+  "expert_bytes": 3800000,
+  "cache_capacities": [
+    0,
+    24,
+    32,
+    40,
+    48,
+    64
+  ],
+  "train_fraction": 0.7,
+  "prefetch_width": 8,
+  "transfer_profiles": [
+    {
+      "name": "pcie-effective-12GBps",
+      "bandwidth_gbps": 12.0,
+      "fixed_us_per_nonempty_layer": 8.0,
+      "overlap_fraction": 0.25
+    },
+    {
+      "name": "pcie-effective-24GBps",
+      "bandwidth_gbps": 24.0,
+      "fixed_us_per_nonempty_layer": 6.0,
+      "overlap_fraction": 0.35
+    }
+  ],
+  "gates": {
+    "cache_practical_hit_rate": 0.6,
+    "cache_oracle_hit_rate": 0.75,
+    "transfer_reduction": 0.4,
+    "prefetch_recall": 0.85,
+    "prefetch_max_overfetch": 0.2,
+    "ternary_safe_fraction": 0.5
+  },
+  "target_cache_capacity": 40,
+  "checkpoint_sha256": "REPLACE_WITH_CHECKPOINT_SHA256",
+  "runtime": "transformers-or-patched-runtime",
+  "runtime_revision": "REPLACE_WITH_IMMUTABLE_RUNTIME_COMMIT",
+  "workload_sha256": "REPLACE_WITH_PROMPT_SUITE_SHA256"
+}
