@@ -1,6 +1,6 @@
 {
   "schema": "lattice.atlas.manifest.v1",
-  "model": "google/gemma-4-26b-a4b-it",
+  "model": "google/gemma-4-26B-A4B-it",
   "model_revision": "REPLACE_WITH_IMMUTABLE_MODEL_COMMIT",
   "n_layers": 30,
   "n_experts": 128,
