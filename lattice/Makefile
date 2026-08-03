@@ -10,8 +10,8 @@ LDLIBS += -lm -pthread
 BUILD := build
 BIN := $(BUILD)/lattice-plan
 LIB := $(BUILD)/liblattice.a
-LIB_OBJECTS := $(BUILD)/planner.o $(BUILD)/scheduler.o $(BUILD)/signature.o $(BUILD)/block_layout.o $(BUILD)/io_reader.o
-TESTS := $(BUILD)/test_planner $(BUILD)/test_scheduler $(BUILD)/test_signature $(BUILD)/test_block_layout $(BUILD)/test_io_reader
+LIB_OBJECTS := $(BUILD)/planner.o $(BUILD)/scheduler.o $(BUILD)/signature.o $(BUILD)/block_layout.o $(BUILD)/io_reader.o $(BUILD)/trunk_plan.o
+TESTS := $(BUILD)/test_planner $(BUILD)/test_scheduler $(BUILD)/test_signature $(BUILD)/test_block_layout $(BUILD)/test_io_reader $(BUILD)/test_trunk_plan
 
 .PHONY: all test check sanitize demo clean
 
@@ -35,6 +35,9 @@ $(BUILD)/block_layout.o: src/block_layout.c include/lattice/block_layout.h | $(B
 $(BUILD)/io_reader.o: src/io_reader.c include/lattice/io_reader.h | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
 
+$(BUILD)/trunk_plan.o: src/trunk_plan.c include/lattice/trunk_plan.h | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) -c $< -o $@
+
 $(LIB): $(LIB_OBJECTS)
 	$(AR) rcs $@ $^
 
@@ -56,12 +59,16 @@ $(BUILD)/test_block_layout: tests/test_block_layout.c $(LIB) | $(BUILD)
 $(BUILD)/test_io_reader: tests/test_io_reader.c $(LIB) | $(BUILD)
 	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIB) -o $@ $(LDFLAGS) $(LDLIBS)
 
+$(BUILD)/test_trunk_plan: tests/test_trunk_plan.c $(LIB) | $(BUILD)
+	$(CC) $(CPPFLAGS) $(CFLAGS) $< $(LIB) -o $@ $(LDFLAGS) $(LDLIBS)
+
 test: $(TESTS)
 	$(BUILD)/test_planner
 	$(BUILD)/test_scheduler
 	$(BUILD)/test_signature
 	$(BUILD)/test_block_layout
 	$(BUILD)/test_io_reader
+	$(BUILD)/test_trunk_plan
 
 check: clean all test
 	$(BIN) --manifest examples/small-moe.tsv --ram-gib 8 --vram-gib 4 --nvme-gbps 5 --quiet --json $(BUILD)/plan.json
