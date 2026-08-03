@@ -1,0 +1,67 @@
+name: Gemma Expert Atlas
+
+on:
+  push:
+    branches:
+      - agent/gemma-expert-atlas
+  pull_request:
+    paths:
+      - "lattice/atlas/**"
+      - "lattice/tests/test_atlas.py"
+      - "tools/gemma_atlas/**"
+      - "examples/gemma-atlas/**"
+      - "docs/experiments/gemma-expert-atlas.md"
+      - ".github/workflows/gemma-atlas.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: gemma-atlas-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python: ["3.10", "3.13"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python }}
+      - name: Compile atlas modules
+        run: python -m compileall -q lattice/atlas tools/gemma_atlas
+      - name: Run atlas tests
+        run: python -m unittest lattice.tests.test_atlas -v
+      - name: Synthetic evidence smoke test
+        shell: bash
+        run: |
+          python -m lattice.atlas synthetic \
+            --manifest examples/gemma-atlas/gemma4-26b-a4b.example.json \
+            --output /tmp/atlas-trace.jsonl \
+            --requests 6 --tokens 8 --hot-experts 16 --hot-probability 0.95
+          python - <<'PY'
+          import json
+          from pathlib import Path
+          source = Path("examples/gemma-atlas/gemma4-26b-a4b.example.json")
+          manifest = json.loads(source.read_text(encoding="utf-8"))
+          manifest.update({
+              "model_revision": "ci-synthetic-model",
+              "checkpoint_sha256": "ci-synthetic-checkpoint",
+              "runtime_revision": "ci-synthetic-runtime",
+              "workload_sha256": "ci-synthetic-workload",
+          })
+          Path("/tmp/atlas-manifest.json").write_text(json.dumps(manifest), encoding="utf-8")
+          PY
+          python -m lattice.atlas analyze \
+            --manifest /tmp/atlas-manifest.json \
+            --trace /tmp/atlas-trace.jsonl \
+            --output-dir /tmp/atlas-output || test $? -eq 3
+          test -s /tmp/atlas-output/atlas-evidence.json
+          test -s /tmp/atlas-output/atlas-report.md
+          test -s /tmp/atlas-output/atlas-receipt.json
+          python -m lattice.atlas verify --output-dir /tmp/atlas-output --require-inputs
