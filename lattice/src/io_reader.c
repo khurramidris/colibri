@@ -76,8 +76,10 @@ static void *lt_io_worker(void *opaque) {
 
         status = lt_pread_full(&job, &bytes_read);
 
+        /* Account the result before the callback, but keep the job in-flight
+         * until the callback returns. wait_idle therefore guarantees that
+         * user completion work is finished and buffers may be reused. */
         pthread_mutex_lock(&reader->mutex);
-        reader->stats.inflight_jobs--;
         if (status == 0) {
             reader->stats.completed_jobs++;
             reader->stats.completed_bytes += bytes_read;
@@ -85,12 +87,16 @@ static void *lt_io_worker(void *opaque) {
             reader->stats.failed_jobs++;
             reader->any_failure = 1;
         }
-        if (reader->queue_count == 0 && reader->stats.inflight_jobs == 0)
-            pthread_cond_broadcast(&reader->idle);
         pthread_mutex_unlock(&reader->mutex);
 
         if (reader->completion)
             reader->completion(&job, status, bytes_read, reader->completion_user);
+
+        pthread_mutex_lock(&reader->mutex);
+        reader->stats.inflight_jobs--;
+        if (reader->queue_count == 0 && reader->stats.inflight_jobs == 0)
+            pthread_cond_broadcast(&reader->idle);
+        pthread_mutex_unlock(&reader->mutex);
     }
     return NULL;
 }
