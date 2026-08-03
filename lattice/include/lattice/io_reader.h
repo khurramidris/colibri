@@ -16,7 +16,11 @@ typedef struct {
     uint64_t offset;
     void *destination;
     uint64_t bytes;
-    uint64_t opaque;
+    uint32_t layer;
+    uint32_t transfer_path;
+    double confidence;
+    uint64_t request_opaque;
+    uint64_t opaque; /* adapter-owned completion context */
 } lt_io_job_t;
 
 typedef void (*lt_io_completion_fn)(const lt_io_job_t *job,
