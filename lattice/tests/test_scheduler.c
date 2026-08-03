@@ -130,6 +130,41 @@ static void test_invalid_duplicate_size(void) {
     lt_scheduler_destroy(s);
 }
 
+static void test_failure_can_retry(void) {
+    lt_scheduler_t *s = lt_scheduler_create(2, 0);
+    lt_transfer_request_t a = request(41, 100, LT_PATH_DEMAND, 0, 1.0);
+    lt_transfer_request_t out;
+    lt_scheduler_stats_t stats;
+    char error[128];
+    CHECK(lt_scheduler_submit(s, &a, error, sizeof(error)) == 1);
+    CHECK(lt_scheduler_pop(s, &out) == 1);
+    CHECK(lt_scheduler_fail(s, 41, error, sizeof(error)) == 0);
+    CHECK(lt_scheduler_submit(s, &a, error, sizeof(error)) == 1);
+    CHECK(lt_scheduler_pop(s, &out) == 1);
+    CHECK(lt_scheduler_complete(s, 41, error, sizeof(error)) == 0);
+    stats = lt_scheduler_stats(s);
+    CHECK(stats.failed == 1 && stats.failed_bytes == 100);
+    CHECK(stats.completed == 1 && stats.completed_bytes == 100);
+    lt_scheduler_destroy(s);
+}
+
+static void test_completed_tensor_must_be_forgotten_after_eviction(void) {
+    lt_scheduler_t *s = lt_scheduler_create(2, 0);
+    lt_transfer_request_t a = request(51, 100, LT_PATH_DEMAND, 0, 1.0);
+    lt_transfer_request_t out;
+    lt_scheduler_stats_t stats;
+    char error[128];
+    CHECK(lt_scheduler_submit(s, &a, error, sizeof(error)) == 1);
+    CHECK(lt_scheduler_pop(s, &out) == 1);
+    CHECK(lt_scheduler_complete(s, 51, error, sizeof(error)) == 0);
+    CHECK(lt_scheduler_submit(s, &a, error, sizeof(error)) == 0);
+    CHECK(lt_scheduler_forget(s, 51) == 1);
+    CHECK(lt_scheduler_submit(s, &a, error, sizeof(error)) == 1);
+    stats = lt_scheduler_stats(s);
+    CHECK(stats.forgotten == 1);
+    lt_scheduler_destroy(s);
+}
+
 int main(void) {
     test_priority();
     test_deadline_and_confidence();
@@ -137,6 +172,8 @@ int main(void) {
     test_inflight_cap();
     test_cancel_speculation();
     test_invalid_duplicate_size();
+    test_failure_can_retry();
+    test_completed_tensor_must_be_forgotten_after_eviction();
     if (failures) {
         fprintf(stderr, "%d scheduler test(s) failed\n", failures);
         return 1;
