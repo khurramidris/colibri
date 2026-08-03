@@ -273,7 +273,7 @@ void lt_scheduler_compact(lt_scheduler_t *scheduler) {
     if (!scheduler) return;
     for (read_index = 0; read_index < scheduler->count; ++read_index) {
         lt_request_state_t state = scheduler->entries[read_index].state;
-        if (state == LT_REQ_DONE || state == LT_REQ_CANCELLED || state == LT_REQ_FAILED) continue;
+        if (state == LT_REQ_CANCELLED || state == LT_REQ_FAILED) continue;
         if (write_index != read_index) scheduler->entries[write_index] = scheduler->entries[read_index];
         ++write_index;
     }
