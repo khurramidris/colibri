@@ -306,6 +306,15 @@ int lt_runtime_run_until_idle(lt_runtime_t *runtime,
     return 0;
 }
 
+int lt_runtime_forget(lt_runtime_t *runtime, uint64_t tensor_id) {
+    int result;
+    if (!runtime) return -1;
+    pthread_mutex_lock(&runtime->mutex);
+    result = lt_scheduler_forget(runtime->scheduler, tensor_id);
+    pthread_mutex_unlock(&runtime->mutex);
+    return result;
+}
+
 size_t lt_runtime_cancel_speculative(lt_runtime_t *runtime,
                                      double min_confidence) {
     size_t result;
