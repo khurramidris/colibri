@@ -93,7 +93,8 @@ size_t lt_scheduler_cancel_speculative(lt_scheduler_t *scheduler,
 /* Cancel any queued request for a tensor. In-flight reads are not aborted. */
 int lt_scheduler_cancel(lt_scheduler_t *scheduler, uint64_t tensor_id);
 
-/* Forget terminal records while preserving queued/in-flight work. */
+/* Remove cancelled and failed records. Completed records remain authoritative
+ * until the cache adapter explicitly calls lt_scheduler_forget. */
 void lt_scheduler_compact(lt_scheduler_t *scheduler);
 
 size_t lt_scheduler_queued(const lt_scheduler_t *scheduler);
