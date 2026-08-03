@@ -13,7 +13,8 @@ A route touching six already resident experts may be cheaper than a route requir
 - `c/bats.h`: dependency-free, deterministic C primitives for calibrated transfer-time prediction, in-flight and resident experts, unique expert-union costing, budgeted candidate selection, and PILOT admission.
 - `c/tests/test_bats.c`: synthetic falsification tests for the central claims.
 - `c/tools/bats_replay.py`: independent JSONL trace oracle for offline analysis.
-- `.github/workflows/bats.yml`: builds and runs the isolated gate on Linux.
+- `c/tools/bats_route_trace.py`: adapter from Colibri's existing `ROUTE_TRACE` stream to BATS shadow-planning records.
+- `.github/workflows/bats.yml`: builds and runs the isolated gates on Linux.
 
 This is intentionally an isolated foundation. Default Colibri execution remains unchanged until a runtime integration can be measured against the existing PILOT and LFRU policies.
 
@@ -43,6 +44,47 @@ Replay with:
 ```bash
 python3 c/tools/bats_replay.py c/tests/bats_trace.jsonl --pretty
 ```
+
+## Use existing Colibri route traces
+
+Capture routing with the engine's existing telemetry:
+
+```bash
+ROUTE_TRACE=/tmp/routes.txt ...
+```
+
+Convert that stream to BATS records. `--n-experts` is the model's per-layer expert count; expert ids are globalized internally as `layer * n_experts + expert` so experts from different layers never collide.
+
+```bash
+python3 c/tools/bats_route_trace.py /tmp/routes.txt \
+  --n-experts 64 \
+  --expert-bytes 19000000 \
+  --default-tier nvme \
+  --bandwidth-gbps 4.0 \
+  --fixed-us 80 \
+  --queue-us 20 \
+  > /tmp/bats.jsonl
+
+python3 c/tools/bats_replay.py /tmp/bats.jsonl
+```
+
+An optional residency file records the current snapshot as:
+
+```text
+# layer expert tier [remaining_us]
+2 17 exec
+2 31 nvme 340.0
+```
+
+Pass it with `--residency`. A fourth value means the load is in flight and supplies its predicted remaining time.
+
+For speculative-decoding analysis, pass `--acceptance` with JSONL annotations:
+
+```json
+{"call": 3, "row": 0, "expected_accepted_tokens": 1.7, "verify_compute_us": 90, "kv_us": 12}
+```
+
+Without an acceptance file, the adapter deliberately assigns every row a benefit of `1.0`. That mode is valid only for transfer-cost shadow analysis; it must not be presented as an acceptance-aware speculative-decoding result.
 
 ## Runtime integration sequence
 
