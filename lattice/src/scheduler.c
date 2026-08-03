@@ -215,6 +215,24 @@ int lt_scheduler_fail(lt_scheduler_t *scheduler,
     return lt_scheduler_finish(scheduler, tensor_id, 0, error, error_cap);
 }
 
+int lt_scheduler_forget(lt_scheduler_t *scheduler, uint64_t tensor_id) {
+    size_t i;
+    if (!scheduler || tensor_id == 0) return -1;
+    for (i = 0; i < scheduler->count; ++i) {
+        lt_scheduler_entry_t *entry = &scheduler->entries[i];
+        if (entry->request.tensor_id != tensor_id) continue;
+        if (entry->state == LT_REQ_QUEUED || entry->state == LT_REQ_INFLIGHT)
+            return -1;
+        if (entry->state == LT_REQ_DONE) {
+            entry->state = LT_REQ_CANCELLED;
+            scheduler->stats.forgotten++;
+            return 1;
+        }
+        return 0;
+    }
+    return 0;
+}
+
 size_t lt_scheduler_cancel_speculative(lt_scheduler_t *scheduler,
                                        double min_confidence) {
     size_t removed = 0;
