@@ -39,6 +39,28 @@ class BatsReplayTest(unittest.TestCase):
         self.assertEqual(result["marginal_bytes"], 3_000_000)
         self.assertAlmostEqual(result["predicted_us"], 1_050.0)
 
+    def test_inflight_uses_remaining_work(self):
+        record = {
+            "hardware": {"nvme": {"bandwidth_gbps": 4.0}},
+            "experts": [{
+                "id": 0,
+                "bytes": 4_000_000,
+                "remaining_bytes": 250_000,
+                "tier": "nvme",
+                "in_flight": True,
+                "remaining_us": 17.5,
+            }],
+            "candidates": [{
+                "id": 0,
+                "expected_accepted_tokens": 1.0,
+                "experts": [0],
+            }],
+            "max_candidates": 1,
+        }
+        result = MODULE.choose(record)
+        self.assertEqual(result["marginal_bytes"], 250_000)
+        self.assertAlmostEqual(result["predicted_us"], 17.5)
+
 
 if __name__ == "__main__":
     unittest.main()
