@@ -21,10 +21,10 @@ from typing import Any
 def _require_dependencies():
     try:
         import torch
-        from transformers import AutoModelForCausalLM, AutoTokenizer
+        from transformers import AutoModelForImageTextToText, AutoProcessor
     except ImportError as error:
         raise SystemExit("hf_capture.py requires torch and transformers") from error
-    return torch, AutoModelForCausalLM, AutoTokenizer
+    return torch, AutoModelForImageTextToText, AutoProcessor
 
 
 def _tensor_from_output(output: Any, torch, n_experts: int):
@@ -58,7 +58,7 @@ def main() -> int:
     parser.add_argument("--dry-discover", action="store_true")
     args = parser.parse_args()
 
-    torch, AutoModelForCausalLM, AutoTokenizer = _require_dependencies()
+    torch, AutoModelForImageTextToText, AutoProcessor = _require_dependencies()
     kwargs: dict[str, Any] = {
         "revision": args.revision,
         "device_map": args.device_map,
@@ -68,10 +68,10 @@ def main() -> int:
         kwargs["torch_dtype"] = getattr(torch, args.dtype)
     if args.load_in_4bit:
         kwargs["load_in_4bit"] = True
-    tokenizer = AutoTokenizer.from_pretrained(
+    processor = AutoProcessor.from_pretrained(
         args.model, revision=args.revision, trust_remote_code=args.trust_remote_code
     )
-    model = AutoModelForCausalLM.from_pretrained(args.model, **kwargs)
+    model = AutoModelForImageTextToText.from_pretrained(args.model, **kwargs)
     model.eval()
 
     pattern = re.compile(args.router_regex)
@@ -155,7 +155,7 @@ def main() -> int:
                 max_new_tokens = int(item.get("max_new_tokens", 64))
                 state["request_id"] = request_id
                 state["call"] = -1
-                inputs = tokenizer(prompt, return_tensors="pt")
+                inputs = processor(text=prompt, return_tensors="pt")
                 device = model.get_input_embeddings().weight.device
                 inputs = {key: value.to(device) for key, value in inputs.items()}
                 with torch.inference_mode():
@@ -164,7 +164,7 @@ def main() -> int:
                         max_new_tokens=max_new_tokens,
                         do_sample=False,
                         use_cache=True,
-                        pad_token_id=tokenizer.eos_token_id,
+                        pad_token_id=processor.tokenizer.eos_token_id,
                     )
                 handle.flush()
     return 0
