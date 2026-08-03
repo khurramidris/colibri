@@ -162,10 +162,18 @@ int lt_signature_schedule(const lt_signature_t *signature,
     n = lt_signature_topk(signature, layer, k, ids, scores);
     for (i = 0; i < n; ++i) {
         lt_transfer_request_t request;
+        uint64_t tail;
         int result;
         if (scores[i] < min_confidence) continue;
         memset(&request, 0, sizeof(request));
-        if ((uint64_t)layer > (UINT64_MAX - tensor_id_base - ids[i]) / signature->experts) {
+        if (tensor_id_base > UINT64_MAX - (uint64_t)ids[i]) {
+            free(ids);
+            free(scores);
+            lt_sig_error(error, error_cap, "tensor ID calculation overflow");
+            return -1;
+        }
+        tail = UINT64_MAX - tensor_id_base - (uint64_t)ids[i];
+        if ((uint64_t)layer > tail / (uint64_t)signature->experts) {
             free(ids);
             free(scores);
             lt_sig_error(error, error_cap, "tensor ID calculation overflow");
