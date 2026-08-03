@@ -72,9 +72,11 @@ static int make_fixture(char path[256], unsigned char expected[TENSOR_COUNT][TEN
     fd = open(path, O_CREAT | O_TRUNC | O_RDWR, 0600);
     if (fd < 0) return -1;
     for (tensor = 0; tensor < TENSOR_COUNT; ++tensor) {
+        ssize_t wrote;
         for (byte = 0; byte < TENSOR_BYTES; ++byte)
             expected[tensor][byte] = (unsigned char)((tensor * 31u + byte * 7u) & 0xffu);
-        if (write(fd, expected[tensor], TENSOR_BYTES) != TENSOR_BYTES) {
+        wrote = write(fd, expected[tensor], TENSOR_BYTES);
+        if (wrote != (ssize_t)TENSOR_BYTES) {
             close(fd);
             unlink(path);
             return -1;
@@ -105,7 +107,7 @@ static lt_runtime_t *make_runtime(Adapter *adapter,
     return lt_runtime_create(&config, &callbacks, error, error_cap);
 }
 
-static void test_prefetch_promotion_and_reads(void) {
+static void test_prefetch_promotion_reads_and_eviction(void) {
     char path[256], error[256];
     unsigned char expected[TENSOR_COUNT][TENSOR_BYTES];
     uint32_t ids[] = {2, 1, 2};
@@ -143,6 +145,21 @@ static void test_prefetch_promotion_and_reads(void) {
     CHECK(stats.io.completed_jobs == 2);
     CHECK(stats.dispatched_jobs == 2);
     CHECK(adapter.completions == 2 && adapter.failed_completions == 0);
+
+    pthread_mutex_lock(&adapter.mutex);
+    adapter.ready[expert2_id - BASE_ID] = 0;
+    pthread_mutex_unlock(&adapter.mutex);
+    CHECK(lt_runtime_forget(runtime, expert2_id) == 1);
+    CHECK(lt_runtime_demand(runtime, expert2_id, TENSOR_BYTES, 1, 10, 2,
+                            error, sizeof(error)) == 1);
+    CHECK(lt_runtime_run_until_idle(runtime, error, sizeof(error)) == 0);
+    CHECK(adapter.ready[expert2_id - BASE_ID] == 1);
+    stats = lt_runtime_stats(runtime);
+    CHECK(stats.scheduler.forgotten == 1);
+    CHECK(stats.scheduler.completed == 3);
+    CHECK(stats.io.completed_jobs == 3);
+    CHECK(adapter.completions == 3);
+
     lt_runtime_destroy(runtime);
     close(adapter.fd);
     unlink(path);
@@ -196,7 +213,7 @@ static void test_inflight_cap_detects_impossible_request(void) {
 }
 
 int main(void) {
-    test_prefetch_promotion_and_reads();
+    test_prefetch_promotion_reads_and_eviction();
     test_resolve_failure_is_not_resident();
     test_inflight_cap_detects_impossible_request();
     if (failures) {
