@@ -18,7 +18,8 @@ typedef enum {
     LT_REQ_QUEUED = 0,
     LT_REQ_INFLIGHT = 1,
     LT_REQ_DONE = 2,
-    LT_REQ_CANCELLED = 3
+    LT_REQ_CANCELLED = 3,
+    LT_REQ_FAILED = 4
 } lt_request_state_t;
 
 typedef struct {
@@ -37,10 +38,12 @@ typedef struct {
     uint64_t promoted;
     uint64_t dispatched;
     uint64_t completed;
+    uint64_t failed;
     uint64_t cancelled;
     uint64_t queued_bytes;
     uint64_t inflight_bytes;
     uint64_t completed_bytes;
+    uint64_t failed_bytes;
 } lt_scheduler_stats_t;
 
 typedef struct lt_scheduler lt_scheduler_t;
@@ -66,11 +69,16 @@ int lt_scheduler_submit(lt_scheduler_t *scheduler,
 int lt_scheduler_pop(lt_scheduler_t *scheduler,
                      lt_transfer_request_t *out_request);
 
-/* Marks one in-flight tensor complete. Returns 0 on success. */
+/* Mark one in-flight tensor complete or failed. Failed records may be compacted
+ * and resubmitted; they never masquerade as a resident tensor. */
 int lt_scheduler_complete(lt_scheduler_t *scheduler,
                           uint64_t tensor_id,
                           char *error,
                           size_t error_cap);
+int lt_scheduler_fail(lt_scheduler_t *scheduler,
+                      uint64_t tensor_id,
+                      char *error,
+                      size_t error_cap);
 
 /* Cancel queued speculative work below min_confidence. Returns count removed. */
 size_t lt_scheduler_cancel_speculative(lt_scheduler_t *scheduler,
@@ -79,7 +87,7 @@ size_t lt_scheduler_cancel_speculative(lt_scheduler_t *scheduler,
 /* Cancel any queued request for a tensor. In-flight reads are not aborted. */
 int lt_scheduler_cancel(lt_scheduler_t *scheduler, uint64_t tensor_id);
 
-/* Forget DONE/CANCELLED records while preserving queued/in-flight work. */
+/* Forget terminal records while preserving queued/in-flight work. */
 void lt_scheduler_compact(lt_scheduler_t *scheduler);
 
 size_t lt_scheduler_queued(const lt_scheduler_t *scheduler);
