@@ -49,7 +49,13 @@ void lt_io_reader_destroy(lt_io_reader_t *reader);
 /* Non-blocking submission: 1 accepted, 0 queue full, -1 invalid/stopped. */
 int lt_io_reader_submit(lt_io_reader_t *reader, const lt_io_job_t *job);
 
-/* Wait until every accepted job completes. Returns 0, or -1 if any job failed. */
+/* Blocking submission: waits for queue capacity. Returns 1 accepted or -1
+ * invalid/stopped. This is the lossless bridge for requests already marked
+ * in-flight by the priority scheduler. */
+int lt_io_reader_submit_wait(lt_io_reader_t *reader, const lt_io_job_t *job);
+
+/* Wait until every accepted job and completion callback finishes. Returns 0,
+ * or -1 if any job failed since reader creation. */
 int lt_io_reader_wait_idle(lt_io_reader_t *reader);
 
 lt_io_stats_t lt_io_reader_stats(lt_io_reader_t *reader);
