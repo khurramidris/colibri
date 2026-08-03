@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - "c/bats.h"
+      - "c/olmoe_bats.c"
+      - "c/Makefile.bats"
       - "c/tests/test_bats.c"
       - "c/tests/test_bats_replay.py"
       - "c/tests/test_bats_route_trace.py"
@@ -14,6 +16,8 @@ on:
   pull_request:
     paths:
       - "c/bats.h"
+      - "c/olmoe_bats.c"
+      - "c/Makefile.bats"
       - "c/tests/test_bats.c"
       - "c/tests/test_bats_replay.py"
       - "c/tests/test_bats_route_trace.py"
@@ -40,3 +44,5 @@ jobs:
         run: python3 c/tests/test_bats_replay.py -v
       - name: Test Colibri route trace adapter
         run: python3 c/tests/test_bats_route_trace.py -v
+      - name: Compile exact OLMoE shadow runtime
+        run: make -C c -f Makefile.bats olmoe-bats ARCH=x86-64-v3
