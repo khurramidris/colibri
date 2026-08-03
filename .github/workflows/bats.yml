@@ -1,0 +1,32 @@
+name: BATS scheduler gate
+
+on:
+  push:
+    paths:
+      - "c/bats.h"
+      - "c/tests/test_bats.c"
+      - "c/tests/bats_trace.jsonl"
+      - "c/tools/bats_replay.py"
+      - ".github/workflows/bats.yml"
+  pull_request:
+    paths:
+      - "c/bats.h"
+      - "c/tests/test_bats.c"
+      - "c/tests/bats_trace.jsonl"
+      - "c/tools/bats_replay.py"
+      - ".github/workflows/bats.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build C scheduler gate
+        run: cc -std=c11 -O2 -Wall -Wextra -Werror c/tests/test_bats.c -o /tmp/test_bats -lm
+      - name: Run C scheduler gate
+        run: /tmp/test_bats
+      - name: Run independent replay oracle
+        run: python3 c/tools/bats_replay.py c/tests/bats_trace.jsonl --pretty
