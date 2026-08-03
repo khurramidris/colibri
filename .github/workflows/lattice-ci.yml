@@ -1,0 +1,49 @@
+name: lattice-ci
+
+on:
+  push:
+    branches:
+      - "lattice/**"
+    paths:
+      - "lattice/**"
+      - ".github/workflows/lattice-ci.yml"
+  pull_request:
+    paths:
+      - "lattice/**"
+      - ".github/workflows/lattice-ci.yml"
+
+concurrency:
+  group: lattice-ci-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  build-test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build and C tests
+        run: make -C lattice check
+      - name: Python tests
+        run: python3 -m unittest discover -s lattice/tests -p 'test_*.py' -v
+      - name: Pareto sweep smoke test
+        run: |
+          python3 lattice/tools/sweep.py \
+            --manifest lattice/examples/small-moe.tsv \
+            --ram-gib 4,8 \
+            --vram-gib 0,4 \
+            --output lattice/build/sweep.csv
+          test -s lattice/build/sweep.csv
+
+  sanitizers:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: ASan and UBSan
+        run: make -C lattice sanitize

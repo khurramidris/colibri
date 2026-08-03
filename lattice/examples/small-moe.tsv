@@ -1,0 +1,9 @@
+# name	role	bytes_each	count	touches_per_token	skew	cpu_ms	gpu_ms	flags	min_ram	min_vram
+attention_blocks	attention	268435456	32	32	0	1.20	0.30	streamable,gpu	0	0
+shared_experts	shared_expert	201326592	32	32	0	0.90	0.24	streamable,gpu	0	0
+routed_experts	routed_expert	25165824	4096	256	0.85	0.075	0.020	streamable,gpu	0	0
+router_and_norms	norm	12582912	32	32	0	0.05	0.02	ram_required,gpu	0	0
+embeddings	embedding	805306368	1	1	0	2.0	0.55	streamable,gpu	0	0
+lm_head	embedding	805306368	1	1	0	2.0	0.55	streamable,gpu	0	0
+kv_cache	kv_cache	536870912	1	1	0	0.10	0.04	ram_required,gpu	0	0
+recurrent_state	recurrent_state	268435456	1	1	0	0.15	0.06	ram_required,gpu	0	0
