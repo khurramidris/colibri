@@ -22,10 +22,16 @@ static void test_transfer_cost(void) {
     bats_expert_state e = { .bytes = 4 * 1000 * 1000, .tier = BATS_TIER_NVME };
     double us = bats_expert_transfer_us(&hw, &e);
     assert(fabs(us - 1100.0) < 1e-9);
+    assert(bats_expert_marginal_bytes(&e) == 4ULL * 1000 * 1000);
     e.resident_in_exec = 1;
     assert(bats_expert_transfer_us(&hw, &e) == 0.0);
-    e.resident_in_exec = 0; e.in_flight = 1; e.remaining_us = 17.5;
+    assert(bats_expert_marginal_bytes(&e) == 0);
+    e.resident_in_exec = 0;
+    e.in_flight = 1;
+    e.remaining_us = 17.5;
+    e.remaining_bytes = 250000;
     assert(bats_expert_transfer_us(&hw, &e) == 17.5);
+    assert(bats_expert_marginal_bytes(&e) == 250000);
 }
 
 static void test_resident_path_beats_fewer_cold_experts(void) {
@@ -84,6 +90,30 @@ static void test_union_reuse_and_budget(void) {
     assert(fabs(plan.predicted_us - 1050.0) < 1e-9);
 }
 
+static void test_inflight_remaining_bytes(void) {
+    bats_hw_profile hw = profile();
+    bats_expert_state expert = {
+        .bytes = 4 * 1000 * 1000,
+        .remaining_bytes = 500000,
+        .tier = BATS_TIER_NVME,
+        .in_flight = 1,
+        .remaining_us = 125.0
+    };
+    const int route[] = {0};
+    bats_candidate candidate = {
+        .id = 1,
+        .expected_accepted_tokens = 1.0,
+        .expert_ids = route,
+        .expert_count = 1
+    };
+    uint8_t new_mask[1];
+    uint64_t bytes = 0;
+    double cost = bats_candidate_marginal_cost(
+        &hw, &expert, 1, &candidate, NULL, new_mask, &bytes);
+    assert(fabs(cost - 125.0) < 1e-9);
+    assert(bytes == 500000);
+}
+
 static void test_deterministic_tie_break(void) {
     bats_hw_profile hw = profile();
     bats_expert_state experts[2];
@@ -117,6 +147,7 @@ int main(void) {
     test_transfer_cost();
     test_resident_path_beats_fewer_cold_experts();
     test_union_reuse_and_budget();
+    test_inflight_remaining_bytes();
     test_deterministic_tie_break();
     test_prefetch_admission();
     puts("test_bats: ok");
