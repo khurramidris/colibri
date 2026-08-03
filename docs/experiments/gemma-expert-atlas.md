@@ -44,7 +44,7 @@ The optional adapter discovers router modules through hooks and writes the canon
 
 ```bash
 python tools/gemma_atlas/hf_capture.py \
-  --model google/gemma-4-26b-a4b-it \
+  --model google/gemma-4-26B-A4B-it \
   --revision <immutable-commit> \
   --prompt-file examples/gemma-atlas/prompts.example.jsonl \
   --output gemma4-routes.jsonl \
