@@ -43,13 +43,14 @@ static double lt_mass_range(const lt_tensor_class_t *c,
                             uint32_t count) {
     double sum = 0.0;
     uint32_t i;
-    const uint32_t end = begin + count > c->count ? c->count : begin + count;
+    uint64_t end64 = (uint64_t)begin + count;
+    const uint32_t end = end64 > c->count ? c->count : (uint32_t)end64;
     for (i = begin; i < end; ++i) sum += lt_rank_weight(i, c->skew);
     return lt_clamp(sum / denominator, 0.0, 1.0);
 }
 
 static int lt_u64_mul(uint64_t a, uint32_t b, uint64_t *out) {
-    if (b != 0 && a > UINT64_MAX / b) return -1;
+    if (!out || (b != 0 && a > UINT64_MAX / b)) return -1;
     *out = a * (uint64_t)b;
     return 0;
 }
@@ -111,6 +112,7 @@ static int lt_allocate_one_vram(const lt_hardware_t *hw,
     size_t best = (size_t)-1;
     double best_score = -1.0;
     size_t i;
+    if (plan->vram_used_bytes > budget) return 0;
     for (i = 0; i < plan->nclasses; ++i) {
         const lt_tensor_class_t *c = &classes[i];
         lt_class_plan_t *p = &plan->classes[i];
@@ -143,6 +145,7 @@ static int lt_allocate_one_ram(const lt_hardware_t *hw,
     size_t best = (size_t)-1;
     double best_score = -1.0;
     size_t i;
+    if (plan->ram_used_bytes > budget) return 0;
     for (i = 0; i < plan->nclasses; ++i) {
         const lt_tensor_class_t *c = &classes[i];
         lt_class_plan_t *p = &plan->classes[i];
@@ -174,9 +177,19 @@ static int lt_place_fixed(const lt_tensor_class_t *c,
                           size_t error_cap) {
     uint32_t already = p->vram_count + p->ram_count;
     uint32_t available = already < c->count ? c->count - already : 0;
-    uint64_t add_bytes;
+    uint64_t add_bytes = 0;
+    if (*used > budget) {
+        lt_set_error(error, error_cap, "existing placement already exceeds budget");
+        return -1;
+    }
     if (want > available) want = available;
-    if (lt_u64_mul(c->bytes_each, want, &add_bytes) != 0 || add_bytes > budget - *used) {
+    if (lt_u64_mul(c->bytes_each, want, &add_bytes) != 0) {
+        char msg[LT_ERROR_MAX];
+        snprintf(msg, sizeof(msg), "%s placement size overflows uint64", c->name);
+        lt_set_error(error, error_cap, msg);
+        return -1;
+    }
+    if (add_bytes > budget - *used) {
         char msg[LT_ERROR_MAX];
         snprintf(msg, sizeof(msg),
                  "%s cannot satisfy %s placement: need %.3f GiB, have %.3f GiB",
@@ -209,6 +222,8 @@ int lt_plan_build(const lt_hardware_t *hw,
         return -1;
     }
     if (!isfinite(hw->nvme_read_gbps) || hw->nvme_read_gbps <= 0.0 ||
+        !isfinite(hw->ram_read_gbps) || hw->ram_read_gbps < 0.0 ||
+        !isfinite(hw->host_to_device_gbps) || hw->host_to_device_gbps < 0.0 ||
         !isfinite(hw->overlap_efficiency) ||
         hw->overlap_efficiency < 0.0 || hw->overlap_efficiency > 1.0 ||
         !isfinite(hw->reserve_fraction) || hw->reserve_fraction < 0.0 || hw->reserve_fraction >= 1.0) {
@@ -230,11 +245,15 @@ int lt_plan_build(const lt_hardware_t *hw,
 
     for (i = 0; i < nclasses; ++i) {
         const lt_tensor_class_t *c = &classes[i];
+        uint64_t class_bytes;
         if (c->name[0] == '\0' || c->bytes_each == 0 || c->count == 0 ||
             !isfinite(c->touches_per_token) || c->touches_per_token < 0.0 ||
             !isfinite(c->skew) || c->skew < 0.0 ||
+            !isfinite(c->cpu_ms_per_touch) || c->cpu_ms_per_touch < 0.0 ||
+            !isfinite(c->gpu_ms_per_touch) || c->gpu_ms_per_touch < 0.0 ||
             c->min_ram_count > c->count || c->min_vram_count > c->count ||
-            c->min_ram_count + c->min_vram_count > c->count) {
+            c->min_ram_count + c->min_vram_count > c->count ||
+            lt_u64_mul(c->bytes_each, c->count, &class_bytes) != 0) {
             snprintf(out->error, sizeof(out->error), "invalid tensor class at index %zu", i);
             free(den);
             return -1;
@@ -293,11 +312,14 @@ int lt_plan_build(const lt_hardware_t *hw,
         lt_class_plan_t *p = &out->classes[i];
         uint32_t placed = p->vram_count + p->ram_count;
         double tv, tr, tn;
-        uint64_t bytes;
         p->nvme_count = c->count - placed;
-        p->vram_bytes = c->bytes_each * (uint64_t)p->vram_count;
-        p->ram_bytes = c->bytes_each * (uint64_t)p->ram_count;
-        p->nvme_bytes = c->bytes_each * (uint64_t)p->nvme_count;
+        if (lt_u64_mul(c->bytes_each, p->vram_count, &p->vram_bytes) != 0 ||
+            lt_u64_mul(c->bytes_each, p->ram_count, &p->ram_bytes) != 0 ||
+            lt_u64_mul(c->bytes_each, p->nvme_count, &p->nvme_bytes) != 0) {
+            snprintf(out->error, sizeof(out->error), "%s placement bytes overflow uint64", c->name);
+            free(den);
+            return -1;
+        }
         p->hot_mass_vram = lt_mass_range(c, den[i], 0, p->vram_count);
         p->hot_mass_ram = lt_mass_range(c, den[i], p->vram_count, p->ram_count);
         p->hot_mass_nvme = lt_clamp(1.0 - p->hot_mass_vram - p->hot_mass_ram, 0.0, 1.0);
@@ -309,6 +331,11 @@ int lt_plan_build(const lt_hardware_t *hw,
                 (c->cpu_ms_per_touch - c->gpu_ms_per_touch) / (double)c->bytes_each;
         }
 
+        if (UINT64_MAX - out->nvme_resident_bytes < p->nvme_bytes) {
+            snprintf(out->error, sizeof(out->error), "%s aggregate NVMe bytes overflow uint64", c->name);
+            free(den);
+            return -1;
+        }
         out->nvme_resident_bytes += p->nvme_bytes;
         tv = c->touches_per_token * p->hot_mass_vram;
         tr = c->touches_per_token * p->hot_mass_ram;
@@ -316,15 +343,6 @@ int lt_plan_build(const lt_hardware_t *hw,
         out->nvme_bytes_per_token += tn * (double)c->bytes_each;
         out->gpu_compute_ms_per_token += tv * c->gpu_ms_per_touch;
         out->cpu_compute_ms_per_token += (tr + tn) * c->cpu_ms_per_touch;
-
-        /* Overflow guard for malformed manifests, although class validation
-         * and ordinary model sizes keep this path far below UINT64_MAX. */
-        if (lt_u64_mul(c->bytes_each, c->count, &bytes) != 0) {
-            snprintf(out->error, sizeof(out->error), "%s byte size overflows uint64", c->name);
-            free(den);
-            return -1;
-        }
-        (void)bytes;
     }
 
     out->movement_ms_per_token = lt_nvme_ms_for_bytes(hw, (uint64_t)out->nvme_bytes_per_token);
@@ -384,6 +402,10 @@ int lt_plan_validate(const lt_hardware_t *hw,
             snprintf(error, error_cap, "%s requires VRAM", c->name);
             return -1;
         }
+        if (UINT64_MAX - ram < p->ram_bytes || UINT64_MAX - vram < p->vram_bytes) {
+            lt_set_error(error, error_cap, "plan byte totals overflow uint64");
+            return -1;
+        }
         ram += p->ram_bytes;
         vram += p->vram_bytes;
     }
@@ -423,7 +445,7 @@ void lt_plan_print(FILE *fp,
             plan->compute_ms_per_token,
             plan->predicted_ms_per_token);
     fprintf(fp, "\n%-28s %-16s %10s %10s %10s %10s\n",
-            "class", "role", "VRAM", "RAM", "NVMe", "NVMe hit%");
+            "class", "role", "VRAM", "RAM", "NVMe", "NVMe mass%");
     for (i = 0; i < plan->nclasses; ++i) {
         const lt_class_plan_t *p = &plan->classes[i];
         fprintf(fp, "%-28s %-16s %5u/%-4u %5u/%-4u %5u/%-4u %9.2f\n",
@@ -520,9 +542,10 @@ static int lt_split_tabs(char *line, char **fields, int max_fields) {
 static int lt_parse_u64(const char *s, uint64_t *out) {
     char *end = NULL;
     unsigned long long v;
+    if (!s || !*s || *s == '-') return -1;
     errno = 0;
     v = strtoull(s, &end, 10);
-    if (errno || !end || *lt_trim(end) != '\0') return -1;
+    if (errno || !end || end == s || *lt_trim(end) != '\0') return -1;
     *out = (uint64_t)v;
     return 0;
 }
@@ -537,9 +560,10 @@ static int lt_parse_u32(const char *s, uint32_t *out) {
 static int lt_parse_double(const char *s, double *out) {
     char *end = NULL;
     double v;
+    if (!s || !*s) return -1;
     errno = 0;
     v = strtod(s, &end);
-    if (errno || !end || *lt_trim(end) != '\0' || !isfinite(v)) return -1;
+    if (errno || !end || end == s || *lt_trim(end) != '\0' || !isfinite(v)) return -1;
     *out = v;
     return 0;
 }
