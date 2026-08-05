@@ -27,3 +27,23 @@ jobs:
           --width 48
           --resident-layers 7
           --passes 5
+      - name: Build native fixture
+        env:
+          PYTHONPATH: research/fareed
+        run: |
+          mkdir -p out
+          python - <<'PY'
+          from synthetic_trunk import make_synthetic_layers, pack_trunk
+          pack_trunk(
+              "out/native_fixture.bin",
+              make_synthetic_layers(n_layers=24, width=48, seed=0),
+          )
+          PY
+      - name: Compile native reader
+        run: >
+          cc -std=c11 -O2 -Wall -Wextra -Werror -pthread
+          research/fareed/trunk_stream.c
+          research/fareed/test_trunk_stream.c
+          -lm -o out/test_trunk_stream
+      - name: Run native buffered and direct-I/O differential
+        run: ./out/test_trunk_stream out/native_fixture.bin
