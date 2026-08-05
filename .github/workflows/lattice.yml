@@ -13,6 +13,7 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'docs/olmoe-acceptance.md'
+      - 'tools/materialize_olmoe_native_contract.py'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -26,6 +27,7 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'docs/olmoe-acceptance.md'
+      - 'tools/materialize_olmoe_native_contract.py'
       - '.github/workflows/lattice.yml'
 
 permissions:
@@ -41,14 +43,23 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      - name: Materialize reviewed native OLMoE contract
+        run: python3 tools/materialize_olmoe_native_contract.py
+      - name: Capture materialized sources
+        uses: actions/upload-artifact@v4
+        with:
+          name: materialized-olmoe-contract
+          path: |
+            c/olmoe.c
+            c/Makefile
+          if-no-files-found: error
+          retention-days: 1
       - name: Validate controller and long oracle artifacts
         run: |
           python3 -m compileall -q lattice c/tools
           python3 -m unittest discover -s lattice/tests -v
           python3 -m lattice --version
-      - name: Build OLMoE engine
-        run: make -C c olmoe
-      - name: Validate Colibri engine and exact top-k oracle
+      - name: Validate native engines and exact top-k oracle
         run: make -C c check
 
   python-matrix:
