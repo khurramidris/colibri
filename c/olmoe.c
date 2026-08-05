@@ -18,6 +18,7 @@
  *   PILOT_EVICT_GUARD=0/1 : 1=enable LFRU prefetch eviction guard (default), 0=disable
  *   EXPERT_DROP=0/1: 1=fadvise(DONTNEED) after each expert read (old behaviour,
  *                    for RAM-tight boxes); 0=keep pages cached (default)
+ *   OLMOE_IGNORE_PERSISTED_PINS=0/1: 1=do not load or save hot_pinned.bin
  *   (expert queue is sorted by eid for SSD read locality)
  */
 #define _GNU_SOURCE
@@ -26,6 +27,8 @@
 #include <string.h>
 #include <math.h>
 #include <time.h>
+#include <limits.h>
+#include <stdint.h>
 #include <pthread.h>
 #if defined(__APPLE__) || defined(__linux__) || defined(__FreeBSD__)
 #include <sys/resource.h>
@@ -102,6 +105,7 @@ static struct { int l, e; } pilot_q[4096];
 static volatile unsigned pilot_r = 0, pilot_w = 0;
 static Model *pilot_m = NULL;
 static int g_pilot = 0;
+static int g_ignore_persisted_pins = 0;
 static int g_wide  = 1;  /* IMPROVEMENT 4: top-K * g_wide candidates prefetched */
 static int g_pilot_evict_guard = 1; /* PILOT_EVICT_GUARD=0 to disable LFRU prefetch eviction guard */
 static int g_expert_drop = 0;       /* EXPERT_DROP=1 restores fadvise(DONTNEED) after expert reads */
@@ -341,45 +345,55 @@ static void model_init(Model *m, const char *snap, int cap, int bits) {
     m->pilot_conf_limit = cl;
     m->dense_load_s = now_s() - t0;
 
-    // Persistent Hot Pinning: try to load hot_pinned.bin
-    char pinpath[512];
-    snprintf(pinpath, sizeof(pinpath), "%s/hot_pinned.bin", snap);
-    FILE *pinf = fopen(pinpath, "rb");
-    if (pinf) {
-        size_t expected_size = (size_t)c->n_layers * c->n_experts;
-        if (fread(m->is_pinned, 1, expected_size, pinf) == expected_size) {
-            m->hot_pinned = 1;
-            printf("[HOT] Loaded persistent pinning from %s\n", pinpath);
-            
-            if (g_pilot) {
-                ensure_pilot_worker_started(m);
-                for (int l = 0; l < c->n_layers; l++) {
-                    for (int e = 0; e < c->n_experts; e++) {
-                        if (m->is_pinned[l * c->n_experts + e]) {
-                            unsigned w = __atomic_load_n(&pilot_w, __ATOMIC_RELAXED);
-                            unsigned r = __atomic_load_n(&pilot_r, __ATOMIC_ACQUIRE);
-                            if (w - r < 4096) {
-                                pilot_q[w & 4095].l = l; pilot_q[w & 4095].e = e;
-                                pthread_mutex_lock(&g_pilot_mx);
-                                m->is_queued[l * c->n_experts + e] = 1;
-                                pthread_mutex_unlock(&g_pilot_mx);
-                                __atomic_store_n(&pilot_w, w + 1, __ATOMIC_RELEASE);
+    // Persistent pin state is outside acceptance identity unless explicitly enabled.
+    if (!g_ignore_persisted_pins) {
+        char pinpath[512];
+        snprintf(pinpath, sizeof(pinpath), "%s/hot_pinned.bin", snap);
+        FILE *pinf = fopen(pinpath, "rb");
+        if (pinf) {
+            size_t expected_size = (size_t)c->n_layers * c->n_experts;
+            size_t got = fread(m->is_pinned, 1, expected_size, pinf);
+            fclose(pinf);
+            if (got == expected_size) {
+                m->hot_pinned = 1;
+                printf("[HOT] Loaded persistent pinning from %s\n", pinpath);
+
+                if (g_pilot) {
+                    ensure_pilot_worker_started(m);
+                    for (int l = 0; l < c->n_layers; l++) {
+                        for (int e = 0; e < c->n_experts; e++) {
+                            if (m->is_pinned[l * c->n_experts + e]) {
+                                unsigned w = __atomic_load_n(&pilot_w, __ATOMIC_RELAXED);
+                                unsigned r = __atomic_load_n(&pilot_r, __ATOMIC_ACQUIRE);
+                                if (w - r < 4096) {
+                                    pilot_q[w & 4095].l = l;
+                                    pilot_q[w & 4095].e = e;
+                                    pthread_mutex_lock(&g_pilot_mx);
+                                    m->is_queued[l * c->n_experts + e] = 1;
+                                    pthread_mutex_unlock(&g_pilot_mx);
+                                    __atomic_store_n(&pilot_w, w + 1, __ATOMIC_RELEASE);
+                                }
                             }
                         }
                     }
+                    printf("[HOT] Pre-loading pinned experts into cache...\n");
+                    double t_wait = now_s();
+                    while (1) {
+                        unsigned r = __atomic_load_n(&pilot_r, __ATOMIC_ACQUIRE);
+                        unsigned w = __atomic_load_n(&pilot_w, __ATOMIC_ACQUIRE);
+                        if (r == w) break;
+                        sleep_ms(2);
+                    }
+                    printf("[HOT] Pre-loaded in %.1fs!\n", now_s() - t_wait);
                 }
-                printf("[HOT] Pre-loading pinned experts into cache...\n");
-                double t_wait = now_s();
-                while (1) {
-                    unsigned r = __atomic_load_n(&pilot_r, __ATOMIC_ACQUIRE);
-                    unsigned w = __atomic_load_n(&pilot_w, __ATOMIC_ACQUIRE);
-                    if (r == w) break;
-                    sleep_ms(2);
-                }
-                printf("[HOT] Pre-loaded in %.1fs!\n", now_s() - t_wait);
+            } else {
+                memset(m->is_pinned, 0, expected_size);
+                printf("[HOT] Warning: invalid pin file size (got %zu, expected %zu)\n",
+                       got, expected_size);
             }
         }
-        fclose(pinf);
+    } else {
+        printf("OLMOE_PERSISTED_PINS_DISABLED\n");
     }
 }
 
@@ -1081,11 +1095,30 @@ static void run_chat(Model *m, Tok *T, int ctx_cap) {
 }
 
 /* ---------- lettura ref.json ---------- */
+#define OLMOE_MAX_REFERENCE_BYTES (4u * 1024u * 1024u)
+#define OLMOE_MAX_TOTAL_TOKENS 2048
+#define OLMOE_MAX_NEW_TOKENS 512
+
 static int *read_int_array(jval *o, const char *key, int *n_out) {
+    *n_out = 0;
+    if (!o || o->t != J_OBJ) return NULL;
     jval *a = json_get(o, key);
-    int *r = malloc(a->len * sizeof(int));
-    for (int i = 0; i < a->len; i++) r[i] = (int)a->kids[i]->num;
-    *n_out = a->len; return r;
+    if (!a || a->t != J_ARR || a->len < 1 || a->len > OLMOE_MAX_TOTAL_TOKENS) return NULL;
+    if ((size_t)a->len > SIZE_MAX / sizeof(int)) return NULL;
+    int *r = calloc((size_t)a->len, sizeof(int));
+    if (!r) return NULL;
+    for (int i = 0; i < a->len; i++) {
+        jval *item = a->kids ? a->kids[i] : NULL;
+        if (!item || item->t != J_NUM || !isfinite(item->num)
+                || item->num < 0.0 || item->num > (double)INT_MAX
+                || floor(item->num) != item->num) {
+            free(r);
+            return NULL;
+        }
+        r[i] = (int)item->num;
+    }
+    *n_out = a->len;
+    return r;
 }
 
 int main(int argc, char **argv) {
@@ -1093,6 +1126,8 @@ int main(int argc, char **argv) {
     const char *snap = getenv("SNAP");
     if (!snap) { fprintf(stderr, "set SNAP=<snapshot directory>\n"); return 1; }
     g_pilot = getenv("PILOT") ? atoi(getenv("PILOT")) : 0;
+    g_ignore_persisted_pins = getenv("OLMOE_IGNORE_PERSISTED_PINS")
+        ? atoi(getenv("OLMOE_IGNORE_PERSISTED_PINS")) != 0 : 0;
     g_wide  = getenv("WIDE")  ? atoi(getenv("WIDE"))  : 1;
     g_pilot_evict_guard = getenv("PILOT_EVICT_GUARD") ? atoi(getenv("PILOT_EVICT_GUARD")) : 1;
     g_expert_drop = getenv("EXPERT_DROP") ? atoi(getenv("EXPERT_DROP")) : 0;
@@ -1101,6 +1136,10 @@ int main(int argc, char **argv) {
     int hot_n  = getenv("HOT")   ? atoi(getenv("HOT"))   : 0;
     int cap    = argc > 1 ? atoi(argv[1]) : 16;
     int bits   = argc > 2 ? atoi(argv[2]) : 8;
+    if (cap < 1 || cap > 512) {
+        fprintf(stderr, "cache_cap must be 1..512 (got %d)\n", cap);
+        return 1;
+    }
     if (bits < 2 || bits > 8) {
         fprintf(stderr, "quant_bits must be 2..8 (got %d)\n", bits);
         return 1;
@@ -1131,14 +1170,64 @@ int main(int argc, char **argv) {
     printf("== Streaming C engine v2.2 | cache=%d/layer bits=%d pilot=%d wide=%d guard=%d hot=%d smooth=%.2f conf=%.2f ==\n",
            cap, bits, g_pilot, g_wide, g_pilot_evict_guard, hot_n, smooth, conf);
 
-    FILE *f = fopen(refpath, "rb"); if (!f) { perror(refpath); return 1; }
-    fseek(f,0,SEEK_END); long n=ftell(f); fseek(f,0,SEEK_SET);
-    char *buf=malloc(n+1); if (fread(buf,1,n,f)!=(size_t)n) {} buf[n]=0; fclose(f);
-    char *arena=NULL; jval *ref = json_parse(buf, &arena);
-    int np, nfull; int *prompt = read_int_array(ref,"prompt_ids",&np); int *full = read_int_array(ref,"full_ids",&nfull);
+    FILE *f = fopen(refpath, "rb");
+    if (!f) { perror(refpath); return 1; }
+    if (fseek(f, 0, SEEK_END) != 0) { perror("fseek"); fclose(f); return 1; }
+    long n = ftell(f);
+    if (n <= 0 || (unsigned long)n > OLMOE_MAX_REFERENCE_BYTES) {
+        fprintf(stderr, "reference JSON must be 1..%u bytes (got %ld)\n",
+                OLMOE_MAX_REFERENCE_BYTES, n);
+        fclose(f);
+        return 1;
+    }
+    if (fseek(f, 0, SEEK_SET) != 0) { perror("fseek"); fclose(f); return 1; }
+    char *buf = malloc((size_t)n + 1);
+    if (!buf) { fprintf(stderr, "reference allocation failed\n"); fclose(f); return 1; }
+    if (fread(buf, 1, (size_t)n, f) != (size_t)n || ferror(f)) {
+        fprintf(stderr, "reference JSON read failed\n");
+        free(buf);
+        fclose(f);
+        return 1;
+    }
+    buf[n] = 0;
+    fclose(f);
+    char *arena = NULL;
+    jval *ref = json_parse(buf, &arena);
+    int np = 0, nfull = 0;
+    int *prompt = read_int_array(ref, "prompt_ids", &np);
+    int *full = read_int_array(ref, "full_ids", &nfull);
+    if (!ref || !prompt || !full || np < 1 || nfull <= np
+            || nfull > OLMOE_MAX_TOTAL_TOKENS || nfull - np > OLMOE_MAX_NEW_TOKENS) {
+        fprintf(stderr, "reference JSON contains an invalid or oversized token path\n");
+        free(prompt);
+        free(full);
+        free(buf);
+        free(arena);
+        return 1;
+    }
+    for (int i = 0; i < np; i++) {
+        if (full[i] != prompt[i]) {
+            fprintf(stderr, "reference full_ids must begin with prompt_ids\n");
+            free(prompt);
+            free(full);
+            free(buf);
+            free(arena);
+            return 1;
+        }
+    }
     int n_new = nfull - np;
 
     Model m; model_init(&m, snap, cap, bits);
+    for (int i = 0; i < nfull; i++) {
+        if (full[i] < 0 || full[i] >= m.c.vocab) {
+            fprintf(stderr, "reference token %d is outside vocab=%d\n", full[i], m.c.vocab);
+            free(prompt);
+            free(full);
+            free(buf);
+            free(arena);
+            return 1;
+        }
+    }
     printf("resident weights loaded in %.1fs | RSS after load: %.2f GB\n", m.dense_load_s, rss_gb());
 
     if (getenv("PPL") && atoi(getenv("PPL")) == 1) {   /* loss-meter mode: teacher-forced NLL */
@@ -1150,11 +1239,16 @@ int main(int argc, char **argv) {
         printf("Expert cache hit rate: %.1f%%  (hit=%llu miss=%llu)\n", tot?100.0*m.hits/tot:0.0,
                (unsigned long long)m.hits, (unsigned long long)m.miss);
         printf("Speed: %.2f tok/s (%.1fs for %d tokens) | PEAK RSS: %.2f GB\n", scored/dt, dt, scored, rss_gb());
-        free(buf); free(arena);
+        free(prompt); free(full); free(buf); free(arena);
         return 0;
     }
 
-    int *out = malloc((np + n_new) * sizeof(int));
+    int *out = calloc((size_t)nfull, sizeof(int));
+    if (!out) {
+        fprintf(stderr, "generation token allocation failed\n");
+        free(prompt); free(full); free(buf); free(arena);
+        return 1;
+    }
     double t = now_s();
     generate(&m, prompt, np, n_new, out);
     double dt = now_s() - t;
@@ -1170,7 +1264,7 @@ int main(int argc, char **argv) {
 
 
     // Persistent Hot Pinning: save dynamic pinning if newly created
-    if (m.hot_pinned) {
+    if (!g_ignore_persisted_pins && m.hot_pinned) {
         char pinpath[512];
         snprintf(pinpath, sizeof(pinpath), "%s/hot_pinned.bin", snap);
         FILE *pinf_chk = fopen(pinpath, "rb");
@@ -1188,6 +1282,6 @@ int main(int argc, char **argv) {
     }
 
     printf("Speed: %.2f tok/s (%.1fs for %d tokens)\n", n_new/dt, dt, n_new);
-    free(buf); free(arena);
+    free(out); free(prompt); free(full); free(buf); free(arena);
     return 0;
 }

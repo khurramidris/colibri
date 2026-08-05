@@ -86,8 +86,9 @@ with open(oracle_path, 'w', encoding='utf-8') as oracle:
             file=oracle,
         )
     print('SUMMARY\\tv2\\t8\\t8\\tseparate_replay_pass\\tprivate_file', file=oracle)
+seconds=8.0/speed
 print('REPLAY_ORACLE_WRITTEN v2 steps=8 topk=8 measurement=separate_replay_pass transport=private_file')
-print(f'REPLAY decode: 8 tokens | {speed:.2f} tok/s')
+print(f'REPLAY decode: 8 tokens in {seconds:.3f}s | {speed:.2f} tok/s')
 print('expert hit 70.0%')
 print('latency p50 10.0 ms p99 20.0 ms')
 """, encoding="utf-8")
@@ -95,7 +96,7 @@ print('latency p50 10.0 ms p99 20.0 ms')
             suite_path = root / "suite.json"
             suite = {
                 "schema_version": 1,
-                "name": "investor-demo",
+                "name": "synthetic-lifecycle",
                 "hourly_cost_usd": 2.0,
                 "cases": [
                     {"id": "coding", "prompt": "Write a safe parser.", "tokens": 8, "weight": 2},
@@ -124,6 +125,7 @@ print('latency p50 10.0 ms p99 20.0 ms')
             runs = workspace.list_runs(session["id"])
             self.assertEqual(len(runs), len(session["candidates"]) * 2 * 3)
             self.assertTrue(all("record_sha256" in run for run in runs))
+            self.assertTrue(all("attempt" in run for run in runs))
             self.assertTrue(all(
                 run["status"] != "success" or "oracle" in run["metrics"]
                 for run in runs
@@ -144,15 +146,20 @@ print('latency p50 10.0 ms p99 20.0 ms')
             self.assertEqual(profile["winner"]["id"], "direct-pipeline")
             self.assertEqual(profile["evidence_root_sha256"], session["evidence_root_sha256"])
             self.assertEqual(profile["oracle_policy"], session["oracle_policy"])
-            self.assertEqual(profile["statistics_policy"]["schema"], "lattice-statistics/2")
-            self.assertEqual(profile["statistics_policy"]["bootstrap"], "stratified_paired_case_medians")
+            self.assertEqual(profile["statistics_policy"]["schema"], "lattice-statistics/3")
+            self.assertEqual(profile["statistics_policy"]["bootstrap"], "stratified_paired_case_medians_percentile")
             self.assertGreater(profile["statistics_policy"]["per_candidate_confidence"], 0.90)
+            self.assertEqual(profile["assurance_level"], "confidence-screened-uncalibrated")
+            self.assertFalse(profile["deployable"])
             report_path = root / "report.md"
             self.assertEqual(main([
                 "report", "--workspace", str(workspace_path), "--output", str(report_path),
             ]), 0)
             report = report_path.read_text(encoding="utf-8")
-            self.assertIn("Promoted `direct-pipeline`", report)
+            self.assertIn("Screening selection: `direct-pipeline`", report)
+            self.assertNotIn("Promoted `direct-pipeline`", report)
+            self.assertIn("Deployable from this profile: **no**", report)
+            self.assertIn("not authorized for launch", report)
             self.assertIn("per million generated tokens", report)
             self.assertIn("Numerical replay consistency", report)
             self.assertIn("Stratified", report)
@@ -167,8 +174,8 @@ print('latency p50 10.0 ms p99 20.0 ms')
             self.assertEqual(main(["verify", "--workspace", str(workspace_path)]), 2)
             atomic_write_json(workspace.project_path, original_project)
             self.assertEqual(main(["verify", "--workspace", str(workspace_path)]), 0)
-            self.assertEqual(main(["env", "--workspace", str(workspace_path), "--format", "json"]), 0)
-            self.assertEqual(main(["launch", "--workspace", str(workspace_path), "--", "info"]), 0)
+            self.assertEqual(main(["env", "--workspace", str(workspace_path), "--format", "json"]), 2)
+            self.assertEqual(main(["launch", "--workspace", str(workspace_path), "--", "info"]), 2)
 
 
 if __name__ == "__main__":

@@ -6,9 +6,14 @@ import sys
 from pathlib import Path
 
 from . import __version__
-from .acceptance import prepare_olmoe_acceptance, run_olmoe_acceptance, write_acceptance_outputs
-from .colibri import create_context, hardware_summary
-from .common import LatticeError
+from .acceptance import (
+    load_and_verify_olmoe_acceptance,
+    prepare_olmoe_acceptance,
+    run_olmoe_acceptance,
+    write_acceptance_outputs,
+)
+from .colibri import create_context, fingerprint_runtime, hardware_summary
+from .common import LatticeError, load_json
 from .deploy import deployment_environment, launch
 from .experiment import create_project, resume_experiment, run_experiment
 from .recommend import recommend
@@ -42,6 +47,8 @@ def cmd_init(args: argparse.Namespace) -> int:
         "runtime_fingerprint": context.runtime_fingerprint,
         "hardware_fingerprint": context.hardware_fingerprint,
         "execution_fingerprint": context.execution_fingerprint,
+        "plan_fingerprint": context.plan_fingerprint,
+        "replay_cap": context.replay_cap,
         "qualification_context": context.qualification_context,
         "suite_fingerprint": suite.fingerprint,
         "hardware": hardware_summary(context),
@@ -51,13 +58,19 @@ def cmd_init(args: argparse.Namespace) -> int:
 
 def _context_from_project(workspace: Workspace, deep: bool = False):
     project = workspace.load_project()
+    repo_root = Path(project["repo_root"])
+    engine = Path(project["engine_path"])
+    current_runtime = fingerprint_runtime(repo_root / "c", repo_root / "c" / "coli", engine)
+    if current_runtime != project.get("runtime_fingerprint"):
+        raise LatticeError("runtime changed before support modules could be executed; reinitialize")
     return create_context(
-        Path(project["repo_root"]),
+        repo_root,
         Path(project["model_path"]),
-        engine=Path(project["engine_path"]),
+        engine=engine,
         deep=deep,
         context_length=int(project["qualification_context"]),
         qualification_overrides=project.get("qualification_environment"),
+        frozen_plan=project.get("plan"),
     )
 
 
@@ -72,6 +85,10 @@ def _assert_project_identity(workspace: Workspace, context) -> None:
         mismatches.append("hardware")
     if project.get("execution_fingerprint") != context.execution_fingerprint:
         mismatches.append("execution environment")
+    if project.get("plan_fingerprint") != context.plan_fingerprint:
+        mismatches.append("execution plan")
+    if project.get("replay_cap") != context.replay_cap:
+        mismatches.append("native replay arguments")
     if project.get("qualification_context") != context.qualification_context:
         mismatches.append("qualification context")
     if mismatches:
@@ -115,6 +132,9 @@ def cmd_recommend(args: argparse.Namespace) -> int:
         "profile_id": profile["id"],
         "winner": profile["winner"]["id"],
         "baseline_retained": profile["baseline_retained"],
+        "assurance_level": profile["assurance_level"],
+        "deployable": profile["deployable"],
+        "deployment_blocker": profile["deployment_blocker"],
         "scores": [score.as_dict() for score in scores],
     }, indent=2))
     return 0
@@ -139,7 +159,9 @@ def cmd_status(args: argparse.Namespace) -> int:
     project = workspace.load_project()
     sessions = []
     for path in sorted(workspace.sessions_dir.glob("*.json")):
-        data = json.loads(path.read_text(encoding="utf-8"))
+        data = load_json(path)
+        if not isinstance(data, dict):
+            raise LatticeError(f"invalid session record: {path}")
         sessions.append({
             "id": data.get("id"),
             "status": data.get("status"),
@@ -150,7 +172,13 @@ def cmd_status(args: argparse.Namespace) -> int:
     profile = None
     if workspace.current_profile_path.exists():
         current = workspace.load_profile()
-        profile = {"id": current["id"], "winner": current["winner"]["id"], "created_at": current["created_at"]}
+        profile = {
+            "id": current["id"],
+            "winner": current["winner"]["id"],
+            "created_at": current["created_at"],
+            "assurance_level": current.get("assurance_level"),
+            "deployable": current.get("deployable", False),
+        }
     print(json.dumps({
         "workspace": str(workspace.root),
         "model_family": project.get("model_family"),
@@ -201,6 +229,7 @@ def cmd_accept_olmoe(args: argparse.Namespace) -> int:
     print(json.dumps({
         "status": record["status"],
         "acceptance_id": record["id"],
+        "record_sha256": record["record_sha256"],
         "evidence_root_sha256": record["evidence_root_sha256"],
         "successful_runs": record["summary"]["successful_runs"],
         "required_runs": record["summary"]["required_runs"],
@@ -210,10 +239,18 @@ def cmd_accept_olmoe(args: argparse.Namespace) -> int:
     return 0 if record["status"] == "accepted" else 3
 
 
+def cmd_verify_olmoe(args: argparse.Namespace) -> int:
+    result = load_and_verify_olmoe_acceptance(
+        Path(args.input), live=args.live
+    )
+    print(json.dumps(result, indent=2))
+    return 0
+
+
 def build_parser() -> argparse.ArgumentParser:
     parser = argparse.ArgumentParser(
         prog="lattice",
-        description="Evidence-driven qualification and deployment profiles for Colibri inference.",
+        description="Evidence-driven acceptance and screening for Colibri inference experiments.",
     )
     parser.add_argument("--version", action="version", version=f"lattice {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
@@ -225,72 +262,88 @@ def build_parser() -> argparse.ArgumentParser:
     init.add_argument("--suite", required=True, help="workload suite JSON")
     init.add_argument("--workspace", default=".lattice", help="evidence workspace")
     init.add_argument("--deep", action=argparse.BooleanOptionalAction, default=True, help="run Colibri deep doctor")
-    init.add_argument("--force", action="store_true", help="replace project.json in an existing workspace")
+    init.add_argument("--force", action="store_true", help="replace project.json only when no evidence exists")
     init.set_defaults(func=cmd_init)
 
     qualify = sub.add_parser("qualify", help="run a controlled multi-workload candidate experiment")
     qualify.add_argument("--workspace", default=".lattice")
-    qualify.add_argument("--repeats", type=int, default=2)
+    qualify.add_argument("--repeats", type=int, default=3)
     qualify.add_argument("--timeout", type=int, default=900, help="seconds per calibration or replay")
     qualify.add_argument("--resume", metavar="SESSION_ID", help="resume an interrupted qualification session")
     qualify.add_argument("--retry-failed", action=argparse.BooleanOptionalAction, default=True,
                          help="when resuming, retry failed tasks as well as missing tasks")
     qualify.set_defaults(func=cmd_qualify)
 
-    rec = sub.add_parser("recommend", help="apply promotion gates and write an immutable profile")
+    rec = sub.add_parser("recommend", help="apply screening gates and write a write-once evidence profile")
     rec.add_argument("--workspace", default=".lattice")
     rec.add_argument("--session", required=True)
-    rec.add_argument("--min-runs", type=int, default=2)
+    rec.add_argument("--min-runs", type=int, default=3)
     rec.add_argument("--min-gain", type=float, default=0.03)
     rec.add_argument("--max-regression", type=float, default=0.05)
     rec.add_argument("--confidence", type=float, default=0.90)
-    rec.add_argument("--require-confidence", action="store_true")
-    rec.add_argument("--hourly-cost", type=float, help="hardware cost in USD/hour for cost-per-million estimate")
+    rec.add_argument(
+        "--require-confidence",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="require a multiple-comparison-adjusted screening interval; disable only for explicit exploratory analysis",
+    )
+    rec.add_argument("--hourly-cost", type=float, help="hardware cost in USD/hour for a decode-only estimate")
     rec.set_defaults(func=cmd_recommend)
 
-    report = sub.add_parser("report", help="generate an investor/customer-readable qualification report")
+    report = sub.add_parser("report", help="generate a qualification evidence report with limitations")
     report.add_argument("--workspace", default=".lattice")
     report.add_argument("--profile")
     report.add_argument("--output")
     report.set_defaults(func=cmd_report)
 
-    verify = sub.add_parser("verify", help="recompute runtime/model/workload identity before deployment")
+    verify = sub.add_parser("verify", help="recompute recorded identities and profile evidence")
     verify.add_argument("--workspace", default=".lattice")
     verify.add_argument("--deep", action="store_true")
     verify.set_defaults(func=cmd_verify)
 
-    status = sub.add_parser("status", help="show sessions and the promoted profile")
+    status = sub.add_parser("status", help="show sessions and the current evidence profile")
     status.add_argument("--workspace", default=".lattice")
     status.set_defaults(func=cmd_status)
 
-    env = sub.add_parser("env", help="print the verified promoted deployment environment")
+    env = sub.add_parser("env", help="print an allowed verified environment when deployment policy permits")
     env.add_argument("--workspace", default=".lattice")
-    env.add_argument("--adaptive", action="store_true", help="allow runtime adaptive state not covered by the qualification")
+    env.add_argument("--adaptive", action="store_true", help="allow runtime adaptive state outside measured evidence")
     env.add_argument("--format", choices=("json", "shell"), default="json")
     env.set_defaults(func=cmd_env)
 
-    launch_parser = sub.add_parser("launch", help="verify and run a Colibri command under the promoted profile")
+    launch_parser = sub.add_parser("launch", help="verify and run a permitted Colibri command when policy allows")
     launch_parser.add_argument("--workspace", default=".lattice")
-    launch_parser.add_argument("--adaptive", action="store_true", help="allow runtime adaptive state not covered by the qualification")
+    launch_parser.add_argument("--adaptive", action="store_true", help="allow runtime adaptive state outside measured evidence")
     launch_parser.add_argument("coli_args", nargs=argparse.REMAINDER, help="arguments after --, e.g. -- serve --port 8000")
     launch_parser.set_defaults(func=cmd_launch)
 
     accept = sub.add_parser(
         "accept-olmoe",
-        help="run a token-exact real-model acceptance against an OLMoE reference continuation",
+        help="run a single-reference token-exact OLMoE execution check",
     )
     accept.add_argument("--repo", default=".", help="Colibri checkout root")
     accept.add_argument("--model", required=True, help="converted OLMoE model directory")
-    accept.add_argument("--reference", required=True, help="reference JSON with prompt_ids and full_ids")
+    accept.add_argument("--reference", required=True, help="version-2 provenance-bound reference JSON")
     accept.add_argument("--engine", help="explicit OLMoE engine binary")
-    accept.add_argument("--cache-cap", type=int, default=16, help="expert cache entries per layer")
+    accept.add_argument("--cache-cap", type=int, default=16, help="positive expert cache entries per layer")
     accept.add_argument("--quant-bits", type=int, default=8, help="expert quantization bits used by the engine")
     accept.add_argument("--repeats", type=int, default=3)
     accept.add_argument("--timeout", type=int, default=1800, help="seconds per real-model run")
     accept.add_argument("--threads", type=int, help="fixed OpenMP thread count; default uses engine tuning")
-    accept.add_argument("--output", default="olmoe-acceptance.json", help="immutable JSON evidence output")
-    accept.add_argument("--report", help="Markdown report path; defaults beside --output")
+    accept.add_argument("--output", default="olmoe-acceptance.json", help="write-once JSON evidence output")
+    accept.add_argument("--report", help="write-once Markdown report path; defaults beside --output")
     accept.set_defaults(func=cmd_accept_olmoe)
+
+    verify_olmoe = sub.add_parser(
+        "verify-olmoe",
+        help="verify retained OLMoE acceptance evidence",
+    )
+    verify_olmoe.add_argument("--input", required=True, help="OLMoE acceptance JSON evidence")
+    verify_olmoe.add_argument(
+        "--live", action="store_true",
+        help="also recheck current model, runtime, reference and machine identity",
+    )
+    verify_olmoe.set_defaults(func=cmd_verify_olmoe)
     return parser
 
 

@@ -1,41 +1,51 @@
-name: Lattice scalable replay oracle artifacts
+name: Lattice controller and native engines
 
 on:
   push:
     paths:
       - 'c/colibri.c'
+      - 'c/olmoe.c'
       - 'c/replay_oracle.h'
-      - 'c/tests/test_replay_oracle.c'
+      - 'c/tests/**'
+      - 'c/tools/**'
       - 'c/Makefile'
       - 'lattice/**'
       - 'LATTICE.md'
-      - 'docs/lattice-qualification.md'
+      - 'docs/**'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
       - 'c/colibri.c'
+      - 'c/olmoe.c'
       - 'c/replay_oracle.h'
-      - 'c/tests/test_replay_oracle.c'
+      - 'c/tests/**'
+      - 'c/tools/**'
       - 'c/Makefile'
       - 'lattice/**'
       - 'LATTICE.md'
-      - 'docs/lattice-qualification.md'
+      - 'docs/**'
       - '.github/workflows/lattice.yml'
 
 permissions:
   contents: read
 
+concurrency:
+  group: lattice-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
 jobs:
   engine-and-controller:
     runs-on: ubuntu-latest
+    timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      # Native acceptance changes are committed source, not generated CI state.
       - name: Validate controller and long oracle artifacts
         run: |
-          python3 -m compileall -q lattice
+          python3 -m compileall -q lattice c/tools
           python3 -m unittest discover -s lattice/tests -v
           python3 -m lattice --version
-      - name: Validate Colibri engine and exact top-k oracle
+      - name: Validate native engines and exact top-k oracle
         run: make -C c check
 
   python-matrix:
@@ -45,13 +55,14 @@ jobs:
         os: [ubuntu-latest, macos-latest, windows-latest]
         python: ['3.10', '3.13']
     runs-on: ${{ matrix.os }}
+    timeout-minutes: 20
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python }}
       - name: Compile
-        run: python -m compileall -q lattice
+        run: python -m compileall -q lattice c/tools
       - name: Unit and protocol integration tests
         run: python -m unittest discover -s lattice/tests -v
       - name: CLI smoke test

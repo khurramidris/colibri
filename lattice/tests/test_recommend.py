@@ -7,8 +7,23 @@ from pathlib import Path
 from lattice.common import LatticeError, atomic_write_json, canonical_json, sha256_bytes
 from lattice.evidence import session_evidence_root
 from lattice.oracle import ORACLE_POLICY, ORACLE_SCHEMA
-from lattice.recommend import recommend
+from lattice.recommend import EXPLORATORY_ASSURANCE, SCREENED_ASSURANCE, recommend
 from lattice.workspace import Workspace
+
+PLAN_FINGERPRINT = "p" * 64
+
+
+def successful_process() -> dict:
+    return {
+        "returncode": 0,
+        "timed_out": False,
+        "duration_seconds": 0.01,
+        "output_truncated": False,
+        "stdout": "",
+        "stderr": "",
+        "stdout_bytes": 0,
+        "stderr_bytes": 0,
+    }
 
 
 class RecommendTests(unittest.TestCase):
@@ -24,6 +39,8 @@ class RecommendTests(unittest.TestCase):
             "runtime_fingerprint": "r",
             "hardware_fingerprint": "h",
             "execution_fingerprint": "e",
+            "plan_fingerprint": PLAN_FINGERPRINT,
+            "replay_cap": 0,
             "qualification_context": 4096,
             "qualification_environment": {},
             "storage_topology": {},
@@ -42,8 +59,7 @@ class RecommendTests(unittest.TestCase):
         atomic_write_json(ws.project_path, project)
         replay = {"prompt_ids": [1, 2], "full_ids": [1, 2, 3, 4]}
         replay_hash = sha256_bytes(canonical_json(replay))
-        replay_path = ws.replays_dir / "case.json"
-        atomic_write_json(replay_path, replay)
+        atomic_write_json(ws.replays_dir / "case.json", replay)
         return ws, replay_hash
 
     def _session(self, ws: Workspace, replay_hash: str, repeats: int) -> dict:
@@ -57,6 +73,8 @@ class RecommendTests(unittest.TestCase):
             "runtime_fingerprint": "r",
             "hardware_fingerprint": "h",
             "execution_fingerprint": "e",
+            "plan_fingerprint": PLAN_FINGERPRINT,
+            "replay_cap": 0,
             "qualification_context": 4096,
             "oracle_policy": dict(ORACLE_POLICY),
             "repeats": repeats,
@@ -70,6 +88,7 @@ class RecommendTests(unittest.TestCase):
                     "sha256": replay_hash,
                     "prompt_tokens": 2,
                     "continuation_tokens": 2,
+                    "calibration": successful_process(),
                 }
             },
             "run_ids": [],
@@ -81,18 +100,39 @@ class RecommendTests(unittest.TestCase):
         )
         ws.write_session(session)
 
+    @staticmethod
+    def _row(forced: int, *, top1: int = 2, forced_logit: float = 1.25) -> list:
+        topk = [top1, 4, 3, 1, 5, 6, 7, 8]
+        if len(set(topk)) != len(topk):
+            topk = [top1] + [value for value in (4, 3, 1, 5, 6, 7, 8, 9, 10) if value != top1][:7]
+        return [
+            forced, top1, topk[1], 0, 3.0, forced_logit, 0.5, 0.8, 1.9,
+            1.0, -2.0, 3.0, -4.0, topk,
+        ]
+
     def _oracle(self, *, top1: int = 2, forced_logit: float = 1.25) -> dict:
         return {
             "schema": ORACLE_SCHEMA,
             "policy": dict(ORACLE_POLICY),
-            "steps": [[
-                3, top1, 4, 0, 3.0, forced_logit, 0.5, 0.8, 1.9,
-                1.0, -2.0, 3.0, -4.0, [top1, 4, 3, 1, 5, 6, 7, 8],
-            ]],
+            "steps": [
+                self._row(3, top1=top1, forced_logit=forced_logit),
+                self._row(4, top1=top1, forced_logit=forced_logit),
+            ],
         }
 
-    def _run(self, candidate: str, repeat: int, tok_s: float, replay_hash: str, suffix: str = "", *, top1: int = 2) -> dict:
+    def _run(
+        self,
+        candidate: str,
+        repeat: int,
+        tok_s: float,
+        replay_hash: str,
+        suffix: str = "",
+        *,
+        top1: int = 2,
+        attempt: int = 0,
+    ) -> dict:
         environment = {} if candidate == "baseline" else {"PIPE": "1"}
+        stdout = "fixture stdout"
         return {
             "schema_version": 1,
             "id": f"run-{candidate}-{repeat}{suffix}",
@@ -100,16 +140,32 @@ class RecommendTests(unittest.TestCase):
             "candidate_id": candidate,
             "case_id": "case",
             "repeat": repeat,
+            "attempt": attempt,
             "replay_sha256": replay_hash,
             "execution_fingerprint": "e",
+            "plan_fingerprint": PLAN_FINGERPRINT,
+            "replay_cap": 0,
             "candidate_environment": environment,
             "status": "success",
-            "metrics": {"tok_s": tok_s, "oracle": self._oracle(top1=top1)},
+            "metrics": {
+                "tok_s": tok_s,
+                "hit_pct": 50.0,
+                "p50_ms": 1.0,
+                "p99_ms": 2.0,
+                "oracle": self._oracle(top1=top1),
+            },
             "returncode": 0,
+            "timed_out": False,
+            "duration_seconds": 0.01,
             "output_truncated": False,
+            "stdout": stdout,
+            "stderr": "",
+            "stdout_bytes": len(stdout.encode()),
+            "stderr_bytes": 0,
+            "error": None,
         }
 
-    def test_fast_candidate_promoted_with_recorded_statistics_policy(self):
+    def test_fast_candidate_is_screened_but_not_declared_deployable(self):
         with tempfile.TemporaryDirectory() as directory:
             ws, replay_hash = self._workspace(Path(directory))
             session = self._session(ws, replay_hash, repeats=3)
@@ -119,17 +175,40 @@ class RecommendTests(unittest.TestCase):
                     ws.write_run(run)
                     session["run_ids"].append(run["id"])
             self._finalize(ws, session)
-            profile, _ = recommend(ws, "session-a", min_runs=3, require_confidence=True)
+            profile, _ = recommend(ws, "session-a")
             self.assertEqual(profile["winner"]["id"], "fast")
-            self.assertEqual(profile["statistics_policy"]["schema"], "lattice-statistics/2")
+            self.assertEqual(profile["statistics_policy"]["schema"], "lattice-statistics/3")
             self.assertEqual(profile["statistics_policy"]["candidate_comparisons"], 1)
             self.assertAlmostEqual(profile["statistics_policy"]["per_candidate_confidence"], 0.90)
+            self.assertEqual(profile["assurance_level"], SCREENED_ASSURANCE)
+            self.assertFalse(profile["deployable"])
+            self.assertIn("not been calibrated", profile["deployment_blocker"])
 
     def test_confidence_gate_requires_three_paired_runs(self):
         with tempfile.TemporaryDirectory() as directory:
             ws, _replay_hash = self._workspace(Path(directory))
             with self.assertRaisesRegex(LatticeError, "requires at least 3 paired runs"):
                 recommend(ws, "session-a", min_runs=2, require_confidence=True)
+
+    def test_two_run_analysis_is_explicitly_exploratory(self):
+        with tempfile.TemporaryDirectory() as directory:
+            ws, replay_hash = self._workspace(Path(directory))
+            session = self._session(ws, replay_hash, repeats=2)
+            for repeat in range(2):
+                for run in (
+                    self._run("baseline", repeat, 1.0, replay_hash),
+                    self._run("fast", repeat, 1.2, replay_hash),
+                ):
+                    ws.write_run(run)
+                    session["run_ids"].append(run["id"])
+            self._finalize(ws, session)
+            profile, scores = recommend(
+                ws, "session-a", min_runs=2, require_confidence=False
+            )
+            self.assertEqual(profile["assurance_level"], EXPLORATORY_ASSURANCE)
+            self.assertFalse(profile["deployable"])
+            self.assertIsNone(scores[0].ci_low)
+            self.assertFalse(scores[0].confidence_evaluated)
 
     def test_numerical_oracle_mismatch_retains_baseline(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -142,12 +221,14 @@ class RecommendTests(unittest.TestCase):
                     ws.write_run(run)
                     session["run_ids"].append(run["id"])
             self._finalize(ws, session)
-            profile, scores = recommend(ws, "session-a", min_runs=2)
+            profile, scores = recommend(
+                ws, "session-a", min_runs=2, require_confidence=False
+            )
             self.assertTrue(profile["baseline_retained"])
             self.assertEqual(profile["winner"]["id"], "baseline")
             self.assertIn("numerical oracle mismatch", scores[0].reason)
 
-    def test_duplicate_success_is_rejected(self):
+    def test_duplicate_attempt_is_rejected_even_when_records_have_unique_ids(self):
         with tempfile.TemporaryDirectory() as directory:
             ws, replay_hash = self._workspace(Path(directory))
             session = self._session(ws, replay_hash, repeats=1)
@@ -160,8 +241,10 @@ class RecommendTests(unittest.TestCase):
                 ws.write_run(run)
                 session["run_ids"].append(run["id"])
             self._finalize(ws, session)
-            with self.assertRaisesRegex(Exception, "duplicate successful run task"):
-                recommend(ws, "session-a", min_runs=1)
+            with self.assertRaisesRegex(LatticeError, "duplicate run attempt"):
+                recommend(
+                    ws, "session-a", min_runs=1, require_confidence=False
+                )
 
 
 if __name__ == "__main__":

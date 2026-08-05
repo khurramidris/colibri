@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import unittest
 
+from lattice.common import LatticeError
 from lattice.stats import (
     bonferroni_confidence,
     bootstrap_speedup,
@@ -30,6 +31,13 @@ class StatsTests(unittest.TestCase):
             bootstrap_speedup(ratios, weights, confidence=0.9, seed=42, samples=500),
         )
 
+    def test_bootstrap_refuses_underpowered_workload(self):
+        with self.assertRaisesRegex(LatticeError, "at least 3 paired runs"):
+            bootstrap_speedup(
+                {"case": [1.1, 1.2]}, {"case": 1.0},
+                confidence=0.9, seed=42, samples=500,
+            )
+
     def test_stratification_preserves_workload_weights(self):
         ratios = {
             "important": [1.20, 1.20, 1.20],
@@ -42,7 +50,7 @@ class StatsTests(unittest.TestCase):
         self.assertAlmostEqual(high, expected)
         self.assertGreater(low, 1.0)
 
-    def test_candidate_clears_gates(self):
+    def test_candidate_clears_confidence_screening(self):
         score = score_candidate(
             "fast", {"a": 1.0, "b": 2.0},
             {"a": {0: 1.0, 1: 1.0, 2: 1.0}, "b": {0: 2.0, 1: 2.0, 2: 2.0}},
@@ -51,10 +59,32 @@ class StatsTests(unittest.TestCase):
             confidence=0.98, require_confidence=True, hourly_cost_usd=2.0,
         )
         self.assertTrue(score.eligible)
+        self.assertTrue(score.confidence_evaluated)
+        self.assertIn("confidence-screened", score.reason)
         self.assertAlmostEqual(score.weighted_speedup or 0, 1.2)
         self.assertIsNotNone(score.cost_per_million_usd)
         self.assertEqual(score.per_case["a"]["paired_runs"], 3)
         self.assertEqual(score.per_case["a"]["paired_repeat_ids"], [0, 1, 2])
+
+    def test_underpowered_candidate_is_exploratory_or_ineligible(self):
+        baseline = {"case": {0: 1.0, 1: 1.0}}
+        candidate = {"case": {0: 1.2, 1: 1.2}}
+        exploratory = score_candidate(
+            "fast", {"case": 1.0}, baseline, candidate,
+            min_runs=2, min_gain=0.03, max_regression=0.05,
+            confidence=0.9, require_confidence=False, hourly_cost_usd=None,
+        )
+        self.assertTrue(exploratory.eligible)
+        self.assertIsNone(exploratory.ci_low)
+        self.assertFalse(exploratory.confidence_evaluated)
+        screened = score_candidate(
+            "fast", {"case": 1.0}, baseline, candidate,
+            min_runs=2, min_gain=0.03, max_regression=0.05,
+            confidence=0.9, require_confidence=True, hourly_cost_usd=None,
+        )
+        self.assertFalse(screened.eligible)
+        self.assertIn("underpowered", screened.reason)
+        self.assertIsNone(screened.ci_low)
 
     def test_point_estimator_uses_paired_ratios_not_ratio_of_medians(self):
         score = score_candidate(
@@ -79,6 +109,7 @@ class StatsTests(unittest.TestCase):
         self.assertAlmostEqual(score.weighted_speedup or 0.0, 1.01)
         self.assertEqual(score.per_case["case"]["paired_repeat_ids"], [2])
         self.assertEqual(score.per_case["case"]["paired_runs"], 1)
+        self.assertIsNone(score.ci_low)
 
     def test_single_workload_regression_blocks_aggregate_gain(self):
         score = score_candidate(

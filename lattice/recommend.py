@@ -15,6 +15,13 @@ from .stats import (
 from .suite import WorkloadSuite, parse_suite
 from .workspace import Workspace
 
+EXPLORATORY_ASSURANCE = "exploratory-point-estimate"
+SCREENED_ASSURANCE = "confidence-screened-uncalibrated"
+DEPLOYMENT_BLOCKER = (
+    "numerical tolerances and statistical interval coverage have not been "
+    "calibrated on real supported backends"
+)
+
 
 def _successful_samples(runs: list[dict[str, Any]], candidate_id: str) -> dict[str, dict[int, float]]:
     values: dict[str, dict[int, float]] = {}
@@ -26,8 +33,9 @@ def _successful_samples(runs: list[dict[str, Any]], candidate_id: str) -> dict[s
         metrics = run.get("metrics") or {}
         tok_s = metrics.get("tok_s")
         if (not isinstance(case_id, str) or isinstance(repeat, bool) or not isinstance(repeat, int)
-                or isinstance(tok_s, bool) or not isinstance(tok_s, (int, float)) or tok_s <= 0):
-            continue
+                or isinstance(tok_s, bool) or not isinstance(tok_s, (int, float))
+                or not math.isfinite(float(tok_s)) or tok_s <= 0):
+            raise LatticeError(f"invalid successful throughput evidence for {candidate_id}")
         case_values = values.setdefault(case_id, {})
         if repeat in case_values:
             raise LatticeError(f"duplicate successful evidence for {candidate_id}/{case_id}/repeat-{repeat}")
@@ -78,31 +86,45 @@ def _ineligible_oracle_score(candidate_id: str, reason: str) -> CandidateScore:
     return CandidateScore(candidate_id, False, reason, None, None, None, None, None, None, {})
 
 
+def _finite_fraction(value: Any, label: str, *, lower: float, upper: float, inclusive: bool = True) -> float:
+    if isinstance(value, bool) or not isinstance(value, (int, float)) or not math.isfinite(float(value)):
+        raise LatticeError(f"{label} must be finite")
+    number = float(value)
+    valid = lower <= number <= upper if inclusive else lower < number < upper
+    if not valid:
+        brackets = "between" if inclusive else "strictly between"
+        raise LatticeError(f"{label} must be {brackets} {lower} and {upper}")
+    return number
+
+
 def evaluate_session(
     workspace: Workspace,
     session_id: str,
     *,
-    min_runs: int = 2,
+    min_runs: int = 3,
     min_gain: float = 0.03,
     max_regression: float = 0.05,
     confidence: float = 0.90,
-    require_confidence: bool = False,
+    require_confidence: bool = True,
     hourly_cost_usd: float | None = None,
 ) -> dict[str, Any]:
-    if not 1 <= min_runs <= 20:
-        raise LatticeError("min_runs must be between 1 and 20")
-    if require_confidence and min_runs < int(STATISTICS_POLICY["minimum_confidence_runs"]):
+    if isinstance(min_runs, bool) or not isinstance(min_runs, int) or not 1 <= min_runs <= 20:
+        raise LatticeError("min_runs must be an integer between 1 and 20")
+    if not isinstance(require_confidence, bool):
+        raise LatticeError("require_confidence must be a boolean")
+    minimum_confidence = int(STATISTICS_POLICY["minimum_confidence_runs_per_workload"])
+    if require_confidence and min_runs < minimum_confidence:
         raise LatticeError(
-            f"confidence-gated promotion requires at least {STATISTICS_POLICY['minimum_confidence_runs']} paired runs"
+            f"confidence-gated promotion requires at least {minimum_confidence} paired runs"
         )
-    if not 0 <= min_gain <= 1:
-        raise LatticeError("min_gain must be between 0 and 1")
-    if not 0 <= max_regression <= 1:
-        raise LatticeError("max_regression must be between 0 and 1")
-    if not 0.5 < confidence < 1:
-        raise LatticeError("confidence must be between 0.5 and 1")
-    if hourly_cost_usd is not None and (not math.isfinite(hourly_cost_usd) or hourly_cost_usd < 0):
-        raise LatticeError("hourly_cost_usd must be finite and non-negative")
+    min_gain = _finite_fraction(min_gain, "min_gain", lower=0.0, upper=1.0)
+    max_regression = _finite_fraction(max_regression, "max_regression", lower=0.0, upper=1.0)
+    confidence = _finite_fraction(confidence, "confidence", lower=0.5, upper=1.0, inclusive=False)
+    if hourly_cost_usd is not None:
+        if (isinstance(hourly_cost_usd, bool) or not isinstance(hourly_cost_usd, (int, float))
+                or not math.isfinite(float(hourly_cost_usd)) or hourly_cost_usd < 0):
+            raise LatticeError("hourly_cost_usd must be finite and non-negative")
+        hourly_cost_usd = float(hourly_cost_usd)
     project = workspace.load_project()
     suite: WorkloadSuite = parse_suite(project["suite"])
     session = workspace.load_session(session_id)
@@ -110,13 +132,17 @@ def evaluate_session(
         raise LatticeError("promotion requires more runs than the session contains")
     runs = workspace.list_runs(session_id)
     candidate_defs = validate_session_evidence(workspace, project, suite, session, runs)
-    candidate_count = max(1, len(candidate_defs) - 1)
-    per_candidate_confidence = bonferroni_confidence(confidence, candidate_count)
+    candidate_count = len(candidate_defs) - 1
+    per_candidate_confidence = (
+        bonferroni_confidence(confidence, candidate_count)
+        if candidate_count > 0 else None
+    )
     statistics_policy = {
         **STATISTICS_POLICY,
         "familywise_confidence": confidence,
         "candidate_comparisons": candidate_count,
         "per_candidate_confidence": per_candidate_confidence,
+        "confidence_required": require_confidence,
     }
     baseline = _successful_samples(runs, "baseline")
     baseline_runs = _successful_run_map(runs, "baseline")
@@ -132,6 +158,7 @@ def evaluate_session(
         if mismatch:
             scores.append(_ineligible_oracle_score(candidate_id, mismatch))
             continue
+        assert per_candidate_confidence is not None
         scores.append(score_candidate(
             candidate_id,
             weights,
@@ -147,6 +174,7 @@ def evaluate_session(
     eligible = [score for score in scores if score.eligible and score.weighted_speedup is not None]
     winner_score = max(eligible, key=lambda score: score.weighted_speedup or 0.0) if eligible else None
     winner_id = winner_score.candidate_id if winner_score else "baseline"
+    assurance_level = SCREENED_ASSURANCE if require_confidence else EXPLORATORY_ASSURANCE
     policy = {
         "min_runs": min_runs,
         "min_gain": min_gain,
@@ -160,6 +188,9 @@ def evaluate_session(
         "winner": candidate_defs[winner_id],
         "winner_score": None if winner_score is None else winner_score.as_dict(),
         "baseline_retained": winner_score is None,
+        "assurance_level": assurance_level,
+        "deployable": False,
+        "deployment_blocker": DEPLOYMENT_BLOCKER,
         "selection_policy": policy,
         "statistics_policy": statistics_policy,
         "oracle_policy": dict(ORACLE_POLICY),
@@ -167,6 +198,8 @@ def evaluate_session(
         "runtime_fingerprint": project["runtime_fingerprint"],
         "hardware_fingerprint": project["hardware_fingerprint"],
         "execution_fingerprint": project["execution_fingerprint"],
+        "plan_fingerprint": project["plan_fingerprint"],
+        "replay_cap": project["replay_cap"],
         "qualification_context": project["qualification_context"],
         "suite_fingerprint": suite.fingerprint,
         "evidence_root_sha256": session["evidence_root_sha256"],
@@ -176,13 +209,14 @@ def evaluate_session(
 
 def recommend(workspace: Workspace, session_id: str, **policy: Any) -> tuple[dict[str, Any], list[CandidateScore]]:
     evaluation = evaluate_session(workspace, session_id, **policy)
-    seed_policy = evaluation["selection_policy"]
     profile_seed = {
         "session_id": session_id,
         "winner": evaluation["winner"]["id"],
-        "policy": seed_policy,
+        "policy": evaluation["selection_policy"],
         "statistics_policy": evaluation["statistics_policy"],
         "oracle_policy": evaluation["oracle_policy"],
+        "assurance_level": evaluation["assurance_level"],
+        "deployable": evaluation["deployable"],
         "evidence_root_sha256": evaluation["evidence_root_sha256"],
     }
     profile = {

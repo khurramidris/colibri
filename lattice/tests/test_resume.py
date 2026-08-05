@@ -9,14 +9,21 @@ from lattice.candidates import Candidate
 from lattice.colibri import ColibriContext
 from lattice.common import LatticeError
 from lattice.experiment import create_project, resume_experiment, run_experiment
-from lattice.process import ProcessResult
 from lattice.oracle import ORACLE_POLICY, ORACLE_SCHEMA
+from lattice.process import ProcessResult
 from lattice.suite import parse_suite
 from lattice.workspace import Workspace
 
 
 def result(stdout: str = "") -> ProcessResult:
     return ProcessResult(("fixture",), 0, stdout, "", False, 0.01, False)
+
+
+def oracle_row(forced: int) -> list:
+    return [
+        forced, 2, 4, 0, 3.0, 1.25, 0.5, 0.8, 1.9,
+        1.0, -2.0, 3.0, -4.0, [2, 4, 3, 1, 5, 6, 7, 8],
+    ]
 
 
 class ResumeTests(unittest.TestCase):
@@ -40,7 +47,7 @@ class ResumeTests(unittest.TestCase):
                 doctor={"status": "ok"}, base_environment={},
                 qualification_context=4096, qualification_environment={},
                 execution_fingerprint="execution", hardware_fingerprint="hardware",
-                storage_topology={},
+                storage_topology={}, plan_fingerprint="p" * 64, replay_cap=0,
             )
             workspace.initialize(create_project(context, suite))
             calls = []
@@ -56,12 +63,15 @@ class ResumeTests(unittest.TestCase):
                 oracle = {
                     "schema": ORACLE_SCHEMA,
                     "policy": dict(ORACLE_POLICY),
-                    "steps": [[
-                        3, 2, 4, 0, 3.0, 1.25, 0.5, 0.8, 1.9,
-                        1.0, -2.0, 3.0, -4.0, [2, 4, 3, 1, 5, 6, 7, 8],
-                    ]],
+                    "steps": [oracle_row(3), oracle_row(4)],
                 }
-                return {"tok_s": 1.0, "hit_pct": 50.0, "p50_ms": 1.0, "p99_ms": 2.0, "oracle": oracle}, result("replay")
+                return {
+                    "tok_s": 1.0,
+                    "hit_pct": 50.0,
+                    "p50_ms": 1.0,
+                    "p99_ms": 2.0,
+                    "oracle": oracle,
+                }, result("replay")
 
             with patch("lattice.experiment.calibrate_case", side_effect=calibrate), \
                     patch("lattice.experiment.run_replay", side_effect=replay):
