@@ -33,6 +33,8 @@ class SyntheticTrunkTests(unittest.TestCase):
         self.assertEqual(self.entries, entries)
         for entry in entries:
             self.assertEqual(0, entry.offset % alignment)
+            self.assertEqual(0, entry.io_length % alignment)
+            self.assertGreaterEqual(entry.io_length, entry.length)
             with self.path.open("rb") as handle:
                 handle.seek(entry.offset)
                 self.assertEqual(self.layers[entry.layer_id], handle.read(entry.length))
@@ -44,11 +46,11 @@ class SyntheticTrunkTests(unittest.TestCase):
             self.assertEqual(first_two, reader.resident_bytes)
             self.assertEqual(
                 sum(entry.length for entry in self.entries[2:]),
-                reader.streamed_bytes_per_pass,
+                reader.streamed_payload_bytes_per_pass,
             )
             self.assertLessEqual(reader.resident_bytes, budget)
             stats = reader.stats()
-            self.assertEqual(first_two, stats.startup_read_bytes)
+            self.assertEqual(first_two, stats.startup_payload_read_bytes)
             self.assertEqual(2, stats.startup_read_calls)
 
     def test_resident_and_streamed_execution_are_bit_identical(self) -> None:
@@ -71,29 +73,36 @@ class SyntheticTrunkTests(unittest.TestCase):
             list(reader.iter_layers())
             stats = reader.stats()
         expected_streamed_layers = len(self.entries) - 3
-        self.assertEqual(expected_streamed_layers * 2, stats.physical_read_calls)
-        self.assertEqual(stats.streamed_bytes_per_pass * 2, stats.physical_read_bytes)
+        self.assertEqual(expected_streamed_layers * 2, stats.read_calls)
+        self.assertEqual(
+            stats.streamed_payload_bytes_per_pass * 2,
+            stats.payload_read_bytes,
+        )
         self.assertEqual(3 * 2, stats.resident_hits)
         self.assertEqual(expected_streamed_layers * 2, stats.streamed_hits)
 
     def test_no_residency_and_full_residency_extremes(self) -> None:
         with TrunkReader(self.path, resident_budget_bytes=0) as none:
             self.assertEqual(0, none.resident_bytes)
-            self.assertEqual(sum(e.length for e in self.entries), none.streamed_bytes_per_pass)
+            self.assertEqual(
+                sum(e.length for e in self.entries),
+                none.streamed_payload_bytes_per_pass,
+            )
         with TrunkReader(
             self.path,
             resident_budget_bytes=sum(e.length for e in self.entries),
         ) as all_resident:
             list(all_resident.iter_layers())
             stats = all_resident.stats()
-            self.assertEqual(0, stats.streamed_bytes_per_pass)
-            self.assertEqual(0, stats.physical_read_bytes)
+            self.assertEqual(0, stats.streamed_payload_bytes_per_pass)
+            self.assertEqual(0, stats.streamed_direct_io_bytes_per_pass)
+            self.assertEqual(0, stats.payload_read_bytes)
             self.assertEqual(len(self.entries), stats.resident_hits)
 
-    def test_modeled_peak_uses_two_streaming_buffers(self) -> None:
+    def test_modeled_peak_uses_two_aligned_streaming_buffers(self) -> None:
         budget = sum(entry.length for entry in self.entries[:1])
         with TrunkReader(self.path, resident_budget_bytes=budget) as reader:
-            max_streamed = max(entry.length for entry in self.entries[1:])
+            max_streamed = max(entry.io_length for entry in self.entries[1:])
             self.assertEqual(
                 reader.resident_bytes + 2 * max_streamed,
                 reader.modeled_peak_working_bytes,
@@ -126,7 +135,7 @@ class SyntheticTrunkTests(unittest.TestCase):
         with self.assertRaisesRegex(RuntimeError, "closed"):
             reader.read_layer(0)
 
-    def test_differential_report_accounts_exact_reads(self) -> None:
+    def test_differential_report_accounts_exact_payload_requests(self) -> None:
         report = differential_report(
             n_layers=9,
             width=16,
@@ -136,8 +145,12 @@ class SyntheticTrunkTests(unittest.TestCase):
         )
         self.assertTrue(all(report["bit_identical_each_pass"]))
         self.assertEqual(
-            report["expected_physical_read_bytes"],
-            report["physical_read_bytes"],
+            report["expected_payload_read_bytes"],
+            report["payload_read_bytes"],
+        )
+        self.assertGreaterEqual(
+            report["modeled_direct_io_bytes"],
+            report["payload_read_bytes"],
         )
 
 
