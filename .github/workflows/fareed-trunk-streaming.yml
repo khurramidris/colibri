@@ -1,0 +1,29 @@
+name: Fareed-inspired trunk streaming
+
+on:
+  push:
+    branches:
+      - research/fareed-compressed-trunk-streaming
+    paths:
+      - "research/fareed/**"
+      - ".github/workflows/fareed-trunk-streaming.yml"
+  pull_request:
+    paths:
+      - "research/fareed/**"
+      - ".github/workflows/fareed-trunk-streaming.yml"
+
+jobs:
+  prototype:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m unittest discover -s research/fareed -p 'test_*.py' -v
+      - run: >
+          python research/fareed/synthetic_trunk.py
+          --layers 24
+          --width 48
+          --resident-layers 7
+          --passes 5
