@@ -41,6 +41,7 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
+      # Native acceptance changes are committed source, not generated CI state.
       - name: Validate controller and long oracle artifacts
         run: |
           python3 -m compileall -q lattice c/tools
