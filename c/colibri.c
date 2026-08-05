@@ -64,6 +64,7 @@
 #include "decode_batch.h"
 #include "route_trace.h"                           /* ROUTE_TRACE + .coli_usage, engine-agnostic (#700) */
 #include "replay_oracle.h"                         /* opt-in numerical sketch for fixed-token replay */
+#include "replay_io.h"                             /* exact-window Linux process I/O accounting */
 #ifdef _OPENMP
 #include <omp.h>                                  /* scratch per-thread nell'attention */
 #else
@@ -6564,13 +6565,41 @@ static void run_replay(Model *m, const int *full, int nfull, int np){
     float *logit=step(m,full,np-1,0); free(logit);
     m->hits=m->miss=m->ereq=m->gpu_expert_calls=0; m->hit_pin=m->hit_ecache=0; m->hit_vk=0;
     for(int r=0;r<MIR_REPS;r++){ atomic_store(&g_mir_bytes[r],0); atomic_store(&g_mir_nread[r],0); }
+    /* Bracket the exact profiler-free decode window. g_prof_io is a lightweight
+     * engine demand counter and remains active while stage profiling is disabled. */
+    ReplayIoSnapshot io_before={0}, io_after={0};
+    int io_before_ok=replay_io_snapshot(&io_before);
+    int64_t logical_before=atomic_load_explicit(&g_prof_io,memory_order_relaxed);
     double t0=now_s(); int steps=0;
     for(int i=np-1;i<nfull-1;i++){
         logit=step(m,full+i,1,i); free(logit); steps++;
     }
     double dt=now_s()-t0, tot=m->hits+m->miss;
+    int64_t logical_bytes=atomic_load_explicit(&g_prof_io,memory_order_relaxed)-logical_before;
+    if(logical_bytes<0) logical_bytes=0;
+    int io_after_ok=replay_io_snapshot(&io_after);
+    ReplayIoDelta io_delta={0};
+    int io_ok=io_before_ok && io_after_ok && replay_io_delta(&io_before,&io_after,&io_delta);
     printf("REPLAY decode: %d tokens in %.3fs | %.2f tok/s | expert hit %.1f%%\n",
         steps,dt,steps/dt,tot?100.0*m->hits/tot:0.0);
+    if(io_ok){
+        double ratio=logical_bytes>0?(double)io_delta.read_bytes/(double)logical_bytes:0.0;
+        double logical_per_token=steps>0?(double)logical_bytes/(double)steps:0.0;
+        double physical_per_token=steps>0?(double)io_delta.read_bytes/(double)steps:0.0;
+        printf("REPLAY_IO v1 available=1 scope=teacher_forced_decode "
+               "logical_expert_bytes=%lld process_read_bytes=%llu process_rchar=%llu "
+               "process_read_syscalls=%llu physical_to_logical=%.6f "
+               "logical_bytes_per_token=%.3f physical_bytes_per_token=%.3f\n",
+               (long long)logical_bytes,
+               (unsigned long long)io_delta.read_bytes,
+               (unsigned long long)io_delta.rchar,
+               (unsigned long long)io_delta.read_syscalls,
+               ratio,logical_per_token,physical_per_token);
+    } else {
+        printf("REPLAY_IO v1 available=0 scope=teacher_forced_decode "
+               "logical_expert_bytes=%lld reason=proc_self_io_unavailable\n",
+               (long long)logical_bytes);
+    }
     g_prof=saved_prof;
 #ifdef COLI_CUDA
     if(m->gpu_expert_count) printf("CUDA expert tier: %d resident experts (%.2f GB) | %llu calls served from VRAM\n",
