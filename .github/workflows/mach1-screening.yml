@@ -1,0 +1,30 @@
+name: Mach-inspired expert screening
+
+on:
+  push:
+    branches:
+      - research/mach1-progressive-experts
+    paths:
+      - "research/mach1/**"
+      - ".github/workflows/mach1-screening.yml"
+  pull_request:
+    paths:
+      - "research/mach1/**"
+      - ".github/workflows/mach1-screening.yml"
+
+jobs:
+  screening:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: python -m pip install --disable-pip-version-check numpy
+      - run: python -m unittest discover -s research/mach1 -p 'test_*.py'
+      - run: >
+          python research/mach1/progressive_expert.py
+          --rows 32 --cols 256
+          --activation-samples 16
+          --fractions 0,0.01,0.03,0.05,0.07
+          --json-out out/mach1-screening.json
