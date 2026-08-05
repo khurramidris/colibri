@@ -674,7 +674,7 @@ efficiency-report:
 # Local validation: one portable CPU build and dependency-free tests.
 check:
 	$(MAKE) clean
-	$(MAKE) portable
+	$(MAKE) portable olmoe$(EXE)
 	$(MAKE) test
 
 install: colibri$(EXE) olmoe$(EXE)
