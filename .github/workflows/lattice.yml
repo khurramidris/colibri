@@ -13,7 +13,6 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'docs/olmoe-acceptance.md'
-      - 'tools/materialize_olmoe_native_contract.py'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -27,11 +26,10 @@ on:
       - 'LATTICE.md'
       - 'docs/lattice-qualification.md'
       - 'docs/olmoe-acceptance.md'
-      - 'tools/materialize_olmoe_native_contract.py'
       - '.github/workflows/lattice.yml'
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: lattice-${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
@@ -43,36 +41,6 @@ jobs:
     timeout-minutes: 45
     steps:
       - uses: actions/checkout@v4
-      - name: Materialize reviewed native OLMoE contract
-        run: |
-          python3 - <<'PY'
-          from pathlib import Path
-          path = Path('tools/materialize_olmoe_native_contract.py')
-          text = path.read_text(encoding='utf-8')
-          old = """    start_count = text.count(start)
-              end_count = text.count(end)
-              if start_count != 1 or end_count != 1:
-                  raise SystemExit(
-                      f"{label}: expected unique anchors, found start={start_count} end={end_count}"
-                  )
-              i = text.index(start)
-              j = text.index(end, i)
-          """
-          new = """    start_count = text.count(start)
-              if start_count != 1:
-                  raise SystemExit(
-                      f"{label}: expected one start anchor, found {start_count}"
-                  )
-              i = text.index(start)
-              j = text.find(end, i + len(start))
-              if j < 0:
-                  raise SystemExit(f"{label}: end anchor not found after start anchor")
-          """
-          if old not in text:
-              raise SystemExit('materializer helper patch anchor not found')
-          path.write_text(text.replace(old, new), encoding='utf-8', newline='\n')
-          PY
-          python3 tools/materialize_olmoe_native_contract.py
       - name: Validate controller and long oracle artifacts
         run: |
           python3 -m compileall -q lattice c/tools
@@ -80,18 +48,6 @@ jobs:
           python3 -m lattice --version
       - name: Validate native engines and exact top-k oracle
         run: make -C c check
-      - name: Commit validated materialized sources
-        if: github.event_name == 'push'
-        run: |
-          git add c/olmoe.c c/Makefile
-          if git diff --cached --quiet; then
-            echo 'materialized sources already committed'
-            exit 0
-          fi
-          git config user.name 'github-actions[bot]'
-          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
-          git commit -m 'fix: materialize OLMoE native acceptance contract'
-          git push origin "HEAD:${GITHUB_REF_NAME}"
 
   python-matrix:
     strategy:
