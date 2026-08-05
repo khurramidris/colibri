@@ -44,7 +44,35 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Materialize reviewed native OLMoE contract
-        run: python3 tools/materialize_olmoe_native_contract.py
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          path = Path('tools/materialize_olmoe_native_contract.py')
+          text = path.read_text(encoding='utf-8')
+          old = '''    start_count = text.count(start)
+              end_count = text.count(end)
+              if start_count != 1 or end_count != 1:
+                  raise SystemExit(
+                      f"{label}: expected unique anchors, found start={start_count} end={end_count}"
+                  )
+              i = text.index(start)
+              j = text.index(end, i)
+          '''
+          new = '''    start_count = text.count(start)
+              if start_count != 1:
+                  raise SystemExit(
+                      f"{label}: expected one start anchor, found {start_count}"
+                  )
+              i = text.index(start)
+              j = text.find(end, i + len(start))
+              if j < 0:
+                  raise SystemExit(f"{label}: end anchor not found after start anchor")
+          '''
+          if old not in text:
+              raise SystemExit('materializer helper patch anchor not found')
+          path.write_text(text.replace(old, new), encoding='utf-8', newline='\n')
+          PY
+          python3 tools/materialize_olmoe_native_contract.py
       - name: Capture materialized sources
         uses: actions/upload-artifact@v4
         with:
