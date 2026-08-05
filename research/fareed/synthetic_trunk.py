@@ -7,10 +7,10 @@ The prototype proves the mechanics required before touching a real checkpoint:
 * a declared resident-byte budget that pins a deterministic prefix;
 * ``pread`` for non-resident layers;
 * one-layer look-ahead using a bounded double buffer;
-* exact CRC verification and physical-read accounting;
+* exact CRC verification and requested-byte accounting;
 * resident and streamed execution over identical compressed bytes.
 
-It is deliberately model-agnostic.  The tiny matrix payload used by the tests
+It is deliberately model-agnostic. The tiny matrix payload used by the tests
 is only an oracle for byte-identical execution; it is not a model benchmark.
 """
 from __future__ import annotations
@@ -47,17 +47,19 @@ class LayerEntry:
     offset: int
     length: int
     crc32: int
+    io_length: int
 
 
 @dataclass(frozen=True)
 class ReaderStats:
     resident_budget_bytes: int
     resident_bytes: int
-    streamed_bytes_per_pass: int
-    startup_read_bytes: int
+    streamed_payload_bytes_per_pass: int
+    streamed_direct_io_bytes_per_pass: int
+    startup_payload_read_bytes: int
     startup_read_calls: int
-    physical_read_bytes: int
-    physical_read_calls: int
+    payload_read_bytes: int
+    read_calls: int
     resident_hits: int
     streamed_hits: int
     max_layer_bytes: int
@@ -93,15 +95,17 @@ def pack_trunk(
     for layer_id, payload_raw in enumerate(layers):
         payload = bytes(payload_raw)
         cursor = _align_up(cursor, alignment)
+        io_length = _align_up(len(payload), alignment)
         entries.append(
             LayerEntry(
                 layer_id=layer_id,
                 offset=cursor,
                 length=len(payload),
                 crc32=zlib.crc32(payload) & 0xFFFFFFFF,
+                io_length=io_length,
             )
         )
-        cursor += len(payload)
+        cursor += io_length
 
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
@@ -124,7 +128,7 @@ def pack_trunk(
                     entry.offset,
                     entry.length,
                     entry.crc32,
-                    0,
+                    entry.io_length,
                 )
             )
         if handle.tell() > data_offset:
@@ -136,6 +140,7 @@ def pack_trunk(
                 raise AssertionError("payload overlap")
             handle.write(b"\0" * (entry.offset - handle.tell()))
             handle.write(payload)
+            handle.write(b"\0" * (entry.io_length - entry.length))
         handle.flush()
         os.fsync(handle.fileno())
     return entries
@@ -159,8 +164,8 @@ def read_index(path: str | os.PathLike[str]) -> tuple[int, list[LayerEntry]]:
             raw_entry = handle.read(ENTRY.size)
             if len(raw_entry) != ENTRY.size:
                 raise TrunkFormatError("truncated trunk index")
-            layer_id, flags, offset, length, crc32, reserved = ENTRY.unpack(raw_entry)
-            if flags != 0 or reserved != 0:
+            layer_id, flags, offset, length, crc32, io_length = ENTRY.unpack(raw_entry)
+            if flags != 0:
                 raise TrunkFormatError("unsupported layer flags")
             if layer_id != expected_id:
                 raise TrunkFormatError("layer ids are not contiguous")
@@ -168,15 +173,17 @@ def read_index(path: str | os.PathLike[str]) -> tuple[int, list[LayerEntry]]:
                 raise TrunkFormatError("layer offset is not aligned")
             if length <= 0:
                 raise TrunkFormatError("invalid layer length")
-            entries.append(LayerEntry(layer_id, offset, length, crc32))
+            if io_length < length or io_length % alignment:
+                raise TrunkFormatError("invalid aligned I/O length")
+            entries.append(LayerEntry(layer_id, offset, length, crc32, io_length))
     file_size = Path(path).stat().st_size
     previous_end = 0
     for entry in entries:
         if entry.offset < previous_end:
             raise TrunkFormatError("overlapping layer payloads")
-        if entry.offset + entry.length > file_size:
+        if entry.offset + entry.io_length > file_size:
             raise TrunkFormatError("layer extends beyond file")
-        previous_end = entry.offset + entry.length
+        previous_end = entry.offset + entry.io_length
     return alignment, entries
 
 
@@ -200,10 +207,10 @@ class TrunkReader:
         self.prefetch_enabled = prefetch
         self.resident_budget_bytes = int(resident_budget_bytes)
         self._resident: dict[int, bytes] = {}
-        self._startup_read_bytes = 0
+        self._startup_payload_read_bytes = 0
         self._startup_read_calls = 0
-        self._physical_read_bytes = 0
-        self._physical_read_calls = 0
+        self._payload_read_bytes = 0
+        self._read_calls = 0
         self._resident_hits = 0
         self._streamed_hits = 0
         self._closed = False
@@ -216,12 +223,15 @@ class TrunkReader:
             self._resident[entry.layer_id] = payload
             used += entry.length
         self.resident_bytes = used
-        self.streamed_bytes_per_pass = sum(
+        self.streamed_payload_bytes_per_pass = sum(
             entry.length for entry in self.entries if entry.layer_id not in self._resident
+        )
+        self.streamed_direct_io_bytes_per_pass = sum(
+            entry.io_length for entry in self.entries if entry.layer_id not in self._resident
         )
         self.max_layer_bytes = max(entry.length for entry in self.entries)
         max_streamed = max(
-            (entry.length for entry in self.entries if entry.layer_id not in self._resident),
+            (entry.io_length for entry in self.entries if entry.layer_id not in self._resident),
             default=0,
         )
         self.modeled_peak_working_bytes = self.resident_bytes + 2 * max_streamed
@@ -252,11 +262,11 @@ class TrunkReader:
                 raise TrunkFormatError(f"short read for layer {entry.layer_id}")
             chunks.append(chunk)
             if phase == "startup":
-                self._startup_read_bytes += len(chunk)
+                self._startup_payload_read_bytes += len(chunk)
                 self._startup_read_calls += 1
             elif phase == "token":
-                self._physical_read_bytes += len(chunk)
-                self._physical_read_calls += 1
+                self._payload_read_bytes += len(chunk)
+                self._read_calls += 1
             elif phase != "none":
                 raise ValueError(f"unknown read phase {phase!r}")
             remaining -= len(chunk)
@@ -329,11 +339,12 @@ class TrunkReader:
         return ReaderStats(
             resident_budget_bytes=self.resident_budget_bytes,
             resident_bytes=self.resident_bytes,
-            streamed_bytes_per_pass=self.streamed_bytes_per_pass,
-            startup_read_bytes=self._startup_read_bytes,
+            streamed_payload_bytes_per_pass=self.streamed_payload_bytes_per_pass,
+            streamed_direct_io_bytes_per_pass=self.streamed_direct_io_bytes_per_pass,
+            startup_payload_read_bytes=self._startup_payload_read_bytes,
             startup_read_calls=self._startup_read_calls,
-            physical_read_bytes=self._physical_read_bytes,
-            physical_read_calls=self._physical_read_calls,
+            payload_read_bytes=self._payload_read_bytes,
+            read_calls=self._read_calls,
             resident_hits=self._resident_hits,
             streamed_hits=self._streamed_hits,
             max_layer_bytes=self.max_layer_bytes,
@@ -469,12 +480,14 @@ def differential_report(
             "passes": passes,
             "bit_identical_each_pass": matches,
             "resident_bytes": stats.resident_bytes,
-            "streamed_bytes_per_pass": stats.streamed_bytes_per_pass,
-            "startup_read_bytes": stats.startup_read_bytes,
+            "streamed_payload_bytes_per_pass": stats.streamed_payload_bytes_per_pass,
+            "streamed_direct_io_bytes_per_pass": stats.streamed_direct_io_bytes_per_pass,
+            "startup_payload_read_bytes": stats.startup_payload_read_bytes,
             "startup_read_calls": stats.startup_read_calls,
-            "physical_read_bytes": stats.physical_read_bytes,
-            "expected_physical_read_bytes": stats.streamed_bytes_per_pass * passes,
-            "physical_read_calls": stats.physical_read_calls,
+            "payload_read_bytes": stats.payload_read_bytes,
+            "expected_payload_read_bytes": stats.streamed_payload_bytes_per_pass * passes,
+            "modeled_direct_io_bytes": stats.streamed_direct_io_bytes_per_pass * passes,
+            "read_calls": stats.read_calls,
             "modeled_peak_working_bytes": stats.modeled_peak_working_bytes,
             "file_bytes": path.stat().st_size,
         }
