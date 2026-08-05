@@ -11,8 +11,7 @@ on:
       - 'c/Makefile'
       - 'lattice/**'
       - 'LATTICE.md'
-      - 'docs/lattice-qualification.md'
-      - 'docs/olmoe-acceptance.md'
+      - 'docs/**'
       - '.github/workflows/lattice.yml'
   pull_request:
     paths:
@@ -24,8 +23,7 @@ on:
       - 'c/Makefile'
       - 'lattice/**'
       - 'LATTICE.md'
-      - 'docs/lattice-qualification.md'
-      - 'docs/olmoe-acceptance.md'
+      - 'docs/**'
       - '.github/workflows/lattice.yml'
 
 permissions:
