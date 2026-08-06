@@ -9,6 +9,8 @@ from pathlib import Path
 from synthetic_trunk import (
     TrunkFormatError,
     TrunkReader,
+    _pread,
+    _pwrite,
     differential_report,
     execute_trunk,
     make_synthetic_layers,
@@ -112,8 +114,8 @@ class SyntheticTrunkTests(unittest.TestCase):
         target = self.entries[4]
         fd = os.open(self.path, os.O_RDWR)
         try:
-            original = os.pread(fd, 1, target.offset + 3)
-            os.pwrite(fd, bytes([original[0] ^ 0xFF]), target.offset + 3)
+            original = _pread(fd, 1, target.offset + 3)
+            _pwrite(fd, bytes([original[0] ^ 0xFF]), target.offset + 3)
         finally:
             os.close(fd)
         with TrunkReader(self.path, resident_budget_bytes=0) as reader:
@@ -123,7 +125,7 @@ class SyntheticTrunkTests(unittest.TestCase):
     def test_bad_header_is_rejected(self) -> None:
         fd = os.open(self.path, os.O_RDWR)
         try:
-            os.pwrite(fd, b"BADMAGIC", 0)
+            _pwrite(fd, b"BADMAGIC", 0)
         finally:
             os.close(fd)
         with self.assertRaisesRegex(TrunkFormatError, "bad trunk magic"):

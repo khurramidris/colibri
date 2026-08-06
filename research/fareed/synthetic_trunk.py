@@ -37,6 +37,26 @@ MATRIX_HEADER = struct.Struct("<4sII")
 DEFAULT_ALIGNMENT = 4096
 
 
+def _pread(fd: int, length: int, offset: int) -> bytes:
+    """Read at an offset on POSIX and on Windows Python builds."""
+    if hasattr(os, "pread"):
+        return os.pread(fd, length, offset)
+    with os.fdopen(os.dup(fd), "rb", closefd=True) as handle:
+        handle.seek(offset)
+        return handle.read(length)
+
+
+def _pwrite(fd: int, data: bytes, offset: int) -> int:
+    """Write at an offset on POSIX and on Windows Python builds."""
+    if hasattr(os, "pwrite"):
+        return os.pwrite(fd, data, offset)
+    with os.fdopen(os.dup(fd), "r+b", closefd=True) as handle:
+        handle.seek(offset)
+        count = handle.write(data)
+        handle.flush()
+        return count
+
+
 class TrunkFormatError(RuntimeError):
     """Raised when a trunk file is malformed or corrupted."""
 
@@ -216,12 +236,17 @@ class TrunkReader:
         self._closed = False
 
         used = 0
-        for entry in self.entries:
-            if used + entry.length > self.resident_budget_bytes:
-                break
-            payload = self._pread_exact(entry, phase="startup")
-            self._resident[entry.layer_id] = payload
-            used += entry.length
+        try:
+            for entry in self.entries:
+                if used + entry.length > self.resident_budget_bytes:
+                    break
+                payload = self._pread_exact(entry, phase="startup")
+                self._resident[entry.layer_id] = payload
+                used += entry.length
+        except BaseException:
+            os.close(self.fd)
+            self._closed = True
+            raise
         self.resident_bytes = used
         self.streamed_payload_bytes_per_pass = sum(
             entry.length for entry in self.entries if entry.layer_id not in self._resident
@@ -257,7 +282,7 @@ class TrunkReader:
         remaining = entry.length
         offset = entry.offset
         while remaining:
-            chunk = os.pread(self.fd, remaining, offset)
+            chunk = _pread(self.fd, remaining, offset)
             if not chunk:
                 raise TrunkFormatError(f"short read for layer {entry.layer_id}")
             chunks.append(chunk)
