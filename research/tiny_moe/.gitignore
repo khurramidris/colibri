@@ -1,0 +1,6 @@
+artifacts/
+*.bin
+*.log
+__pycache__/
+.pytest_cache/
+results/posix/test_trunk_stream

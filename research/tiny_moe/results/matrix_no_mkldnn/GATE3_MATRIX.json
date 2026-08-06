@@ -1,0 +1,2355 @@
+{
+  "cases": [
+    {
+      "accounting": {
+        "compute_seconds": 2.7826228999999993,
+        "load_wait_seconds": 0.0,
+        "payload_bytes": 58290232,
+        "read_calls": 14,
+        "read_events": [
+          {
+            "layer_id": 0,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 1,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          }
+        ],
+        "read_sizes": [
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588
+        ],
+        "requested_bytes": 58290232,
+        "startup_payload_bytes": 58290232,
+        "startup_requested_bytes": 58290232,
+        "token_payload_bytes": 0,
+        "token_requested_bytes": 0
+      },
+      "accounting_summary": {
+        "by_layer": {
+          "0": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "1": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "10": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "11": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "12": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "13": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "2": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "3": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "4": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "5": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "6": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "7": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "8": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "9": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          }
+        },
+        "by_phase": {
+          "startup": {
+            "payload_bytes": 58290232,
+            "reads": 14,
+            "requested_bytes": 58290232
+          }
+        }
+      },
+      "cache_observation": {
+        "mapped_file_entries": [],
+        "page_cache_bytes": null,
+        "path": "research\\tiny_moe\\artifacts\\base.trunk.bin",
+        "platform": "nt",
+        "source": "psutil.memory_maps"
+      },
+      "comparison": {
+        "all_identical": true,
+        "greedy_tokens_identical": true,
+        "step_count_identical": true,
+        "steps": [
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 0
+          },
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 1
+          },
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 2
+          }
+        ]
+      },
+      "memory_audit": {
+        "declared_persistent_state_bytes": 32769024,
+        "declared_resident_trunk_bytes": 58290232,
+        "declared_routed_expert_bytes": 352321536,
+        "declared_transient_buffer_bytes": 0,
+        "python_mmap_objects": 0,
+        "python_tensor_objects": 552,
+        "python_tensor_unique_bytes": 445491224
+      },
+      "metadata": {
+        "io_mode": "buffered",
+        "persistent_state_bytes": 32769024,
+        "prefetch": true,
+        "resident_layers": 14,
+        "resident_trunk_bytes": 58290232,
+        "routed_expert_bytes": 352321536,
+        "transient_buffer_bytes": 0,
+        "trunk_file_bytes": 58388480
+      },
+      "mode": "fully_resident",
+      "process_metrics": {
+        "ready_seen": true,
+        "rss_samples": 215,
+        "startup_peak_rss_bytes": 944132096,
+        "stderr": "D:\\Experiment\\Inference\\colibri_fareed\\research\\tiny_moe\\streamed_runner.py:473: FutureWarning: `torch.distributed.reduce_op` is deprecated, please use `torch.distributed.ReduceOp` instead\n  if isinstance(obj, torch.Tensor):\n",
+        "steady_state_peak_rss_bytes": 632340480,
+        "wall_seconds": 6.9174449
+      },
+      "read_gate": {
+        "each_nonresident_layer_once_per_forward": true,
+        "expected_startup_reads": 14,
+        "expected_stream_reads": 0,
+        "observed_startup_reads": 14,
+        "observed_stream_reads": 0
+      },
+      "repeat": 1,
+      "repeat_identical_to_first": true,
+      "resident_layers": 14
+    },
+    {
+      "accounting": {
+        "compute_seconds": 2.7969863999999993,
+        "load_wait_seconds": 0.0004049999999979903,
+        "payload_bytes": 116580464,
+        "read_calls": 28,
+        "read_events": [
+          {
+            "layer_id": 0,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 1,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.0011825999999999226,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.0012233999999997636,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.0012311000000000405,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0012132999999998617,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0012037000000004738,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0014474999999993798,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.0012195999999997653,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.001131799999999572,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.001250999999999891,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.0013173000000001878,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0017306000000001376,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0013800000000001589,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0012815999999995498,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.0014905999999994535,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.0012644000000001654,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.004413800000000023,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.001281399999999877,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0012612000000000734,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0012824000000000169,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0012579999999999814,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.001860300000000592,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          }
+        ],
+        "read_sizes": [
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588
+        ],
+        "requested_bytes": 116580464,
+        "startup_payload_bytes": 29145116,
+        "startup_requested_bytes": 29145116,
+        "token_payload_bytes": 87435348,
+        "token_requested_bytes": 87435348
+      },
+      "accounting_summary": {
+        "by_layer": {
+          "0": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "1": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "10": {
+            "load_seconds": 0.004205100000000073,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "11": {
+            "load_seconds": 0.0038661000000006496,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "12": {
+            "load_seconds": 0.003987099999998911,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "13": {
+            "load_seconds": 0.004570499999999811,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "2": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "3": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "4": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "5": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "6": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "7": {
+            "load_seconds": 0.00357879999999966,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "8": {
+            "load_seconds": 0.006888199999999678,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "9": {
+            "load_seconds": 0.0038298000000001053,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          }
+        },
+        "by_phase": {
+          "decode": {
+            "payload_bytes": 58290232,
+            "reads": 14,
+            "requested_bytes": 58290232
+          },
+          "prefill": {
+            "payload_bytes": 29145116,
+            "reads": 7,
+            "requested_bytes": 29145116
+          },
+          "startup": {
+            "payload_bytes": 29145116,
+            "reads": 7,
+            "requested_bytes": 29145116
+          }
+        }
+      },
+      "cache_observation": {
+        "mapped_file_entries": [],
+        "page_cache_bytes": null,
+        "path": "research\\tiny_moe\\artifacts\\base.trunk.bin",
+        "platform": "nt",
+        "source": "psutil.memory_maps"
+      },
+      "comparison": {
+        "all_identical": true,
+        "greedy_tokens_identical": true,
+        "step_count_identical": true,
+        "steps": [
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 0
+          },
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 1
+          },
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 2
+          }
+        ]
+      },
+      "memory_audit": {
+        "declared_persistent_state_bytes": 32769024,
+        "declared_resident_trunk_bytes": 29145116,
+        "declared_routed_expert_bytes": 352321536,
+        "declared_transient_buffer_bytes": 8331264,
+        "python_mmap_objects": 0,
+        "python_tensor_objects": 370,
+        "python_tensor_unique_bytes": 416346108
+      },
+      "metadata": {
+        "io_mode": "buffered",
+        "persistent_state_bytes": 32769024,
+        "prefetch": true,
+        "resident_layers": 7,
+        "resident_trunk_bytes": 29145116,
+        "routed_expert_bytes": 352321536,
+        "transient_buffer_bytes": 8331264,
+        "trunk_file_bytes": 58388480
+      },
+      "mode": "fifty_percent",
+      "process_metrics": {
+        "ready_seen": true,
+        "rss_samples": 227,
+        "startup_peak_rss_bytes": 946540544,
+        "stderr": "D:\\Experiment\\Inference\\colibri_fareed\\research\\tiny_moe\\streamed_runner.py:473: FutureWarning: `torch.distributed.reduce_op` is deprecated, please use `torch.distributed.ReduceOp` instead\n  if isinstance(obj, torch.Tensor):\n",
+        "steady_state_peak_rss_bytes": 609492992,
+        "wall_seconds": 7.1327112
+      },
+      "read_gate": {
+        "each_nonresident_layer_once_per_forward": true,
+        "expected_startup_reads": 7,
+        "expected_stream_reads": 21,
+        "observed_startup_reads": 7,
+        "observed_stream_reads": 21
+      },
+      "repeat": 1,
+      "repeat_identical_to_first": true,
+      "resident_layers": 7
+    },
+    {
+      "accounting": {
+        "compute_seconds": 2.766596299999998,
+        "load_wait_seconds": 0.000659700000000818,
+        "payload_bytes": 158216344,
+        "read_calls": 38,
+        "read_events": [
+          {
+            "layer_id": 0,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 1,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.0011289999999997136,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.002908399999999922,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.0012259999999999494,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.0012087000000002845,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.001264299999999885,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.0011967000000003836,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.0012264999999995752,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.0012087999999996768,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0015428999999995696,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0012958000000002912,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.001677400000000162,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.0012995999999994012,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.001406400000000474,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.0027841999999997924,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.0015663999999997458,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.0012856999999995011,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.0012433000000005023,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.001193900000000525,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.0012699999999998823,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.0012316999999999467,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0012540999999997027,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0025452999999995285,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0012391000000002705,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.0012393999999993355,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.0011583000000001675,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.0012155000000007021,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.0013692000000000704,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.001232299999999853,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.0013741000000004888,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.0016647000000000745,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.0014640999999997462,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.00125390000000003,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0012502000000003122,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.001241099999999662,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0012477000000004068,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.0014134000000005642,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          }
+        ],
+        "read_sizes": [
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588
+        ],
+        "requested_bytes": 158216344,
+        "startup_payload_bytes": 8327176,
+        "startup_requested_bytes": 8327176,
+        "token_payload_bytes": 149889168,
+        "token_requested_bytes": 149889168
+      },
+      "accounting_summary": {
+        "by_layer": {
+          "0": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "1": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "10": {
+            "load_seconds": 0.0040471999999995845,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "11": {
+            "load_seconds": 0.005082199999999482,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "12": {
+            "load_seconds": 0.0041642000000008395,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "13": {
+            "load_seconds": 0.003952399999999301,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "2": {
+            "load_seconds": 0.003693700000000355,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "3": {
+            "load_seconds": 0.006908100000000417,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "4": {
+            "load_seconds": 0.0041615999999997655,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "5": {
+            "load_seconds": 0.0037266999999996386,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "6": {
+            "load_seconds": 0.003881700000000876,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "7": {
+            "load_seconds": 0.004055300000000983,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "8": {
+            "load_seconds": 0.003960599999999204,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "9": {
+            "load_seconds": 0.0036943999999996535,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          }
+        },
+        "by_phase": {
+          "decode": {
+            "payload_bytes": 99926112,
+            "reads": 24,
+            "requested_bytes": 99926112
+          },
+          "prefill": {
+            "payload_bytes": 49963056,
+            "reads": 12,
+            "requested_bytes": 49963056
+          },
+          "startup": {
+            "payload_bytes": 8327176,
+            "reads": 2,
+            "requested_bytes": 8327176
+          }
+        }
+      },
+      "cache_observation": {
+        "mapped_file_entries": [],
+        "page_cache_bytes": null,
+        "path": "research\\tiny_moe\\artifacts\\base.trunk.bin",
+        "platform": "nt",
+        "source": "psutil.memory_maps"
+      },
+      "comparison": {
+        "all_identical": true,
+        "greedy_tokens_identical": true,
+        "step_count_identical": true,
+        "steps": [
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 0
+          },
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 1
+          },
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 2
+          }
+        ]
+      },
+      "memory_audit": {
+        "declared_persistent_state_bytes": 32769024,
+        "declared_resident_trunk_bytes": 8327176,
+        "declared_routed_expert_bytes": 352321536,
+        "declared_transient_buffer_bytes": 8331264,
+        "python_mmap_objects": 0,
+        "python_tensor_objects": 240,
+        "python_tensor_unique_bytes": 395528168
+      },
+      "metadata": {
+        "io_mode": "buffered",
+        "persistent_state_bytes": 32769024,
+        "prefetch": true,
+        "resident_layers": 2,
+        "resident_trunk_bytes": 8327176,
+        "routed_expert_bytes": 352321536,
+        "transient_buffer_bytes": 8331264,
+        "trunk_file_bytes": 58388480
+      },
+      "mode": "two_layers",
+      "process_metrics": {
+        "ready_seen": true,
+        "rss_samples": 220,
+        "startup_peak_rss_bytes": 962699264,
+        "stderr": "D:\\Experiment\\Inference\\colibri_fareed\\research\\tiny_moe\\streamed_runner.py:473: FutureWarning: `torch.distributed.reduce_op` is deprecated, please use `torch.distributed.ReduceOp` instead\n  if isinstance(obj, torch.Tensor):\n",
+        "steady_state_peak_rss_bytes": 589381632,
+        "wall_seconds": 6.926964099999999
+      },
+      "read_gate": {
+        "each_nonresident_layer_once_per_forward": true,
+        "expected_startup_reads": 2,
+        "expected_stream_reads": 36,
+        "observed_startup_reads": 2,
+        "observed_stream_reads": 36
+      },
+      "repeat": 1,
+      "repeat_identical_to_first": true,
+      "resident_layers": 2
+    },
+    {
+      "accounting": {
+        "compute_seconds": 2.834635799999996,
+        "load_wait_seconds": 0.0007477999999965235,
+        "payload_bytes": 166543520,
+        "read_calls": 40,
+        "read_events": [
+          {
+            "layer_id": 0,
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "phase": "startup",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 1,
+            "load_seconds": 0.0011996000000000784,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.001987500000000253,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.0025028000000002493,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.0012354000000005527,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.0021991999999997347,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.0012306000000004147,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.0013887000000005756,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.0012509000000004988,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.0012381000000001308,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0014289000000005103,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0012743999999997868,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0012143000000000015,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.001234400000000413,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 1,
+            "load_seconds": 0.0012503999999999849,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.0012356999999996177,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.0015572999999999837,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.0012243999999999033,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.0012492999999995646,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.0012612999999994656,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.0012714000000002557,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.0014555999999998903,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.0012613000000003538,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0012243999999999033,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0016290999999997169,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0012433999999998946,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.0012020000000001474,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 1,
+            "load_seconds": 0.001195500000000571,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.0012289999999994805,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.001279799999999831,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.003119500000000386,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.0012450999999993329,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.0012489000000002193,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.00257929999999984,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.001267499999999977,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.0013876000000001554,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0012457999999995195,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0013047999999997728,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0012698000000002096,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.001223500000000044,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          }
+        ],
+        "read_sizes": [
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588
+        ],
+        "requested_bytes": 166543520,
+        "startup_payload_bytes": 4163588,
+        "startup_requested_bytes": 4163588,
+        "token_payload_bytes": 162379932,
+        "token_requested_bytes": 162379932
+      },
+      "accounting_summary": {
+        "by_layer": {
+          "0": {
+            "load_seconds": 0.0,
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          },
+          "1": {
+            "load_seconds": 0.0036455000000006343,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "10": {
+            "load_seconds": 0.003899099999999933,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "11": {
+            "load_seconds": 0.0042082999999992765,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "12": {
+            "load_seconds": 0.0037275000000001057,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "13": {
+            "load_seconds": 0.0036599000000006043,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "2": {
+            "load_seconds": 0.004452199999999351,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "3": {
+            "load_seconds": 0.005339900000000064,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "4": {
+            "load_seconds": 0.005579300000000842,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "5": {
+            "load_seconds": 0.004693599999998632,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "6": {
+            "load_seconds": 0.0037408000000000996,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "7": {
+            "load_seconds": 0.005239400000000671,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "8": {
+            "load_seconds": 0.003974000000000366,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "9": {
+            "load_seconds": 0.00388700000000064,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          }
+        },
+        "by_phase": {
+          "decode": {
+            "payload_bytes": 108253288,
+            "reads": 26,
+            "requested_bytes": 108253288
+          },
+          "prefill": {
+            "payload_bytes": 54126644,
+            "reads": 13,
+            "requested_bytes": 54126644
+          },
+          "startup": {
+            "payload_bytes": 4163588,
+            "reads": 1,
+            "requested_bytes": 4163588
+          }
+        }
+      },
+      "cache_observation": {
+        "mapped_file_entries": [],
+        "page_cache_bytes": null,
+        "path": "research\\tiny_moe\\artifacts\\base.trunk.bin",
+        "platform": "nt",
+        "source": "psutil.memory_maps"
+      },
+      "comparison": {
+        "all_identical": true,
+        "greedy_tokens_identical": true,
+        "step_count_identical": true,
+        "steps": [
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 0
+          },
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 1
+          },
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 2
+          }
+        ]
+      },
+      "memory_audit": {
+        "declared_persistent_state_bytes": 32769024,
+        "declared_resident_trunk_bytes": 4163588,
+        "declared_routed_expert_bytes": 352321536,
+        "declared_transient_buffer_bytes": 8331264,
+        "python_mmap_objects": 0,
+        "python_tensor_objects": 214,
+        "python_tensor_unique_bytes": 391364580
+      },
+      "metadata": {
+        "io_mode": "buffered",
+        "persistent_state_bytes": 32769024,
+        "prefetch": true,
+        "resident_layers": 1,
+        "resident_trunk_bytes": 4163588,
+        "routed_expert_bytes": 352321536,
+        "transient_buffer_bytes": 8331264,
+        "trunk_file_bytes": 58388480
+      },
+      "mode": "one_layer",
+      "process_metrics": {
+        "ready_seen": true,
+        "rss_samples": 225,
+        "startup_peak_rss_bytes": 963166208,
+        "stderr": "D:\\Experiment\\Inference\\colibri_fareed\\research\\tiny_moe\\streamed_runner.py:473: FutureWarning: `torch.distributed.reduce_op` is deprecated, please use `torch.distributed.ReduceOp` instead\n  if isinstance(obj, torch.Tensor):\n",
+        "steady_state_peak_rss_bytes": 585064448,
+        "wall_seconds": 6.9999983000000014
+      },
+      "read_gate": {
+        "each_nonresident_layer_once_per_forward": true,
+        "expected_startup_reads": 1,
+        "expected_stream_reads": 39,
+        "observed_startup_reads": 1,
+        "observed_stream_reads": 39
+      },
+      "repeat": 1,
+      "repeat_identical_to_first": true,
+      "resident_layers": 1
+    },
+    {
+      "accounting": {
+        "compute_seconds": 2.740724999999997,
+        "load_wait_seconds": 0.0007910000000022066,
+        "payload_bytes": 174870696,
+        "read_calls": 42,
+        "read_events": [
+          {
+            "layer_id": 0,
+            "load_seconds": 0.0012208000000000219,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 1,
+            "load_seconds": 0.001427500000000137,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.0011855000000000615,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.0014661000000000257,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.0012389999999999901,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.0012017000000001943,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.0012560999999999822,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.001439799999999991,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.0025924999999995535,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.001213100000000189,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0019391999999998077,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0012143999999993937,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0012470000000002202,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.0012210000000001386,
+            "payload_bytes": 4163588,
+            "phase": "prefill",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 0,
+            "load_seconds": 0.001151200000000685,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 1,
+            "load_seconds": 0.0012172999999995326,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.0012994000000006167,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.0015992000000002449,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.0012680999999998832,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.0012408999999999892,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.0012697999999993215,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.0012675999999993692,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.0013686999999995564,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.0012607000000004476,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0012699999999998823,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.0012543000000002635,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0012842000000006237,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.0011719000000001145,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 0,
+            "load_seconds": 0.0011770000000002057,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 1,
+            "load_seconds": 0.0012682000000001636,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 2,
+            "load_seconds": 0.0012042000000000996,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 3,
+            "load_seconds": 0.0012439000000004086,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 4,
+            "load_seconds": 0.0013277000000000427,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 5,
+            "load_seconds": 0.0016449000000005043,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 6,
+            "load_seconds": 0.001256299999999655,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 7,
+            "load_seconds": 0.0012410000000002697,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 8,
+            "load_seconds": 0.002487799999999929,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 9,
+            "load_seconds": 0.0012368999999994301,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 10,
+            "load_seconds": 0.0016118999999994443,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 11,
+            "load_seconds": 0.001374700000000395,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 12,
+            "load_seconds": 0.0012344999999998052,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          },
+          {
+            "layer_id": 13,
+            "load_seconds": 0.0011961999999998696,
+            "payload_bytes": 4163588,
+            "phase": "decode",
+            "requested_bytes": 4163588
+          }
+        ],
+        "read_sizes": [
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588,
+          4163588
+        ],
+        "requested_bytes": 174870696,
+        "startup_payload_bytes": 0,
+        "startup_requested_bytes": 0,
+        "token_payload_bytes": 174870696,
+        "token_requested_bytes": 174870696
+      },
+      "accounting_summary": {
+        "by_layer": {
+          "0": {
+            "load_seconds": 0.0035490000000009125,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "1": {
+            "load_seconds": 0.003912999999999833,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "10": {
+            "load_seconds": 0.004821099999999134,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "11": {
+            "load_seconds": 0.0038434000000000523,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "12": {
+            "load_seconds": 0.003765700000000649,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "13": {
+            "load_seconds": 0.0035891000000001227,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "2": {
+            "load_seconds": 0.003689100000000778,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "3": {
+            "load_seconds": 0.004309200000000679,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "4": {
+            "load_seconds": 0.003834799999999916,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "5": {
+            "load_seconds": 0.004087500000000688,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "6": {
+            "load_seconds": 0.0037821999999989586,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "7": {
+            "load_seconds": 0.00394839999999963,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "8": {
+            "load_seconds": 0.006448999999999039,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          },
+          "9": {
+            "load_seconds": 0.0037107000000000667,
+            "payload_bytes": 12490764,
+            "reads": 3,
+            "requested_bytes": 12490764
+          }
+        },
+        "by_phase": {
+          "decode": {
+            "payload_bytes": 116580464,
+            "reads": 28,
+            "requested_bytes": 116580464
+          },
+          "prefill": {
+            "payload_bytes": 58290232,
+            "reads": 14,
+            "requested_bytes": 58290232
+          }
+        }
+      },
+      "cache_observation": {
+        "mapped_file_entries": [],
+        "page_cache_bytes": null,
+        "path": "research\\tiny_moe\\artifacts\\base.trunk.bin",
+        "platform": "nt",
+        "source": "psutil.memory_maps"
+      },
+      "comparison": {
+        "all_identical": true,
+        "greedy_tokens_identical": true,
+        "step_count_identical": true,
+        "steps": [
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 0
+          },
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 1
+          },
+          {
+            "all_identical": true,
+            "final_logits_identical": true,
+            "hidden_mismatches": [],
+            "hidden_states_identical": true,
+            "persistent_state_identical": true,
+            "router_top2_identical": true,
+            "router_top2_mismatches": [],
+            "router_weight_mismatches": [],
+            "router_weights_identical": true,
+            "step": 2
+          }
+        ]
+      },
+      "memory_audit": {
+        "declared_persistent_state_bytes": 32769024,
+        "declared_resident_trunk_bytes": 0,
+        "declared_routed_expert_bytes": 352321536,
+        "declared_transient_buffer_bytes": 8331264,
+        "python_mmap_objects": 0,
+        "python_tensor_objects": 188,
+        "python_tensor_unique_bytes": 387200992
+      },
+      "metadata": {
+        "io_mode": "buffered",
+        "persistent_state_bytes": 32769024,
+        "prefetch": true,
+        "resident_layers": 0,
+        "resident_trunk_bytes": 0,
+        "routed_expert_bytes": 352321536,
+        "transient_buffer_bytes": 8331264,
+        "trunk_file_bytes": 58388480
+      },
+      "mode": "zero_layers",
+      "process_metrics": {
+        "ready_seen": true,
+        "rss_samples": 219,
+        "startup_peak_rss_bytes": 972963840,
+        "stderr": "D:\\Experiment\\Inference\\colibri_fareed\\research\\tiny_moe\\streamed_runner.py:473: FutureWarning: `torch.distributed.reduce_op` is deprecated, please use `torch.distributed.ReduceOp` instead\n  if isinstance(obj, torch.Tensor):\n",
+        "steady_state_peak_rss_bytes": 581201920,
+        "wall_seconds": 6.931536699999995
+      },
+      "read_gate": {
+        "each_nonresident_layer_once_per_forward": true,
+        "expected_startup_reads": 0,
+        "expected_stream_reads": 42,
+        "observed_startup_reads": 0,
+        "observed_stream_reads": 42
+      },
+      "repeat": 1,
+      "repeat_identical_to_first": true,
+      "resident_layers": 0
+    }
+  ],
+  "checkpoint": "research\\tiny_moe\\artifacts\\checkpoint\\base\\model.safetensors",
+  "disable_mkldnn": true,
+  "format": "tiny-moe-gate3-results-v1",
+  "input_ids": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "modes": {
+    "fifty_percent": 7,
+    "fully_resident": 14,
+    "one_layer": 1,
+    "two_layers": 2,
+    "zero_layers": 0
+  },
+  "new_tokens": 2,
+  "reference": "research\\tiny_moe\\results\\reference_f16_decode2_no_mkldnn.json",
+  "repeats": 1,
+  "trunk": "research\\tiny_moe\\artifacts\\base.trunk.bin"
+}

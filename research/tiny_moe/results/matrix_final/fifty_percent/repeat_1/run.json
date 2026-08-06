@@ -1,0 +1,1119 @@
+{
+  "accounting": {
+    "compute_seconds": 3.1549915999999945,
+    "load_wait_seconds": 0.0004478999999975031,
+    "payload_bytes": 116580464,
+    "read_calls": 28,
+    "read_events": [
+      {
+        "layer_id": 0,
+        "load_seconds": 0.0,
+        "payload_bytes": 4163588,
+        "phase": "startup",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 1,
+        "load_seconds": 0.0,
+        "payload_bytes": 4163588,
+        "phase": "startup",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 2,
+        "load_seconds": 0.0,
+        "payload_bytes": 4163588,
+        "phase": "startup",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 3,
+        "load_seconds": 0.0,
+        "payload_bytes": 4163588,
+        "phase": "startup",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 4,
+        "load_seconds": 0.0,
+        "payload_bytes": 4163588,
+        "phase": "startup",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 5,
+        "load_seconds": 0.0,
+        "payload_bytes": 4163588,
+        "phase": "startup",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 6,
+        "load_seconds": 0.0,
+        "payload_bytes": 4163588,
+        "phase": "startup",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 7,
+        "load_seconds": 0.0010310000000002262,
+        "payload_bytes": 4163588,
+        "phase": "prefill",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 8,
+        "load_seconds": 0.0011252999999999957,
+        "payload_bytes": 4163588,
+        "phase": "prefill",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 9,
+        "load_seconds": 0.0011220999999999037,
+        "payload_bytes": 4163588,
+        "phase": "prefill",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 10,
+        "load_seconds": 0.0010995999999998674,
+        "payload_bytes": 4163588,
+        "phase": "prefill",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 11,
+        "load_seconds": 0.001124099999999295,
+        "payload_bytes": 4163588,
+        "phase": "prefill",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 12,
+        "load_seconds": 0.001057900000000167,
+        "payload_bytes": 4163588,
+        "phase": "prefill",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 13,
+        "load_seconds": 0.001404800000000428,
+        "payload_bytes": 4163588,
+        "phase": "prefill",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 7,
+        "load_seconds": 0.00124110000000055,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 8,
+        "load_seconds": 0.0012570000000007298,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 9,
+        "load_seconds": 0.001141600000000409,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 10,
+        "load_seconds": 0.0011383000000000365,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 11,
+        "load_seconds": 0.0011410000000005027,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 12,
+        "load_seconds": 0.001166999999999696,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 13,
+        "load_seconds": 0.0010777000000006254,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 7,
+        "load_seconds": 0.0011605000000001198,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 8,
+        "load_seconds": 0.0011501000000002648,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 9,
+        "load_seconds": 0.0011413000000004558,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 10,
+        "load_seconds": 0.0010969999999996816,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 11,
+        "load_seconds": 0.0011216999999996702,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 12,
+        "load_seconds": 0.0011223999999998568,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      },
+      {
+        "layer_id": 13,
+        "load_seconds": 0.0010852000000003414,
+        "payload_bytes": 4163588,
+        "phase": "decode",
+        "requested_bytes": 4163588
+      }
+    ],
+    "read_sizes": [
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588,
+      4163588
+    ],
+    "requested_bytes": 116580464,
+    "startup_payload_bytes": 29145116,
+    "startup_requested_bytes": 29145116,
+    "token_payload_bytes": 87435348,
+    "token_requested_bytes": 87435348
+  },
+  "memory_audit": {
+    "checkpoint_file_mappings": [],
+    "declared_persistent_state_bytes": 34374656,
+    "declared_resident_trunk_bytes": 29145116,
+    "declared_routed_expert_bytes": 352321536,
+    "declared_transient_buffer_bytes": 8331264,
+    "python_mmap_objects": 0,
+    "python_tensor_objects": 370,
+    "python_tensor_unique_bytes": 416346108,
+    "rss_at_audit_bytes": 609030144
+  },
+  "metadata": {
+    "io_mode": "buffered",
+    "kv_cache_bytes": 1376256,
+    "pe_cache_bytes": 229376,
+    "persistent_state_bytes": 34374656,
+    "persistent_weight_bytes": 32769024,
+    "prefetch": true,
+    "resident_layers": 7,
+    "resident_trunk_bytes": 29145116,
+    "routed_expert_bytes": 352321536,
+    "transient_buffer_bytes": 8331264,
+    "trunk_file_bytes": 58388480
+  },
+  "trace": {
+    "steps": [
+      {
+        "hidden_sha256": [
+          "a53232a35257a13847242e758221454bb4c933e55cb823827cc5b5dd46de70b5",
+          "c21c574dd0bb0b6e40730988dd6f712009d7f258c1151d73bda1adf9e1595f4a",
+          "c08105f54de205176cc0f52ef1e55767962d99d04742349043bbdedd775a65f1",
+          "63a429f53053ef1699fbc9f9259bf7cfa9829f61c32d97b5044576767a171f61",
+          "c09c67b63d06b327f95b8431a729cc11b89be47b8629948cfed54e31de2656a6",
+          "169ecc61496dd6dd2724c75ba8972c071041289e52cc229be17176e1e1f1d612",
+          "cfd322adc73ffd6dec6aeee1dcbc07ff02d027ddb52662961169bfd75c2f4442",
+          "21a0bbeeefc87ec8d4a708266c5ae5032d72352a89e082c9671cacb53823dba8",
+          "3fbf404126e9b01fdaef596d4e7a1df1c5f74e9493d351192a47bc6f039ee8bf",
+          "a263b6f2f069db1757190f7d955a32fd0cd69ab3b4bb0fd2a989ba40de1bb49a",
+          "a19b2a9e6ac64b0f3cea7a6b5941c6da0b3cd5d22696a221dc822de3c460fcb7",
+          "005b9a290c80d097ee1c715bf70dffb9c424363c674bdb099795aaac3facccc0",
+          "3cd2d50fb30a1b93f01738ef32a0aaf897d3c35e0e87de4d75f9588e7190271b",
+          "86b592e31b3ed84db607ef18b509fe13668dc1a57395a7e1029e7f7e0eb2da7b"
+        ],
+        "logits_sha256": "70684cb154583d51740ae9e2124d9f23796e67eef973811ec95e2ad97e31b8f7",
+        "logits_shape": [
+          1,
+          4,
+          32000
+        ],
+        "persistent": [
+          {
+            "cache_len": 4,
+            "kv_sha256": "c8125de41de4ba8e84c9fd6e43df0524f64c5dd39da054e89d6f0b34c3c3be96",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 0,
+            "pe_sha256": "fe7a7694d7d962050ea18fe794dc082a2065bb08a603f8b0bdef34e5b438da30",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "7516f13de735c720d742ea38bb476fd80a83a1187a25675d7b32469e878a5375",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 1,
+            "pe_sha256": "ea55fa80e444a261cf68ce5754da6b73a6521a3ffd70dfcf3040e73b1858256b",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "7b8b0150d097273ed78e0a46f143a9b6dc4edd6f3e40ef232d8b614bccf4ec04",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 2,
+            "pe_sha256": "1c9c78f12fa8f196a3b6bf9eaddbf7a8c0d369cd513a3b1cd36d842d1e0fa57f",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "c2818a289bc9c59fa31c0e5c5ac27756e0bf8061a2bb34d5790164ba957be1c1",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 3,
+            "pe_sha256": "fda12a315fa31132697ff3e54d9abd63cf5f7f075a5e5b8624530f7f52bb8f4b",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "2060059dc193137ed19653840364c039531adfa8a8f449a85e81548ffbd9b8b8",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 4,
+            "pe_sha256": "e653866e8da2117f1101cb532fd8d7f0d7f064197712a8a92d6ee4718207fb7f",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "b51ad10f53f8eb3d5d1da1af5646a006dedb8c8342269db3d786a6f0c1301b1d",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 5,
+            "pe_sha256": "27b0682810739033dedad4dd1e60eb0dbb7cb218a61d3598702558a0f3510e7d",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "141fc087f3ad07cbefa42d9e3eee2386553aca768e4c2e35c1e2cad3c510aae7",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 6,
+            "pe_sha256": "86546a17b197ff0070edc1f7f8041c3be0461b649da94f4e63fff07854034f8e",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "fb363e4b66bc7440e1028b18e29afa096ca395e4aefe43de9b4eb7aa54c07004",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 7,
+            "pe_sha256": "9fd7a83e941a896193abc6a12f3b369a26fbdad925ae5f62d980fca0d9aec905",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "cf980f9c0ebba834156b6f4c27657ef9049c555467fcc12ef52496df1e3c71af",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 8,
+            "pe_sha256": "99e2a89c7f95d363fa23035de46b3780796d133b11c9e7dfe1693977b35935cf",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "63f61d2080f7e9aec1f1d641b1c1b584fcd785c9e1ce5403ccd038e353cb74f2",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 9,
+            "pe_sha256": "25cde07c65d64f716ecf71dc6d932ed64b5d1bb72ac6ca8ddc96215d4fb82f38",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "79c8cdc1c6dd1822010bd00fafb9e166648ead3a6ce0c41f0678fad14f6a9a26",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 10,
+            "pe_sha256": "f3fd903d2eb043addd9d7c2b34e4299dae2f78e8865eece96d6d70f13a181b8c",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "fae6db47791f34275f07059f09a27d482847b0717080a2f668ad55b70b4acd2a",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 11,
+            "pe_sha256": "e883712593b2ee34c09b372c4781daf640afc58b298533eb29cfda5280afcab6",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "95314423715403d2f56084b0ea1089862e091e42407972ecce507b9aead63c6f",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 12,
+            "pe_sha256": "2a29650a23be3dec31b6abecf78de438b63f6a5546eb66c5dcf64f7bfe497bf3",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          },
+          {
+            "cache_len": 4,
+            "kv_sha256": "d600b8c2a255bdefc60cd41a6ee5a9de8b964b6287c99815467e57f70821bd8b",
+            "kv_shape": [
+              1,
+              4,
+              96
+            ],
+            "layer_id": 13,
+            "pe_sha256": "8a80684844f7d8a39415481293dd24c80e73d7acba89c3546e2191a04346ec7b",
+            "pe_shape": [
+              1,
+              4,
+              16
+            ]
+          }
+        ],
+        "router_ids_sha256": [
+          "10e0a1cba2d54e377614d542acf779dc447fd670b3c70165936e2d880eacf969",
+          "56c44d71b852666487c8563f551923b0449bbe41e960fea7ac6c8544ce9b93f6",
+          "3b4e0d1390111691d5100a8e74e02cf9a95cee7a11befbe242d483558651ca71",
+          "16b51acdd90a95f3ecb850218ed4bf91f85a604aa0184f8895627d94a236e71a",
+          "a903f2d19de5e36f53a3bc75492b41e6292e4ae8a87b1b0027423c309b1f0cf8",
+          "12b1bf62efd33e95b6d3ea1bdf1e99c732f18d924914172297811cbb081a0d6b",
+          "5aafe17d8de46eb6a1c8e57f0139205c239a2242d19b9f13c70e47eeece2aec1",
+          "014840580d7b86562f941be64390ceda364e616ea39056db3f9fd5f329e6d0c6",
+          "b127212712c2a123f3cc8e1156ce9c58d85c1694d668e5f2284bf20fcb3c5fc2",
+          "1f72d06e6c0baada4c773033d2f66c919946d267e1aae5ae360f89b616cfb486",
+          "3d22798baa3cc8631fcc5c8614482317e28549bc5cb152cfd62b8c35ef7907f3",
+          "6e3955782e21253700ea10d67d43f5d78080cb6037ac6a0b4abd140c72d99dfc",
+          "dfc7529d1d44253384b1aba168cb57c4f84f669b87c1aaed86cf40aa9e599995",
+          "913bc4851c475e93b1616c1c47d26eb24cb82170219031fb433759e1f7ef750a"
+        ],
+        "router_weights_sha256": [
+          "2b4dac4855bd0298c4dcbd59018a6abcaee65c8956d392a0ee825c1fc4813255",
+          "7582b938c7132874dce93dca279a7342e7c46d982a781ba4c2b0e03e5c973314",
+          "3e12ee89104e4d7eb81600392fbdbaf486911e3225a90bec235b083701d58363",
+          "2f7885250f81a2b3060d756f8f8322bbd544a7a2bf260fbd200efd19a13391e6",
+          "1c0296dd3facc5ad695d2d201862ab41b7c49143ca71118fcd3cf76a644dce13",
+          "cc47a0ba54312ac935cc6c5b120a55e25b61a491c191c2ef59b94dbcd5f28f97",
+          "4344d97d0b9c2de82bfde9fa9bb9e414b212015db90689dddf7b3c8eb2219ef0",
+          "783b70c325524babf9b336eaacf57fe099365704bbb7b635a1607e683ffc1f05",
+          "e60f4bab1596d3efba4046cf136ef4b7b383b088bc856b1f4054f6caaf77228c",
+          "438404f3baa09b91a265764b82d5b098df1c8e5d8eb31edac87803808c01e1c0",
+          "06caee0dba551cfc82b1e39b137bcffcb8ec5d665c23bd798e1b82f09295fef9",
+          "2d6275668b1f055d3be511385ef94b50f49f4a10c028ffa3311ea07174c61bd3",
+          "f9f8a8012fd26cf3da77f56a2411d75df8d9337d252d20508f6f6658e85a5f9e",
+          "774492f07f38354e864ecb95f0c012665496db84c64ccc546c1b0d99a92a9aab"
+        ]
+      },
+      {
+        "hidden_sha256": [
+          "1af37989c7552f91edbd6248665458181faa3670094ee45945110918c7231a32",
+          "4e60eea4737724a3ce306bfcf6a596f04f64323a775396a1d06945a072b19ea6",
+          "33663ba13fa61f5e026bd1ee34dbe19c157bdb78e5b7289a43304c6f6057553e",
+          "da185381cb8065c4f79fbd59acd34c809ee2b8bbaa9f9db62b4356e86bb98836",
+          "8529086bc9e24b4f4c6d275859740be21af41f80dfcf33d6f785aeec31f999bf",
+          "80cd5548822a93d0b486c7e3e54ee6089cb22378486cea136b96c67e1cafb6ec",
+          "c1209ee4e2d27afb2872c6797d1629d4e787e37b26e5786a15cf498736789029",
+          "35be3dfbb0555c71da9ebe02fa55eaf2c29d01424a1994c4b3f14467cf587c95",
+          "da053d24d300fa7230b0ef2fd0315f63b0b74ca8810c61afc1e1d067fab63b6b",
+          "7e1c87f9964960aab734f8a30321f5e6aac2f04f4bd61a68f533aa284df4e6e5",
+          "505f69315264eed8652ddbb0a6d0247a08129766e2ce670207dca6877a325c7f",
+          "b5f3b236e40bd4106aa1a6d45aa0d3b47f6c27a04b299eb3663f7317c8b62081",
+          "2d1d8b305f516ea8dc25af36cb33d9a771ccbe53886e41f2c16192723ed5cd49",
+          "eb196f20ff5403d907c4815811c0c242a595aabe90848adb14be363bab4ef364"
+        ],
+        "logits_sha256": "e47ddb62abf9185472779250e88d7663dc5225f89f8d8cf228b043a79f58fb41",
+        "logits_shape": [
+          1,
+          1,
+          32000
+        ],
+        "persistent": [
+          {
+            "cache_len": 5,
+            "kv_sha256": "4824a91cfc475d3e1dcb7af6d338d579740d69653aea3c71164a79ed3bbf2ed1",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 0,
+            "pe_sha256": "5d9632c368d73ab8b46357280825a2d7fc13d9ab74203c9051682a6461a33502",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "2b070dbd56efb88e3c9211370ab34786cbafa11b2133d6e58100cb391c27ba11",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 1,
+            "pe_sha256": "292542e075ca1a03b44592bd79d99e06d9de936bfbaa8697b7d7344475c58551",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "427ba885c763ed23944fecd246bc6707869610d402299df796ad35278619272c",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 2,
+            "pe_sha256": "da258e21c547f72fcb0e3927fd56b5a1e6e7cb852d58ecd1c5b270254e771423",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "e6a2941c2f6c4a5e491ef567da781e7fcb582d0e59275b6491308f09306eb29e",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 3,
+            "pe_sha256": "56757f34b9ea61f97fc5c4b8ec61dfd1a17644b48c61949fe073d63afb7bc24b",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "95f27e8c5251f24bc68c5a2e5d6f3c9ceaa4fb910211e21b0330b1136e8d7864",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 4,
+            "pe_sha256": "ad7dd13f8cfe8f03266bb7216c9a40bcdf06b6ef1905fe38feeeac353fe534b4",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "b075c6196e39241364b608e0670af9145b48add1c75703d70713d3866fc8e1cc",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 5,
+            "pe_sha256": "0335ebe6d772cb0cab3a013f9fb9462f1af227075c8ab6e40261b34b55886902",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "443e420b26cc7558b016ce2e3779374378277d81f9ee5b54780102ef694ae0b3",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 6,
+            "pe_sha256": "ecf6cc936798a7181e5f1ab8d3ac54525183d59775b18212c173deaaccfbbd73",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "e0bdb5c4d62dfe9f4b33c59c25bcbc1a6ef9eed6361732b5c0cbd448904194d9",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 7,
+            "pe_sha256": "d35c1d508324fbad573b2c0664119a477e594a861644021ed2e6bfa09d433c49",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "98c9ea5d7f8d660ed755d8d2a5c14e085911ee56e7e0e90ff000c2a53cdde915",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 8,
+            "pe_sha256": "61efd5d880b4d452d259081653a33c1069f95209996ab8a6c2cb9626028992bd",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "81e6eb70336464b63391f4140871c634434405debc487807a839116bd7b943af",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 9,
+            "pe_sha256": "4e2e04e9edb488432682e00f7cd5b5e60c824070eef75242ac3eb61f449332bb",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "9faabeeae8febfd2dd72c6d6f8240aabef339d3380157c4ec2c65b83860a6c2d",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 10,
+            "pe_sha256": "e46ee18d3a01db332d223dd58235a17a6d4c824e051a052c85a0d23b7d4c6d71",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "cba1fea8c69cec80e1dbbb8a708a98fd35d9fe002c5dc01c91d7f560220817d3",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 11,
+            "pe_sha256": "e0c69c97190c77a38c63c65ab1e23869e437d762bda2ad348b25014b08a6635a",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "cc4c0f993e33304ace46000959ef1bda4bb6d771f925ccedf5d29a3ae97a9005",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 12,
+            "pe_sha256": "5103ad73c8d1ef12385ad75378f452fab9e4ae94e94b483349620286465cc5b4",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          },
+          {
+            "cache_len": 5,
+            "kv_sha256": "f25b3f6a1c986d08d4e308d2490be98aa2d1159688554cc34fc3fb73e2bda1db",
+            "kv_shape": [
+              1,
+              5,
+              96
+            ],
+            "layer_id": 13,
+            "pe_sha256": "e0898539106a718d46897c71eeab0d71a32977bcb1cd0efed22df1fc312f87a8",
+            "pe_shape": [
+              1,
+              5,
+              16
+            ]
+          }
+        ],
+        "router_ids_sha256": [
+          "8035674bb60d7cbb0e092c00c0b80ec3cd778e695e914896e8f24f79d0444dc0",
+          "e165902a1fcd97dda115b6198c9a46910c0eef5e723f526ea12e18bd7009f463",
+          "59d5966c96af7ecad5c9d2918d6582d102b2c67f6b765ea28ac24371ab4f93be",
+          "9eda69073c7d3efd5c3b8ccdf5d3cbad0a7261c88731a44db7d157551f6ab227",
+          "181d9408cee887a97d4c8d97f2f846ab0edc8d9f2c803793daaa119a16fbd824",
+          "f7548c023e431138b11357593f5cceb9dd35eb0b0a2041f0b1560212eeb6f13e",
+          "761b59d486d929d4d242938b94eeae7ee280c78da753bba0c9af46ad5e4bef4b",
+          "3d484babff90efb32f8caa5d903b69266d3e719695bd4887cf1eb5dfab6ae23d",
+          "a2dcad78d59bc1d926164cb141e465599a7910555594b47588344d5b7edef56b",
+          "761b59d486d929d4d242938b94eeae7ee280c78da753bba0c9af46ad5e4bef4b",
+          "dc29665959b307dd9336e1d6544bcd9176421294748ea29f229189650b786247",
+          "5e9a5de4a59a7c3c9ba8846060ba77ab402e3088658aa705e1a64e796f6cd5cf",
+          "e165902a1fcd97dda115b6198c9a46910c0eef5e723f526ea12e18bd7009f463",
+          "8035674bb60d7cbb0e092c00c0b80ec3cd778e695e914896e8f24f79d0444dc0"
+        ],
+        "router_weights_sha256": [
+          "ee79ab2c998da976c0e686b65cdb2d80b84c4eafd830fe6ff3e33cdcae249e83",
+          "dced4d4503b7479aed263350f878117c5de5b1a58ef02acb638008fde8c67f00",
+          "3027a04d68d506072015b74475f2896a704285fd388897c92861b75834b9dbcb",
+          "9c0185f629a60e5ae15cba9dcc3fd6581f63dbafba64f587f21173c5dabf1545",
+          "3d12f9a6ce96329d9fec0516f6981ab740ddae80094ce3e208fb7d465040cd95",
+          "042a68fd4854459bfee68a91f82412bd4dd3dcd5a437e88dfba42a753369782c",
+          "e6f11abc1ef701809ef1222ab3d57838e50325a38ad13f74ec6ce05fe88613f2",
+          "b2bc4454f4a77f414bd3bb148d20440cbb28562e49f3c95dc91c1a23e4f954b1",
+          "0d8b4d83cdbbedd37bd105ef96ebed8dce77f425c8fb3d45b72851857da7bbd4",
+          "6f66d4bb821f507b36252faf78ca0be3bebbe673956b8b0c6225941a3eaa1797",
+          "e1f825cc5cdf4dc6ecabcfe16ebfaeaee8ec134dc4deaf995b8356d64add8c60",
+          "a99c2850cb330b039faf124b21ef8864e328d1292b3d53acd7f24e77f42be64d",
+          "dced4d4503b7479aed263350f878117c5de5b1a58ef02acb638008fde8c67f00",
+          "531a79daaa237585fecbd629b4a979cda784ef676a817fa95930a848fedaa3e9"
+        ]
+      },
+      {
+        "hidden_sha256": [
+          "0c470a5daaaf45ecbcb0c74886667831da1f69a640acf731dd66f0b0c3ade75a",
+          "402fa4c85e1a0c03491757dcd38c0989e735731ebfa729e88983148155ed1956",
+          "d9a7c27fdb02dcbb7b05fb016908b8e9f1b30bec7dfa2c1b8158c76d6717ddfc",
+          "6b96257470c1345f2f02f1a53ddc30d0dd5fb0accdb51625ae5a51a284796a1b",
+          "7e2ce82b0a740aa147fc1f6c700f4cc5903f831d074f5142f12889ca8613d5c0",
+          "59a29e8ed791ca8591e200b3ac484fe8b3fb8daae7992e35c3e2d59ea6993432",
+          "09daccd5e2b3b3ab0f49783a4d5447672a9464f2f635e69e6465efc624faa190",
+          "181cdd2b6f4abdfadfb7c14ccaf0cd1f46300928a1735d2b29b6fa4f40953ae7",
+          "c9dbcf6ab03e7c5e57cc11f59dc82fc2437771013854badcb6dde1391976f7d7",
+          "3b48bbd52c5ee343a7ce45af0d2d092f767bc1d72b8fec6ddf30d53cf027cd57",
+          "a36c1bb26ec6ee5c150a63aa7b25b2f69975e8bb5f3a03efc55043f74d0eedfe",
+          "935e85ace3e36155a2afc8a7a4713e960fe6a8e1e2e92c79daec8da4e4754384",
+          "6241a3d42e00cb6af2ce313256181994dd397e0ca1a5e100961f57d8e16dceab",
+          "6b0da312dd4bcd76d362b67255399d2d56b2f3980d8d074a78fa5f0d51ccbeaa"
+        ],
+        "logits_sha256": "569275d4a2bc4a91dbd0de0e93e5309250f91abde9cad5f1e6b776f4eb6b60b0",
+        "logits_shape": [
+          1,
+          1,
+          32000
+        ],
+        "persistent": [
+          {
+            "cache_len": 6,
+            "kv_sha256": "139a6dd225f35de5a6b5482f7693abe7d84665082ef20b4dfa2a173f58347c9c",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 0,
+            "pe_sha256": "a3fd9f167f6c68146818139ae391c287c0ae6d2d8ce27915b9e74fe23ce0091a",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "99e65775992ac0f7408267b1242416aa3130bb4200f4dcc4e96497d1f65489f2",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 1,
+            "pe_sha256": "bc5e5ccce631ad43ab9021058466101b47713f06da73a45065da7aea38246e41",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "2c26b0df7d531523458d4b2a9aaa6284c64915051a39032c9a9e29158e6280df",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 2,
+            "pe_sha256": "1bb3f712a5ab559b1f50b44396ccc725e065751a5444d199f54fb130be48f0b1",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "53baf92b5aa9ba1a299d8a8690d2bb9a14c3c9da1421f28d96ceed23acf772a0",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 3,
+            "pe_sha256": "42a896139e3f0ef8f441ae78ecd981813a9a971a4a372071ccd2419d22a5b4d6",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "69b4eb4f31fb8cf6dd4709875160c930cfb1b62a18e407107b79ab6b96323155",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 4,
+            "pe_sha256": "0aa068f633758c873252d980ffed4780fea868dc6eff5159e68c7d302f9d5493",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "4f0e9ba154d5e6753d2ae5c938662905ae55103a25ff8f1edfdb16df5a6ba4c5",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 5,
+            "pe_sha256": "b93566fbb7766a26e449df4ba3121690c352e05af2dd27eb0af1f9db41773696",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "800af3fccafee1825e5abe6a8abd0ef5df2d5976384f7b6a1c081cb795201b23",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 6,
+            "pe_sha256": "9eabf33246ae62c533b4ebd08fe605ab1bb4d7d974d791140d381c4c8b444fec",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "952bf5ad5abe53032d6c2deee55efcbef664d8977b48623de42b30a9ba67c9c4",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 7,
+            "pe_sha256": "c68716b1038d70cf7da7a8d96d87e1d0f7c2663b750dff2055f4b2feb589f89b",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "6f6e3df9c2923efee8321f88f7a43b79c68f0e49c9c041d57d5dd2530d39dd6e",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 8,
+            "pe_sha256": "9f2437422c40588d103f7d5f77e404785ea4f024b3ba0376e4ade4b38991c04b",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "97c105a9999a0219dd76dfe25b3ed8c956f135140f34ebce423a168a8b5b2aad",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 9,
+            "pe_sha256": "3fa4b478165c3958063a27d9d84be9979ab213dcd6e572089724d6f8115366f2",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "2224af49fc0aa540ab7d89a933186ebc283b901cfd06cbbed9eaff0b164f5d7b",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 10,
+            "pe_sha256": "20a921251baa5913ef01f001d9b53f8b7047057a5f175c17f0a72cc1b45260b3",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "48948b883e6dccec8458e0f3cc5ac9311ad0259f83b462ff7a72d5f1665060de",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 11,
+            "pe_sha256": "11f665d520aa0b56568c27d5dd0e7d7c546329aea674331f679782e831a5f928",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "0f573b0a57487f9e8f1232feb9e5a76be9232ea79fb7829c005436ad3c52616d",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 12,
+            "pe_sha256": "1d076ec14f81295ce59274a76bed0f17e9e8345965f2ff4156f8127e1890cc58",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          },
+          {
+            "cache_len": 6,
+            "kv_sha256": "b2ebbdcb3c48ca378a128f900e6c8b0c3ad7e2dc8c16c4b8764e3e4d28007329",
+            "kv_shape": [
+              1,
+              6,
+              96
+            ],
+            "layer_id": 13,
+            "pe_sha256": "6e612f3ae0c1e8224bca857a67f581092d3a7c5c4b7dae1aa95cba1aa22c6c3c",
+            "pe_shape": [
+              1,
+              6,
+              16
+            ]
+          }
+        ],
+        "router_ids_sha256": [
+          "8e8f6841378f772c40db2f07e876776d50c481ed7329ebcab75312e3b1fa7807",
+          "10a266e9cf5c28e627ddc40222c1d38e7f02dc71049b6a31854d6e51ce737eb1",
+          "b8ff9f309e92fdfadbc444835024721ff04fbd2c677a178f3afcf3647dc84129",
+          "c571327cb01ac1de6972713cbf6cc1fc3c2cab8b581ee0bc3fe6d8b56963fd5b",
+          "8e8f6841378f772c40db2f07e876776d50c481ed7329ebcab75312e3b1fa7807",
+          "3d484babff90efb32f8caa5d903b69266d3e719695bd4887cf1eb5dfab6ae23d",
+          "9eda69073c7d3efd5c3b8ccdf5d3cbad0a7261c88731a44db7d157551f6ab227",
+          "9eda69073c7d3efd5c3b8ccdf5d3cbad0a7261c88731a44db7d157551f6ab227",
+          "3d484babff90efb32f8caa5d903b69266d3e719695bd4887cf1eb5dfab6ae23d",
+          "1ca2dc94cfbfbdeda20e312fb83e2086f0cfe288026e64460faa99c99c3f23f0",
+          "181d9408cee887a97d4c8d97f2f846ab0edc8d9f2c803793daaa119a16fbd824",
+          "b15c0825f56c18d83e23f123bd56f2d07143f7997456af9ec4de6016cfa043b1",
+          "59d5966c96af7ecad5c9d2918d6582d102b2c67f6b765ea28ac24371ab4f93be",
+          "cf6df3013024c56eb03d050c106bd48cbfbc32f675fb158c68dfaa8b33df8b9d"
+        ],
+        "router_weights_sha256": [
+          "8233ec3fd42c652f0e67e321538d6e92f77baf57d11b75b3cb5608b4a0cbc24c",
+          "8202a9700eac933da1cd252a75bf91af3da6b927d31b91c0fe77d80d963bf398",
+          "a84a9ca280e2a47a9913cee79c47f34abe7594597dc7a7b081c408a7d92b5ea2",
+          "3ac378ce40f8495ff9fef773ae4ffa4bbb73be8a39bd22bbe3e8c92bb3316867",
+          "e15a43b484f18e8be88130151a0d0aeffa24ac69ca901ad9e52d631db9904288",
+          "4d202b1b08cdd3838ac4fd08e3065177c09d510bce6853e756594b1ebc73ad54",
+          "ab4b630e93fa3b46aebaaed348c1802af8985f3b620b0458efec1bb7fab0cb7b",
+          "db3b4c75313e0f634da2232cecd8a61907de5788cda11cf6f6fbe353f41d7636",
+          "672ababfba3c02e847cac5b2d14e677e420ccc3cc0e6a295a593407ac656a332",
+          "709689b748c5de79cc54d956e9e4ac6a5b23e59228053af425df5cdaa2973f8d",
+          "9b216b54c1dda4c23a73cb41ed1cf5cdb967f86537d75af993f9654ef7cc8542",
+          "5d0b9c7f584eb8f2b0bdbf0b2fa63453fb065c1d7f6079f47dbc5f59640ae74f",
+          "7806aa845e598fa9f2d9d5ad4f8aed312e276802f563eee858c04b54c47acecd",
+          "2e1cd171194cffc02d9d32debf5a4baea248ff82cdac28a9d2cc469032771745"
+        ]
+      }
+    ],
+    "token_ids": [
+      28723,
+      675
+    ]
+  }
+}

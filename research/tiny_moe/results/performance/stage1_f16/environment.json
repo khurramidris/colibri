@@ -1,0 +1,13 @@
+{
+  "cache_policy": "No filesystem cache flush performed; child startup is process-cold only, repetitions are OS-cache-warm.",
+  "cpu_count": 4,
+  "machine": "AMD64",
+  "platform": "Windows-10-10.0.19045-SP0",
+  "processor": "Intel64 Family 6 Model 142 Stepping 9, GenuineIntel",
+  "python": "3.9.13",
+  "release": "10",
+  "system": "Windows",
+  "torch": "2.6.0+cpu",
+  "torch_threads": 2,
+  "version": "10.0.19045"
+}
