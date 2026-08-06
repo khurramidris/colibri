@@ -1,0 +1,1 @@
+{"rss_bytes": 573431808, "metadata": {"resident_layers": 2, "resident_trunk_bytes": 8327176, "persistent_weight_bytes": 32769024, "kv_cache_bytes": 1376256, "pe_cache_bytes": 229376, "persistent_state_bytes": 34374656, "routed_expert_bytes": 352321536, "transient_buffer_bytes": 8331264, "prefetch": true, "io_mode": "buffered", "trunk_file_bytes": 58388480}}

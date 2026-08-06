@@ -1,0 +1,4081 @@
+{
+  "alignment_bytes": 4096,
+  "architecture": {
+    "attention_heads": 8,
+    "checkpoint_dtype": [
+      "F16"
+    ],
+    "hidden_size": 512,
+    "kv_lora_rank": 96,
+    "moe_intermediate_size": 1024,
+    "num_layers": 14,
+    "qk_nope_dim": 48,
+    "qk_rope_dim": 16,
+    "routed_experts": 8,
+    "shared_experts": 1,
+    "top_k": 2,
+    "vocab_size": 32000,
+    "weight_tying": true
+  },
+  "categories": {
+    "persistent": 65537024,
+    "routed_expert": 352321536,
+    "trunk": 58290232,
+    "unclassified": 0
+  },
+  "format": "safetensors-header-manifest-v1",
+  "layers": [
+    {
+      "layer_id": 0,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.0.moe.w13",
+        "layers.0.moe.w2"
+      ],
+      "source_span": {
+        "end": 62117548,
+        "start": 32788136
+      },
+      "tensor_names": [
+        "layers.0.attn.w_in.weight",
+        "layers.0.attn.w_kr.weight",
+        "layers.0.attn.w_o.weight",
+        "layers.0.attn.w_uk",
+        "layers.0.attn.w_uq_qr.weight",
+        "layers.0.attn.w_uv",
+        "layers.0.attn_norm.weight",
+        "layers.0.ffn_norm.weight",
+        "layers.0.ls1",
+        "layers.0.ls2",
+        "layers.0.moe.router.weight",
+        "layers.0.moe.shared_w13.weight",
+        "layers.0.moe.shared_w2.weight",
+        "layers.0.moe.w13",
+        "layers.0.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.0.attn.w_in.weight",
+        "layers.0.attn.w_kr.weight",
+        "layers.0.attn.w_o.weight",
+        "layers.0.attn.w_uk",
+        "layers.0.attn.w_uq_qr.weight",
+        "layers.0.attn.w_uv",
+        "layers.0.attn_norm.weight",
+        "layers.0.ffn_norm.weight",
+        "layers.0.ls1",
+        "layers.0.ls2",
+        "layers.0.moe.router.weight",
+        "layers.0.moe.shared_w13.weight",
+        "layers.0.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 1,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.1.moe.w13",
+        "layers.1.moe.w2"
+      ],
+      "source_span": {
+        "end": 91446960,
+        "start": 62117548
+      },
+      "tensor_names": [
+        "layers.1.attn.w_in.weight",
+        "layers.1.attn.w_kr.weight",
+        "layers.1.attn.w_o.weight",
+        "layers.1.attn.w_uk",
+        "layers.1.attn.w_uq_qr.weight",
+        "layers.1.attn.w_uv",
+        "layers.1.attn_norm.weight",
+        "layers.1.ffn_norm.weight",
+        "layers.1.ls1",
+        "layers.1.ls2",
+        "layers.1.moe.router.weight",
+        "layers.1.moe.shared_w13.weight",
+        "layers.1.moe.shared_w2.weight",
+        "layers.1.moe.w13",
+        "layers.1.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.1.attn.w_in.weight",
+        "layers.1.attn.w_kr.weight",
+        "layers.1.attn.w_o.weight",
+        "layers.1.attn.w_uk",
+        "layers.1.attn.w_uq_qr.weight",
+        "layers.1.attn.w_uv",
+        "layers.1.attn_norm.weight",
+        "layers.1.ffn_norm.weight",
+        "layers.1.ls1",
+        "layers.1.ls2",
+        "layers.1.moe.router.weight",
+        "layers.1.moe.shared_w13.weight",
+        "layers.1.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 2,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.2.moe.w13",
+        "layers.2.moe.w2"
+      ],
+      "source_span": {
+        "end": 238094020,
+        "start": 208764608
+      },
+      "tensor_names": [
+        "layers.2.attn.w_in.weight",
+        "layers.2.attn.w_kr.weight",
+        "layers.2.attn.w_o.weight",
+        "layers.2.attn.w_uk",
+        "layers.2.attn.w_uq_qr.weight",
+        "layers.2.attn.w_uv",
+        "layers.2.attn_norm.weight",
+        "layers.2.ffn_norm.weight",
+        "layers.2.ls1",
+        "layers.2.ls2",
+        "layers.2.moe.router.weight",
+        "layers.2.moe.shared_w13.weight",
+        "layers.2.moe.shared_w2.weight",
+        "layers.2.moe.w13",
+        "layers.2.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.2.attn.w_in.weight",
+        "layers.2.attn.w_kr.weight",
+        "layers.2.attn.w_o.weight",
+        "layers.2.attn.w_uk",
+        "layers.2.attn.w_uq_qr.weight",
+        "layers.2.attn.w_uv",
+        "layers.2.attn_norm.weight",
+        "layers.2.ffn_norm.weight",
+        "layers.2.ls1",
+        "layers.2.ls2",
+        "layers.2.moe.router.weight",
+        "layers.2.moe.shared_w13.weight",
+        "layers.2.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 3,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.3.moe.w13",
+        "layers.3.moe.w2"
+      ],
+      "source_span": {
+        "end": 267423432,
+        "start": 238094020
+      },
+      "tensor_names": [
+        "layers.3.attn.w_in.weight",
+        "layers.3.attn.w_kr.weight",
+        "layers.3.attn.w_o.weight",
+        "layers.3.attn.w_uk",
+        "layers.3.attn.w_uq_qr.weight",
+        "layers.3.attn.w_uv",
+        "layers.3.attn_norm.weight",
+        "layers.3.ffn_norm.weight",
+        "layers.3.ls1",
+        "layers.3.ls2",
+        "layers.3.moe.router.weight",
+        "layers.3.moe.shared_w13.weight",
+        "layers.3.moe.shared_w2.weight",
+        "layers.3.moe.w13",
+        "layers.3.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.3.attn.w_in.weight",
+        "layers.3.attn.w_kr.weight",
+        "layers.3.attn.w_o.weight",
+        "layers.3.attn.w_uk",
+        "layers.3.attn.w_uq_qr.weight",
+        "layers.3.attn.w_uv",
+        "layers.3.attn_norm.weight",
+        "layers.3.ffn_norm.weight",
+        "layers.3.ls1",
+        "layers.3.ls2",
+        "layers.3.moe.router.weight",
+        "layers.3.moe.shared_w13.weight",
+        "layers.3.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 4,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.4.moe.w13",
+        "layers.4.moe.w2"
+      ],
+      "source_span": {
+        "end": 296752844,
+        "start": 267423432
+      },
+      "tensor_names": [
+        "layers.4.attn.w_in.weight",
+        "layers.4.attn.w_kr.weight",
+        "layers.4.attn.w_o.weight",
+        "layers.4.attn.w_uk",
+        "layers.4.attn.w_uq_qr.weight",
+        "layers.4.attn.w_uv",
+        "layers.4.attn_norm.weight",
+        "layers.4.ffn_norm.weight",
+        "layers.4.ls1",
+        "layers.4.ls2",
+        "layers.4.moe.router.weight",
+        "layers.4.moe.shared_w13.weight",
+        "layers.4.moe.shared_w2.weight",
+        "layers.4.moe.w13",
+        "layers.4.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.4.attn.w_in.weight",
+        "layers.4.attn.w_kr.weight",
+        "layers.4.attn.w_o.weight",
+        "layers.4.attn.w_uk",
+        "layers.4.attn.w_uq_qr.weight",
+        "layers.4.attn.w_uv",
+        "layers.4.attn_norm.weight",
+        "layers.4.ffn_norm.weight",
+        "layers.4.ls1",
+        "layers.4.ls2",
+        "layers.4.moe.router.weight",
+        "layers.4.moe.shared_w13.weight",
+        "layers.4.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 5,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.5.moe.w13",
+        "layers.5.moe.w2"
+      ],
+      "source_span": {
+        "end": 326082256,
+        "start": 296752844
+      },
+      "tensor_names": [
+        "layers.5.attn.w_in.weight",
+        "layers.5.attn.w_kr.weight",
+        "layers.5.attn.w_o.weight",
+        "layers.5.attn.w_uk",
+        "layers.5.attn.w_uq_qr.weight",
+        "layers.5.attn.w_uv",
+        "layers.5.attn_norm.weight",
+        "layers.5.ffn_norm.weight",
+        "layers.5.ls1",
+        "layers.5.ls2",
+        "layers.5.moe.router.weight",
+        "layers.5.moe.shared_w13.weight",
+        "layers.5.moe.shared_w2.weight",
+        "layers.5.moe.w13",
+        "layers.5.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.5.attn.w_in.weight",
+        "layers.5.attn.w_kr.weight",
+        "layers.5.attn.w_o.weight",
+        "layers.5.attn.w_uk",
+        "layers.5.attn.w_uq_qr.weight",
+        "layers.5.attn.w_uv",
+        "layers.5.attn_norm.weight",
+        "layers.5.ffn_norm.weight",
+        "layers.5.ls1",
+        "layers.5.ls2",
+        "layers.5.moe.router.weight",
+        "layers.5.moe.shared_w13.weight",
+        "layers.5.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 6,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.6.moe.w13",
+        "layers.6.moe.w2"
+      ],
+      "source_span": {
+        "end": 355411668,
+        "start": 326082256
+      },
+      "tensor_names": [
+        "layers.6.attn.w_in.weight",
+        "layers.6.attn.w_kr.weight",
+        "layers.6.attn.w_o.weight",
+        "layers.6.attn.w_uk",
+        "layers.6.attn.w_uq_qr.weight",
+        "layers.6.attn.w_uv",
+        "layers.6.attn_norm.weight",
+        "layers.6.ffn_norm.weight",
+        "layers.6.ls1",
+        "layers.6.ls2",
+        "layers.6.moe.router.weight",
+        "layers.6.moe.shared_w13.weight",
+        "layers.6.moe.shared_w2.weight",
+        "layers.6.moe.w13",
+        "layers.6.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.6.attn.w_in.weight",
+        "layers.6.attn.w_kr.weight",
+        "layers.6.attn.w_o.weight",
+        "layers.6.attn.w_uk",
+        "layers.6.attn.w_uq_qr.weight",
+        "layers.6.attn.w_uv",
+        "layers.6.attn_norm.weight",
+        "layers.6.ffn_norm.weight",
+        "layers.6.ls1",
+        "layers.6.ls2",
+        "layers.6.moe.router.weight",
+        "layers.6.moe.shared_w13.weight",
+        "layers.6.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 7,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.7.moe.w13",
+        "layers.7.moe.w2"
+      ],
+      "source_span": {
+        "end": 384741080,
+        "start": 355411668
+      },
+      "tensor_names": [
+        "layers.7.attn.w_in.weight",
+        "layers.7.attn.w_kr.weight",
+        "layers.7.attn.w_o.weight",
+        "layers.7.attn.w_uk",
+        "layers.7.attn.w_uq_qr.weight",
+        "layers.7.attn.w_uv",
+        "layers.7.attn_norm.weight",
+        "layers.7.ffn_norm.weight",
+        "layers.7.ls1",
+        "layers.7.ls2",
+        "layers.7.moe.router.weight",
+        "layers.7.moe.shared_w13.weight",
+        "layers.7.moe.shared_w2.weight",
+        "layers.7.moe.w13",
+        "layers.7.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.7.attn.w_in.weight",
+        "layers.7.attn.w_kr.weight",
+        "layers.7.attn.w_o.weight",
+        "layers.7.attn.w_uk",
+        "layers.7.attn.w_uq_qr.weight",
+        "layers.7.attn.w_uv",
+        "layers.7.attn_norm.weight",
+        "layers.7.ffn_norm.weight",
+        "layers.7.ls1",
+        "layers.7.ls2",
+        "layers.7.moe.router.weight",
+        "layers.7.moe.shared_w13.weight",
+        "layers.7.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 8,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.8.moe.w13",
+        "layers.8.moe.w2"
+      ],
+      "source_span": {
+        "end": 414070492,
+        "start": 384741080
+      },
+      "tensor_names": [
+        "layers.8.attn.w_in.weight",
+        "layers.8.attn.w_kr.weight",
+        "layers.8.attn.w_o.weight",
+        "layers.8.attn.w_uk",
+        "layers.8.attn.w_uq_qr.weight",
+        "layers.8.attn.w_uv",
+        "layers.8.attn_norm.weight",
+        "layers.8.ffn_norm.weight",
+        "layers.8.ls1",
+        "layers.8.ls2",
+        "layers.8.moe.router.weight",
+        "layers.8.moe.shared_w13.weight",
+        "layers.8.moe.shared_w2.weight",
+        "layers.8.moe.w13",
+        "layers.8.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.8.attn.w_in.weight",
+        "layers.8.attn.w_kr.weight",
+        "layers.8.attn.w_o.weight",
+        "layers.8.attn.w_uk",
+        "layers.8.attn.w_uq_qr.weight",
+        "layers.8.attn.w_uv",
+        "layers.8.attn_norm.weight",
+        "layers.8.ffn_norm.weight",
+        "layers.8.ls1",
+        "layers.8.ls2",
+        "layers.8.moe.router.weight",
+        "layers.8.moe.shared_w13.weight",
+        "layers.8.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 9,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.9.moe.w13",
+        "layers.9.moe.w2"
+      ],
+      "source_span": {
+        "end": 443399904,
+        "start": 414070492
+      },
+      "tensor_names": [
+        "layers.9.attn.w_in.weight",
+        "layers.9.attn.w_kr.weight",
+        "layers.9.attn.w_o.weight",
+        "layers.9.attn.w_uk",
+        "layers.9.attn.w_uq_qr.weight",
+        "layers.9.attn.w_uv",
+        "layers.9.attn_norm.weight",
+        "layers.9.ffn_norm.weight",
+        "layers.9.ls1",
+        "layers.9.ls2",
+        "layers.9.moe.router.weight",
+        "layers.9.moe.shared_w13.weight",
+        "layers.9.moe.shared_w2.weight",
+        "layers.9.moe.w13",
+        "layers.9.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.9.attn.w_in.weight",
+        "layers.9.attn.w_kr.weight",
+        "layers.9.attn.w_o.weight",
+        "layers.9.attn.w_uk",
+        "layers.9.attn.w_uq_qr.weight",
+        "layers.9.attn.w_uv",
+        "layers.9.attn_norm.weight",
+        "layers.9.ffn_norm.weight",
+        "layers.9.ls1",
+        "layers.9.ls2",
+        "layers.9.moe.router.weight",
+        "layers.9.moe.shared_w13.weight",
+        "layers.9.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 10,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.10.moe.w13",
+        "layers.10.moe.w2"
+      ],
+      "source_span": {
+        "end": 120776372,
+        "start": 91446960
+      },
+      "tensor_names": [
+        "layers.10.attn.w_in.weight",
+        "layers.10.attn.w_kr.weight",
+        "layers.10.attn.w_o.weight",
+        "layers.10.attn.w_uk",
+        "layers.10.attn.w_uq_qr.weight",
+        "layers.10.attn.w_uv",
+        "layers.10.attn_norm.weight",
+        "layers.10.ffn_norm.weight",
+        "layers.10.ls1",
+        "layers.10.ls2",
+        "layers.10.moe.router.weight",
+        "layers.10.moe.shared_w13.weight",
+        "layers.10.moe.shared_w2.weight",
+        "layers.10.moe.w13",
+        "layers.10.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.10.attn.w_in.weight",
+        "layers.10.attn.w_kr.weight",
+        "layers.10.attn.w_o.weight",
+        "layers.10.attn.w_uk",
+        "layers.10.attn.w_uq_qr.weight",
+        "layers.10.attn.w_uv",
+        "layers.10.attn_norm.weight",
+        "layers.10.ffn_norm.weight",
+        "layers.10.ls1",
+        "layers.10.ls2",
+        "layers.10.moe.router.weight",
+        "layers.10.moe.shared_w13.weight",
+        "layers.10.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 11,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.11.moe.w13",
+        "layers.11.moe.w2"
+      ],
+      "source_span": {
+        "end": 150105784,
+        "start": 120776372
+      },
+      "tensor_names": [
+        "layers.11.attn.w_in.weight",
+        "layers.11.attn.w_kr.weight",
+        "layers.11.attn.w_o.weight",
+        "layers.11.attn.w_uk",
+        "layers.11.attn.w_uq_qr.weight",
+        "layers.11.attn.w_uv",
+        "layers.11.attn_norm.weight",
+        "layers.11.ffn_norm.weight",
+        "layers.11.ls1",
+        "layers.11.ls2",
+        "layers.11.moe.router.weight",
+        "layers.11.moe.shared_w13.weight",
+        "layers.11.moe.shared_w2.weight",
+        "layers.11.moe.w13",
+        "layers.11.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.11.attn.w_in.weight",
+        "layers.11.attn.w_kr.weight",
+        "layers.11.attn.w_o.weight",
+        "layers.11.attn.w_uk",
+        "layers.11.attn.w_uq_qr.weight",
+        "layers.11.attn.w_uv",
+        "layers.11.attn_norm.weight",
+        "layers.11.ffn_norm.weight",
+        "layers.11.ls1",
+        "layers.11.ls2",
+        "layers.11.moe.router.weight",
+        "layers.11.moe.shared_w13.weight",
+        "layers.11.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 12,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.12.moe.w13",
+        "layers.12.moe.w2"
+      ],
+      "source_span": {
+        "end": 179435196,
+        "start": 150105784
+      },
+      "tensor_names": [
+        "layers.12.attn.w_in.weight",
+        "layers.12.attn.w_kr.weight",
+        "layers.12.attn.w_o.weight",
+        "layers.12.attn.w_uk",
+        "layers.12.attn.w_uq_qr.weight",
+        "layers.12.attn.w_uv",
+        "layers.12.attn_norm.weight",
+        "layers.12.ffn_norm.weight",
+        "layers.12.ls1",
+        "layers.12.ls2",
+        "layers.12.moe.router.weight",
+        "layers.12.moe.shared_w13.weight",
+        "layers.12.moe.shared_w2.weight",
+        "layers.12.moe.w13",
+        "layers.12.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.12.attn.w_in.weight",
+        "layers.12.attn.w_kr.weight",
+        "layers.12.attn.w_o.weight",
+        "layers.12.attn.w_uk",
+        "layers.12.attn.w_uq_qr.weight",
+        "layers.12.attn.w_uv",
+        "layers.12.attn_norm.weight",
+        "layers.12.ffn_norm.weight",
+        "layers.12.ls1",
+        "layers.12.ls2",
+        "layers.12.moe.router.weight",
+        "layers.12.moe.shared_w13.weight",
+        "layers.12.moe.shared_w2.weight"
+      ]
+    },
+    {
+      "layer_id": 13,
+      "routed_expert_payload_bytes": 25165824,
+      "routed_expert_tensor_names": [
+        "layers.13.moe.w13",
+        "layers.13.moe.w2"
+      ],
+      "source_span": {
+        "end": 208764608,
+        "start": 179435196
+      },
+      "tensor_names": [
+        "layers.13.attn.w_in.weight",
+        "layers.13.attn.w_kr.weight",
+        "layers.13.attn.w_o.weight",
+        "layers.13.attn.w_uk",
+        "layers.13.attn.w_uq_qr.weight",
+        "layers.13.attn.w_uv",
+        "layers.13.attn_norm.weight",
+        "layers.13.ffn_norm.weight",
+        "layers.13.ls1",
+        "layers.13.ls2",
+        "layers.13.moe.router.weight",
+        "layers.13.moe.shared_w13.weight",
+        "layers.13.moe.shared_w2.weight",
+        "layers.13.moe.w13",
+        "layers.13.moe.w2"
+      ],
+      "trunk_payload_bytes": 4163588,
+      "trunk_tensor_names": [
+        "layers.13.attn.w_in.weight",
+        "layers.13.attn.w_kr.weight",
+        "layers.13.attn.w_o.weight",
+        "layers.13.attn.w_uk",
+        "layers.13.attn.w_uq_qr.weight",
+        "layers.13.attn.w_uv",
+        "layers.13.attn_norm.weight",
+        "layers.13.ffn_norm.weight",
+        "layers.13.ls1",
+        "layers.13.ls2",
+        "layers.13.moe.router.weight",
+        "layers.13.moe.shared_w13.weight",
+        "layers.13.moe.shared_w2.weight"
+      ]
+    }
+  ],
+  "metadata": null,
+  "model": {
+    "hub_commit": "bb4d6474d9123ce6e1523b340bb6f8dd0877e56a",
+    "hub_id": "AbdelrhmanEbied/Tiny-MoE",
+    "source_repo": "https://github.com/AbdelrhmanEbied/Tiny-MoE",
+    "source_repo_commit": "e380414b734c5a0834c9e7783d6f44a84728f5f2",
+    "variant": "base"
+  },
+  "safetensors_header_bytes": 20136,
+  "source": "research\\tiny_moe\\artifacts\\checkpoint\\base\\model.safetensors",
+  "source_sha256": "8f23864c7576b8be1e23cba99432aca6eba161d6fbfde5536c62adc41da3845f",
+  "source_size_bytes": 476168928,
+  "tensor_count": 213,
+  "tensors": [
+    {
+      "absolute_offset": 20136,
+      "byte_count": 32768000,
+      "category": "persistent",
+      "data_offsets": [
+        0,
+        32768000
+      ],
+      "dtype": "F16",
+      "layer_id": null,
+      "name": "embed_tokens.weight",
+      "shape": [
+        32000,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 32788136,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        32768000,
+        32964608
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 32984744,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        32964608,
+        32980992
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 33001128,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        32980992,
+        33505280
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 33525416,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        33505280,
+        33579008
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 33599144,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        33579008,
+        33677312
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 33697448,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        33677312,
+        33775616
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 33795752,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        33775616,
+        33776640
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 33796776,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        33776640,
+        33777664
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 33797800,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        33777664,
+        33777666
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 33797802,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        33777666,
+        33777668
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 33797804,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        33777668,
+        33785860
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 33805996,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        33785860,
+        35883012
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 35903148,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        35883012,
+        36931588
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 36951724,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        36931588,
+        53708804
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 53728940,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        53708804,
+        62097412
+      ],
+      "dtype": "F16",
+      "layer_id": 0,
+      "name": "layers.0.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 62117548,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        62097412,
+        62294020
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 62314156,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        62294020,
+        62310404
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 62330540,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        62310404,
+        62834692
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 62854828,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        62834692,
+        62908420
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 62928556,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        62908420,
+        63006724
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 63026860,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        63006724,
+        63105028
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 63125164,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        63105028,
+        63106052
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 63126188,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        63106052,
+        63107076
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 63127212,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        63107076,
+        63107078
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 63127214,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        63107078,
+        63107080
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 63127216,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        63107080,
+        63115272
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 63135408,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        63115272,
+        65212424
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 65232560,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        65212424,
+        66261000
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 66281136,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        66261000,
+        83038216
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 83058352,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        83038216,
+        91426824
+      ],
+      "dtype": "F16",
+      "layer_id": 1,
+      "name": "layers.1.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 91446960,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        91426824,
+        91623432
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 91643568,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        91623432,
+        91639816
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 91659952,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        91639816,
+        92164104
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 92184240,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        92164104,
+        92237832
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 92257968,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        92237832,
+        92336136
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 92356272,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        92336136,
+        92434440
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 92454576,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        92434440,
+        92435464
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 92455600,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        92435464,
+        92436488
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 92456624,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        92436488,
+        92436490
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 92456626,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        92436490,
+        92436492
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 92456628,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        92436492,
+        92444684
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 92464820,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        92444684,
+        94541836
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 94561972,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        94541836,
+        95590412
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 95610548,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        95590412,
+        112367628
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 112387764,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        112367628,
+        120756236
+      ],
+      "dtype": "F16",
+      "layer_id": 10,
+      "name": "layers.10.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 120776372,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        120756236,
+        120952844
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 120972980,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        120952844,
+        120969228
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 120989364,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        120969228,
+        121493516
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 121513652,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        121493516,
+        121567244
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 121587380,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        121567244,
+        121665548
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 121685684,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        121665548,
+        121763852
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 121783988,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        121763852,
+        121764876
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 121785012,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        121764876,
+        121765900
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 121786036,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        121765900,
+        121765902
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 121786038,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        121765902,
+        121765904
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 121786040,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        121765904,
+        121774096
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 121794232,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        121774096,
+        123871248
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 123891384,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        123871248,
+        124919824
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 124939960,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        124919824,
+        141697040
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 141717176,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        141697040,
+        150085648
+      ],
+      "dtype": "F16",
+      "layer_id": 11,
+      "name": "layers.11.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 150105784,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        150085648,
+        150282256
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 150302392,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        150282256,
+        150298640
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 150318776,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        150298640,
+        150822928
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 150843064,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        150822928,
+        150896656
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 150916792,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        150896656,
+        150994960
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 151015096,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        150994960,
+        151093264
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 151113400,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        151093264,
+        151094288
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 151114424,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        151094288,
+        151095312
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 151115448,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        151095312,
+        151095314
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 151115450,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        151095314,
+        151095316
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 151115452,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        151095316,
+        151103508
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 151123644,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        151103508,
+        153200660
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 153220796,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        153200660,
+        154249236
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 154269372,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        154249236,
+        171026452
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 171046588,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        171026452,
+        179415060
+      ],
+      "dtype": "F16",
+      "layer_id": 12,
+      "name": "layers.12.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 179435196,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        179415060,
+        179611668
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 179631804,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        179611668,
+        179628052
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 179648188,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        179628052,
+        180152340
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 180172476,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        180152340,
+        180226068
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 180246204,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        180226068,
+        180324372
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 180344508,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        180324372,
+        180422676
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 180442812,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        180422676,
+        180423700
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 180443836,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        180423700,
+        180424724
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 180444860,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        180424724,
+        180424726
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 180444862,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        180424726,
+        180424728
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 180444864,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        180424728,
+        180432920
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 180453056,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        180432920,
+        182530072
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 182550208,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        182530072,
+        183578648
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 183598784,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        183578648,
+        200355864
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 200376000,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        200355864,
+        208744472
+      ],
+      "dtype": "F16",
+      "layer_id": 13,
+      "name": "layers.13.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 208764608,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        208744472,
+        208941080
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 208961216,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        208941080,
+        208957464
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 208977600,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        208957464,
+        209481752
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 209501888,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        209481752,
+        209555480
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 209575616,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        209555480,
+        209653784
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 209673920,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        209653784,
+        209752088
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 209772224,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        209752088,
+        209753112
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 209773248,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        209753112,
+        209754136
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 209774272,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        209754136,
+        209754138
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 209774274,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        209754138,
+        209754140
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 209774276,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        209754140,
+        209762332
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 209782468,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        209762332,
+        211859484
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 211879620,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        211859484,
+        212908060
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 212928196,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        212908060,
+        229685276
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 229705412,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        229685276,
+        238073884
+      ],
+      "dtype": "F16",
+      "layer_id": 2,
+      "name": "layers.2.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 238094020,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        238073884,
+        238270492
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 238290628,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        238270492,
+        238286876
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 238307012,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        238286876,
+        238811164
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 238831300,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        238811164,
+        238884892
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 238905028,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        238884892,
+        238983196
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 239003332,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        238983196,
+        239081500
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 239101636,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        239081500,
+        239082524
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 239102660,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        239082524,
+        239083548
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 239103684,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        239083548,
+        239083550
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 239103686,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        239083550,
+        239083552
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 239103688,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        239083552,
+        239091744
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 239111880,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        239091744,
+        241188896
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 241209032,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        241188896,
+        242237472
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 242257608,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        242237472,
+        259014688
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 259034824,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        259014688,
+        267403296
+      ],
+      "dtype": "F16",
+      "layer_id": 3,
+      "name": "layers.3.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 267423432,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        267403296,
+        267599904
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 267620040,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        267599904,
+        267616288
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 267636424,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        267616288,
+        268140576
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 268160712,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        268140576,
+        268214304
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 268234440,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        268214304,
+        268312608
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 268332744,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        268312608,
+        268410912
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 268431048,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        268410912,
+        268411936
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 268432072,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        268411936,
+        268412960
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 268433096,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        268412960,
+        268412962
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 268433098,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        268412962,
+        268412964
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 268433100,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        268412964,
+        268421156
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 268441292,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        268421156,
+        270518308
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 270538444,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        270518308,
+        271566884
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 271587020,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        271566884,
+        288344100
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 288364236,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        288344100,
+        296732708
+      ],
+      "dtype": "F16",
+      "layer_id": 4,
+      "name": "layers.4.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 296752844,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        296732708,
+        296929316
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 296949452,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        296929316,
+        296945700
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 296965836,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        296945700,
+        297469988
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 297490124,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        297469988,
+        297543716
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 297563852,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        297543716,
+        297642020
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 297662156,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        297642020,
+        297740324
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 297760460,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        297740324,
+        297741348
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 297761484,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        297741348,
+        297742372
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 297762508,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        297742372,
+        297742374
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 297762510,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        297742374,
+        297742376
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 297762512,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        297742376,
+        297750568
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 297770704,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        297750568,
+        299847720
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 299867856,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        299847720,
+        300896296
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 300916432,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        300896296,
+        317673512
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 317693648,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        317673512,
+        326062120
+      ],
+      "dtype": "F16",
+      "layer_id": 5,
+      "name": "layers.5.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 326082256,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        326062120,
+        326258728
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 326278864,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        326258728,
+        326275112
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 326295248,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        326275112,
+        326799400
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 326819536,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        326799400,
+        326873128
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 326893264,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        326873128,
+        326971432
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 326991568,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        326971432,
+        327069736
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 327089872,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        327069736,
+        327070760
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 327090896,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        327070760,
+        327071784
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 327091920,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        327071784,
+        327071786
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 327091922,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        327071786,
+        327071788
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 327091924,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        327071788,
+        327079980
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 327100116,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        327079980,
+        329177132
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 329197268,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        329177132,
+        330225708
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 330245844,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        330225708,
+        347002924
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 347023060,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        347002924,
+        355391532
+      ],
+      "dtype": "F16",
+      "layer_id": 6,
+      "name": "layers.6.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 355411668,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        355391532,
+        355588140
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 355608276,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        355588140,
+        355604524
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 355624660,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        355604524,
+        356128812
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 356148948,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        356128812,
+        356202540
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 356222676,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        356202540,
+        356300844
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 356320980,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        356300844,
+        356399148
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 356419284,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        356399148,
+        356400172
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 356420308,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        356400172,
+        356401196
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 356421332,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        356401196,
+        356401198
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 356421334,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        356401198,
+        356401200
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 356421336,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        356401200,
+        356409392
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 356429528,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        356409392,
+        358506544
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 358526680,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        358506544,
+        359555120
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 359575256,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        359555120,
+        376332336
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 376352472,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        376332336,
+        384720944
+      ],
+      "dtype": "F16",
+      "layer_id": 7,
+      "name": "layers.7.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 384741080,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        384720944,
+        384917552
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 384937688,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        384917552,
+        384933936
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 384954072,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        384933936,
+        385458224
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 385478360,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        385458224,
+        385531952
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 385552088,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        385531952,
+        385630256
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 385650392,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        385630256,
+        385728560
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 385748696,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        385728560,
+        385729584
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 385749720,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        385729584,
+        385730608
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 385750744,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        385730608,
+        385730610
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 385750746,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        385730610,
+        385730612
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 385750748,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        385730612,
+        385738804
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 385758940,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        385738804,
+        387835956
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 387856092,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        387835956,
+        388884532
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 388904668,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        388884532,
+        405661748
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 405681884,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        405661748,
+        414050356
+      ],
+      "dtype": "F16",
+      "layer_id": 8,
+      "name": "layers.8.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 414070492,
+      "byte_count": 196608,
+      "category": "trunk",
+      "data_offsets": [
+        414050356,
+        414246964
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.attn.w_in.weight",
+      "shape": [
+        192,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 414267100,
+      "byte_count": 16384,
+      "category": "trunk",
+      "data_offsets": [
+        414246964,
+        414263348
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.attn.w_kr.weight",
+      "shape": [
+        16,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 414283484,
+      "byte_count": 524288,
+      "category": "trunk",
+      "data_offsets": [
+        414263348,
+        414787636
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.attn.w_o.weight",
+      "shape": [
+        512,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 414807772,
+      "byte_count": 73728,
+      "category": "trunk",
+      "data_offsets": [
+        414787636,
+        414861364
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.attn.w_uk",
+      "shape": [
+        8,
+        48,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 414881500,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        414861364,
+        414959668
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.attn.w_uq_qr.weight",
+      "shape": [
+        512,
+        96
+      ]
+    },
+    {
+      "absolute_offset": 414979804,
+      "byte_count": 98304,
+      "category": "trunk",
+      "data_offsets": [
+        414959668,
+        415057972
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.attn.w_uv",
+      "shape": [
+        8,
+        96,
+        64
+      ]
+    },
+    {
+      "absolute_offset": 415078108,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        415057972,
+        415058996
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.attn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 415079132,
+      "byte_count": 1024,
+      "category": "trunk",
+      "data_offsets": [
+        415058996,
+        415060020
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.ffn_norm.weight",
+      "shape": [
+        512
+      ]
+    },
+    {
+      "absolute_offset": 415080156,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        415060020,
+        415060022
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.ls1",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 415080158,
+      "byte_count": 2,
+      "category": "trunk",
+      "data_offsets": [
+        415060022,
+        415060024
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.ls2",
+      "shape": [
+        1
+      ]
+    },
+    {
+      "absolute_offset": 415080160,
+      "byte_count": 8192,
+      "category": "trunk",
+      "data_offsets": [
+        415060024,
+        415068216
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.moe.router.weight",
+      "shape": [
+        8,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 415088352,
+      "byte_count": 2097152,
+      "category": "trunk",
+      "data_offsets": [
+        415068216,
+        417165368
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.moe.shared_w13.weight",
+      "shape": [
+        2048,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 417185504,
+      "byte_count": 1048576,
+      "category": "trunk",
+      "data_offsets": [
+        417165368,
+        418213944
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.moe.shared_w2.weight",
+      "shape": [
+        512,
+        1024
+      ]
+    },
+    {
+      "absolute_offset": 418234080,
+      "byte_count": 16777216,
+      "category": "routed_expert",
+      "data_offsets": [
+        418213944,
+        434991160
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.moe.w13",
+      "shape": [
+        8,
+        512,
+        2048
+      ]
+    },
+    {
+      "absolute_offset": 435011296,
+      "byte_count": 8388608,
+      "category": "routed_expert",
+      "data_offsets": [
+        434991160,
+        443379768
+      ],
+      "dtype": "F16",
+      "layer_id": 9,
+      "name": "layers.9.moe.w2",
+      "shape": [
+        8,
+        1024,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 443399904,
+      "byte_count": 32768000,
+      "category": "persistent",
+      "data_offsets": [
+        443379768,
+        476147768
+      ],
+      "dtype": "F16",
+      "layer_id": null,
+      "name": "lm_head.weight",
+      "shape": [
+        32000,
+        512
+      ]
+    },
+    {
+      "absolute_offset": 476167904,
+      "byte_count": 1024,
+      "category": "persistent",
+      "data_offsets": [
+        476147768,
+        476148792
+      ],
+      "dtype": "F16",
+      "layer_id": null,
+      "name": "norm.weight",
+      "shape": [
+        512
+      ]
+    }
+  ]
+}
