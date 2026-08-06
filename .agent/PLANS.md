@@ -1,13 +1,13 @@
-# ExecPlan: Tiny-MoE real trunk streaming Gate 3
+# ExecPlan: Tiny-MoE performance and compressed-trunk comparison
 
 Use this file as durable working memory for the current long-running task.
 Keep it concise, current, and self-contained.
 
 ## Goal
 
-- Establish or falsify Gate 3 for a genuinely trained AbdelrhmanEbied/Tiny-MoE
-  checkpoint: a numerically identical fully resident and layer-streamed path,
-  with measured memory/I/O accounting and reproducible evidence.
+- Determine whether F16 layer streaming has a measurable cost/benefit and
+  whether Int8 or Int4 Colibri-style trunk compression improves that tradeoff
+  on the native Windows laptop without unacceptable model divergence.
 
 ## Constraints
 
@@ -20,6 +20,10 @@ Keep it concise, current, and self-contained.
 - No success claim from synthetic fixtures; failed/negative results remain.
 - Keep research implementation isolated under research/tiny_moe until gates
   justify integration.
+- Do not redo the completed Gate 3 correctness matrix.
+- Native Windows is primary for PyTorch performance; WSL is limited to Linux
+  reader/O_DIRECT experiments.
+- Never claim physical cold-cache behavior without a documented cache flush.
 
 ## Relevant Files
 
@@ -29,25 +33,28 @@ Keep it concise, current, and self-contained.
 - research/fareed/GATE2_RESULTS.md - prior Gate 2 evidence.
 - research/tiny_moe/ - all new inspection, packing, runners, accounting, tests,
   and results.
-- draft PR #11 - review history to inspect and update only after evidence.
+- research/tiny_moe/results/performance/ - Stage 1/2 raw benchmark artifacts.
+- research/tiny_moe/compressed_trunk.py - compressed artifact builder/reader.
+- research/tiny_moe/compressed_runner.py - compressed execution path.
+- research/tiny_moe/performance_benchmark.py - warm-up/repetition matrix.
+- research/tiny_moe/PERFORMANCE_RESULTS.md - final measured decision.
+- draft PR #12 - current review history and target branch.
 
 ## Plan
 
-1. Audit branch, latest commit, PR #11, Fareed code/results, and existing tests;
-   create the dedicated working branch without altering prior evidence.
-2. Inspect Tiny-MoE metadata/config/custom code/tokenizer/checkpoint index and
-   tensor names without loading the full checkpoint; freeze the architecture,
-   tensor manifest, source checksums, and experiment plan.
-3. Download only required model files and build machine-readable MANIFEST.json.
-4. Implement isolated layer-addressable trunk packing, validation, accounting,
-   resident reference, streamed runner, and deterministic tests.
-5. Run Gate 3 modes A-E with layer/token comparisons, RSS/I/O/cache metrics,
-   repeated deterministic executions, and trusted Transformers reference where
-   feasible.
-6. Iterate only on measured blockers; run formatting, lint/type/native checks;
-   write GATE3_RESULTS.md with PROVEN/MEASURED/MODELED/ASSUMED/NOT YET TESTED.
-7. Update PR #11 or open a clearly linked draft PR targeting the Fareed branch
-   only after the evidence and reviewable commits exist.
+1. Freeze the Stage 1 Windows protocol and hardware/cache classification.
+2. Benchmark existing F16 full-resident and five streaming residency modes for
+   prefill, one-token decode, and >=64-token greedy generation with one warm-up
+   plus >=10 measured repetitions; retain raw JSON.
+3. Validate the packed-file reader under WSL buffered and O_DIRECT modes only.
+4. Build exact-value Int8 per-row and Int4 group-64 non-expert trunk artifacts,
+   with checksums and range validation; do not quantize routed experts.
+5. Implement direct compressed-layer execution with explicit conversion and
+   scratch accounting, never a full-F16 trunk copy.
+6. Benchmark compressed modes and quality against the existing F16 reference;
+   classify PASS/NARROW/KILL/INCONCLUSIVE from measurements.
+7. Run tests/format/lint/type/native checks, write PERFORMANCE_RESULTS.md, and
+   update PR #12 with raw artifacts and commands.
 
 ## Progress
 
@@ -95,6 +102,21 @@ Keep it concise, current, and self-contained.
   is 20/20; Linux native strict GCC plus buffered/direct-preferred tests pass.
 - Project-owned Tiny-MoE code passes Black, Ruff, and targeted mypy; Tiny-MoE
   tests pass 4/4.
+- New performance stage requested by user; completed correctness artifacts are
+  frozen and must not be regenerated.
+- Added a non-capturing `_step(..., capture=False)` path and
+  `performance_benchmark.py`. The native Windows Stage 1 matrix has all 18
+  cases complete: six modes across prefill, one-token decode, and 64-token
+  generation, each with one warm-up and ten measured repetitions.
+- Added a non-timing 65-step routing audit. All six modes have identical
+  generated tokens, Top-2 selection hashes, and router-weight hashes at every
+  step. The timing matrix was not rerun.
+- Added `results/performance/STAGE1_ANALYSIS.json`,
+  `PERFORMANCE_MATRIX.json`, raw case JSON, routing-audit JSON, and the
+  human-readable `STAGE1_RESULTS.md`.
+- Added initial `compressed_trunk.py` and `compressed_runner.py` scaffolding for
+  Int8 per-row and Int4 group-64 artifacts; compression benchmarks and quality
+  tests have not started.
 
 ## Discoveries
 
@@ -112,12 +134,19 @@ Keep it concise, current, and self-contained.
 - Checkpoint tensor ordering is lexicographic and interleaves routed expert
   tensors with non-expert tensors. The new trunk is therefore a repacked exact
   byte copy of only non-routed tensors, not a raw source span.
+- Tiny-MoE is small enough that framework/allocation overhead may dominate
+  storage traffic; Stage 1 must test for an INCONCLUSIVE or NARROW result before
+  interpreting compressed-byte reductions as speedups.
 
 ## Decisions
 
 - Use the requested branch name research/tiny-moe-real-trunk-streaming.
 - Treat the Transformers path as a reference, not as proof that a custom
   streamed path is correct.
+- Treat the completed `results/matrix_final` and Gate 3 report as immutable
+  correctness evidence; performance runs use new artifacts/directories.
+- Use F16, Int8 per-row, and Int4 group-64 only for non-expert trunk tensors;
+  retain routed expert weights unchanged.
 
 ## Verification
 
@@ -127,12 +156,14 @@ Keep it concise, current, and self-contained.
   and complete test gates are documented in GATE3_RESULTS.md. Correctness is
   proven; steady-state RSS monotonicity and real-model O_DIRECT/page-cache
   gates remain open.
+- Native Windows Stage 1 timing and route validation are complete. The timing
+  data are noisy; F16 streaming has no reliable speedup claim and compressed
+  comparison remains open.
+- Compressed artifact correctness and Stage 2 performance are not yet run.
 
 ## Resume
 
-- Current status: Gate 3 report is written. Correctness passes for the real
-  Tiny-MoE checkpoint; resource/performance gates are explicitly bounded by the
-  report's caveats.
-- Next action: inspect the final diff, run final checks, create small reviewable
-  commits, and update the existing draft PR history under the original task
-  scope.
+- Current status: Stage 1 is validated and ready for an isolated commit; no
+  benchmark process is active.
+- Next action: commit only Stage 1 code/evidence, push it to PR #12, then
+  complete and test the Int8/Int4 compressed path.

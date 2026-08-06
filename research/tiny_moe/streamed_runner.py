@@ -250,6 +250,10 @@ class TinyMoeRuntime:
         self.reader: LayerReader | None = None
         self.resident: dict[int, tuple[bytearray, dict[str, torch.Tensor]]] = {}
         self.experts: list[dict[str, torch.Tensor]] = []
+        self.last_route_trace: dict[str, list[str]] = {
+            "router_ids_sha256": [],
+            "router_weights_sha256": [],
+        }
         self.embed_tokens: torch.Tensor
         self.norm: torch.Tensor
         self._load_persistent_and_experts()
@@ -347,6 +351,9 @@ class TinyMoeRuntime:
 
     def reset_cache(self) -> None:
         self.cache_len = [0] * len(self.cache_len)
+
+    def _resident_weights(self, layer_id: int) -> dict[str, torch.Tensor]:
+        return self.resident[layer_id][1]
 
     def _rope_apply(
         self, x: torch.Tensor, position_ids: torch.Tensor | None
@@ -520,11 +527,20 @@ class TinyMoeRuntime:
             for layer_id in range(len(self.cache_len))
         ]
 
-    def _step(self, input_ids: torch.Tensor, phase: str) -> StepTrace:
+    def _step(
+        self,
+        input_ids: torch.Tensor,
+        phase: str,
+        *,
+        capture: bool = True,
+        capture_routes: bool = False,
+    ) -> StepTrace:
         x = F.embedding(input_ids, self.embed_tokens)
         hidden_states: list[torch.Tensor] = []
         route_ids: list[torch.Tensor] = []
         route_weights: list[torch.Tensor] = []
+        route_id_hashes: list[str] = []
+        route_weight_hashes: list[str] = []
         if self.resident_layers < len(self.index["layers"]) and self.reader is None:
             self.reader = LayerReader(self.trunk, self.index, io_mode=self.io_mode)
             self.reader.accounting = self.accounting
@@ -535,7 +551,7 @@ class TinyMoeRuntime:
             buffer_id = 0
             for layer_id in range(len(self.index["layers"])):
                 if layer_id < self.resident_layers:
-                    weights = self.resident[layer_id][1]
+                    weights = self._resident_weights(layer_id)
                 else:
                     if executor is not None and layer_id in futures:
                         started_wait = time.perf_counter()
@@ -555,9 +571,13 @@ class TinyMoeRuntime:
                 compute_started = time.perf_counter()
                 x, ids, weights_for_route = self._forward_layer(layer_id, x, weights)
                 self.accounting.record_compute(time.perf_counter() - compute_started)
-                hidden_states.append(x.detach().cpu().clone())
-                route_ids.append(ids.detach().cpu().clone())
-                route_weights.append(weights_for_route.detach().cpu().clone())
+                if capture:
+                    hidden_states.append(x.detach().cpu().clone())
+                    route_ids.append(ids.detach().cpu().clone())
+                    route_weights.append(weights_for_route.detach().cpu().clone())
+                if capture_routes:
+                    route_id_hashes.append(tensor_digest(ids))
+                    route_weight_hashes.append(tensor_digest(weights_for_route))
                 if layer_id >= self.resident_layers:
                     buffer_id = 1 - buffer_id
             logits = (
@@ -572,8 +592,16 @@ class TinyMoeRuntime:
         finally:
             if executor is not None:
                 executor.shutdown(wait=True)
+        self.last_route_trace = {
+            "router_ids_sha256": route_id_hashes,
+            "router_weights_sha256": route_weight_hashes,
+        }
         return StepTrace(
-            hidden_states, route_ids, route_weights, self._persistent_trace(), logits
+            hidden_states,
+            route_ids,
+            route_weights,
+            self._persistent_trace() if capture else [],
+            logits,
         )
 
     @torch.inference_mode()
